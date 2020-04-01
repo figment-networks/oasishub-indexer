@@ -1,7 +1,7 @@
 package orm
 
 import (
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 type EntityAggModel struct {

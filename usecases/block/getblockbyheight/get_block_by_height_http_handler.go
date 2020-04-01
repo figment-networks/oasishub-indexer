@@ -1,10 +1,10 @@
 package getblockbyheight
 
 import (
-	"github.com/figment-networks/oasishub/mappers/blockseqmapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/mappers/blockseqmapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

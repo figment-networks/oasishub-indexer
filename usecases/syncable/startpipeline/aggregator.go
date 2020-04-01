@@ -2,14 +2,14 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub/domain/accountdomain"
-	"github.com/figment-networks/oasishub/domain/entitydomain"
-	"github.com/figment-networks/oasishub/mappers/accountaggmapper"
-	"github.com/figment-networks/oasishub/mappers/entityaggmapper"
-	"github.com/figment-networks/oasishub/repos/accountaggrepo"
-	"github.com/figment-networks/oasishub/repos/entityaggrepo"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/accountaggmapper"
+	"github.com/figment-networks/oasishub-indexer/mappers/entityaggmapper"
+	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type Aggregator interface {

@@ -1,13 +1,13 @@
 package blockseqmapper
 
 import (
-	"github.com/figment-networks/oasishub/db/timescale/orm"
-	"github.com/figment-networks/oasishub/domain/blockdomain"
-	"github.com/figment-networks/oasishub/domain/commons"
-	"github.com/figment-networks/oasishub/domain/syncabledomain"
-	"github.com/figment-networks/oasishub/mappers/syncablemapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
+	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/commons"
+	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
 func FromPersistence(o orm.BlockSeqModel) (*blockdomain.BlockSeq, errors.ApplicationError) {

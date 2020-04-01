@@ -2,18 +2,18 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub/domain/reportdomain"
-	"github.com/figment-networks/oasishub/repos/accountaggrepo"
-	"github.com/figment-networks/oasishub/repos/blockseqrepo"
-	"github.com/figment-networks/oasishub/repos/debondingdelegationseqrepo"
-	"github.com/figment-networks/oasishub/repos/delegationseqrepo"
-	"github.com/figment-networks/oasishub/repos/entityaggrepo"
-	"github.com/figment-networks/oasishub/repos/stakingseqrepo"
-	"github.com/figment-networks/oasishub/repos/syncablerepo"
-	"github.com/figment-networks/oasishub/repos/transactionseqrepo"
-	"github.com/figment-networks/oasishub/repos/validatorseqrepo"
-	"github.com/figment-networks/oasishub/utils/iterators"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
+	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
+	"github.com/figment-networks/oasishub-indexer/utils/iterators"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type Pipeline interface {

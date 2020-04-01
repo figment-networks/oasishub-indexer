@@ -2,8 +2,8 @@ package timescaleclient
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/config"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )

@@ -3,12 +3,12 @@ package syncablemapper
 import (
 	"encoding/json"
 	"github.com/figment-networks/oasis-rpc-proxy/controllers"
-	"github.com/figment-networks/oasishub/db/timescale/orm"
-	"github.com/figment-networks/oasishub/domain/commons"
-	"github.com/figment-networks/oasishub/domain/syncabledomain"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
+	"github.com/figment-networks/oasishub-indexer/domain/commons"
+	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm/dialects/postgres"
 )
 

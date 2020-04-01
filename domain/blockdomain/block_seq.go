@@ -1,8 +1,8 @@
 package blockdomain
 
 import (
-	"github.com/figment-networks/oasishub/domain/commons"
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/domain/commons"
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 type BlockSeq struct {

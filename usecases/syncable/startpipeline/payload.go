@@ -1,16 +1,16 @@
 package startpipeline
 
 import (
-	"github.com/figment-networks/oasishub/domain/accountdomain"
-	"github.com/figment-networks/oasishub/domain/blockdomain"
-	"github.com/figment-networks/oasishub/domain/delegationdomain"
-	"github.com/figment-networks/oasishub/domain/entitydomain"
-	"github.com/figment-networks/oasishub/domain/stakingdomain"
-	"github.com/figment-networks/oasishub/domain/syncabledomain"
-	"github.com/figment-networks/oasishub/domain/transactiondomain"
-	"github.com/figment-networks/oasishub/domain/validatordomain"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
+	"github.com/figment-networks/oasishub-indexer/domain/stakingdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
+	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
+	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 	"sync"
 	"time"
 )

@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/spf13/viper"
 )
 

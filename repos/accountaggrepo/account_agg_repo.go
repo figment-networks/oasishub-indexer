@@ -2,12 +2,12 @@ package accountaggrepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/db/timescale/orm"
-	"github.com/figment-networks/oasishub/domain/accountdomain"
-	"github.com/figment-networks/oasishub/mappers/accountaggmapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
+	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/accountaggmapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 )
 

@@ -6,7 +6,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 	gc "gopkg.in/check.v1"
 )
 

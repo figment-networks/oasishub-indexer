@@ -2,7 +2,7 @@ package log
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/config"
+	"github.com/figment-networks/oasishub-indexer/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"strings"

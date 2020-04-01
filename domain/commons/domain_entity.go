@@ -1,7 +1,7 @@
 package commons
 
 import (
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"time"
 )
 

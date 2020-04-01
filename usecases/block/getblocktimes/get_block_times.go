@@ -1,7 +1,7 @@
 package getblocktimes
 
 import (
-	"github.com/figment-networks/oasishub/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 )
 
 type UseCase interface {

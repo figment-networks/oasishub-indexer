@@ -1,8 +1,8 @@
 package getblocktimesforinterval
 
 import (
-	"github.com/figment-networks/oasishub/repos/blockseqrepo"
-	"github.com/figment-networks/oasishub/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
 type UseCase interface {

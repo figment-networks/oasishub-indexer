@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 	"golang.org/x/xerrors"
 	gc "gopkg.in/check.v1"
 )

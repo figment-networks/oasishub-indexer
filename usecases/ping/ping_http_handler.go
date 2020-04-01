@@ -1,7 +1,7 @@
 package ping
 
 import (
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )

@@ -2,13 +2,13 @@ package syncablerepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/clients/restclient"
-	"github.com/figment-networks/oasishub/domain/commons"
-	"github.com/figment-networks/oasishub/domain/syncabledomain"
-	"github.com/figment-networks/oasishub/mappers/syncablemapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/clients/restclient"
+	"github.com/figment-networks/oasishub-indexer/domain/commons"
+	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"io/ioutil"
 )
 

@@ -1,8 +1,8 @@
 package orm
 
 import (
-	"github.com/figment-networks/oasishub/domain/syncabledomain"
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm/dialects/postgres"
 	"time"
 )

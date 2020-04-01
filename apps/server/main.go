@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/apps/shared"
-	"github.com/figment-networks/oasishub/config"
-	"github.com/figment-networks/oasishub/repos/blockseqrepo"
-	"github.com/figment-networks/oasishub/repos/syncablerepo"
-	"github.com/figment-networks/oasishub/usecases/block/getblockbyheight"
-	"github.com/figment-networks/oasishub/usecases/block/getblocktimes"
-	"github.com/figment-networks/oasishub/usecases/block/getblocktimesforinterval"
-	"github.com/figment-networks/oasishub/usecases/ping"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/apps/shared"
+	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
+	"github.com/figment-networks/oasishub-indexer/usecases/block/getblockbyheight"
+	"github.com/figment-networks/oasishub-indexer/usecases/block/getblocktimes"
+	"github.com/figment-networks/oasishub-indexer/usecases/block/getblocktimesforinterval"
+	"github.com/figment-networks/oasishub-indexer/usecases/ping"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 )
 

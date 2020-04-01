@@ -2,12 +2,12 @@ package transactionseqrepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/db/timescale/orm"
-	"github.com/figment-networks/oasishub/domain/transactiondomain"
-	"github.com/figment-networks/oasishub/mappers/transactionseqmapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
+	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/transactionseqmapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 )
 

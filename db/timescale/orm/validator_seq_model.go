@@ -1,8 +1,8 @@
 package orm
 
 import (
-	"github.com/figment-networks/oasishub/domain/validatordomain"
-	"github.com/figment-networks/oasishub/types"
+	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 type ValidatorSeqModel struct {

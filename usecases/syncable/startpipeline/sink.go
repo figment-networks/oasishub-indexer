@@ -2,9 +2,9 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub/domain/reportdomain"
-	"github.com/figment-networks/oasishub/repos/syncablerepo"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type Sink interface {

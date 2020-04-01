@@ -1,9 +1,9 @@
 package shared
 
 import (
-	"github.com/figment-networks/oasishub/clients/restclient"
-	"github.com/figment-networks/oasishub/clients/timescaleclient"
-	"github.com/figment-networks/oasishub/config"
+	"github.com/figment-networks/oasishub-indexer/clients/restclient"
+	"github.com/figment-networks/oasishub-indexer/clients/timescaleclient"
+	"github.com/figment-networks/oasishub-indexer/config"
 )
 
 func NewNodeClient() restclient.HttpGetter {

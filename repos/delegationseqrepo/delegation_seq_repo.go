@@ -2,12 +2,12 @@ package delegationseqrepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/db/timescale/orm"
-	"github.com/figment-networks/oasishub/domain/delegationdomain"
-	"github.com/figment-networks/oasishub/mappers/delegationseqmapper"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
+	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/delegationseqmapper"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 )
 

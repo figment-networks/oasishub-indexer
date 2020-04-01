@@ -2,8 +2,8 @@ package iterators
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub/types"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type HeightIterator struct {

@@ -1,10 +1,10 @@
 package reportrepo
 
 import (
-	"github.com/figment-networks/oasishub/domain/reportdomain"
-	"github.com/figment-networks/oasishub/mappers/reportmapper"
-	"github.com/figment-networks/oasishub/utils/errors"
-	"github.com/figment-networks/oasishub/utils/log"
+	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/mappers/reportmapper"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 )
 

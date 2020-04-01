@@ -2,8 +2,8 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub/utils/iterators"
-	"github.com/figment-networks/oasishub/utils/pipeline"
+	"github.com/figment-networks/oasishub-indexer/utils/iterators"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type blockSource struct {
