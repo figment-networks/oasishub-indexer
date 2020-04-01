@@ -91,3 +91,18 @@ func FromData(stateSyncable *syncabledomain.Syncable) ([]*accountdomain.AccountA
 	return accounts, nil
 }
 
+func ToView(s *accountdomain.AccountAgg) map[string]interface{} {
+	return map[string]interface{}{
+		"id":                s.ID,
+		"started_at_height": s.StartedAtHeight,
+		"started_at":        s.StartedAt,
+
+		"public_key":                         s.PublicKey,
+		"last_general_balance":               s.LastGeneralBalance.String(),
+		"last_general_nonce":                 s.LastGeneralNonce,
+		"last_escrow_active_balance":         s.LastEscrowActiveBalance.String(),
+		"last_escrow_active_total_shares":    s.LastEscrowActiveTotalShares.String(),
+		"last_escrow_debonding_balance":      s.LastEscrowDebondingBalance.String(),
+		"last_escrow_debonding_total_shares": s.LastEscrowDebondingTotalShares.String(),
+	}
+}

@@ -81,3 +81,16 @@ func FromData(stateSyncable syncabledomain.Syncable) (*stakingdomain.StakingSeq,
 
 	return e, nil
 }
+
+func ToView(s *stakingdomain.StakingSeq) map[string]interface{} {
+	return map[string]interface{}{
+		"id":                    s.ID,
+		"height":                s.Height,
+		"time":                  s.Time,
+		"chain_id":              s.ChainId,
+		"total_supply":          s.TotalSupply.String(),
+		"common_pool":           s.CommonPool.String(),
+		"debonding_interval":    s.DebondingInterval,
+		"min_delegation_amount": s.MinDelegationAmount.String(),
+	}
+}

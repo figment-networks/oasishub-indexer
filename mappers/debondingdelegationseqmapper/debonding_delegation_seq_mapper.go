@@ -88,3 +88,22 @@ func FromData(stateSyncable *syncabledomain.Syncable) ([]*delegationdomain.Debon
 	}
 	return delegations, nil
 }
+
+func ToView(ts []*delegationdomain.DebondingDelegationSeq) []map[string]interface{} {
+	var items []map[string]interface{}
+	for _, t := range ts {
+		i := map[string]interface{}{
+			"id":       t.ID,
+			"height":   t.Height,
+			"time":     t.Time,
+			"chain_id": t.ChainId,
+
+			"validator_uid": t.ValidatorUID,
+			"delegator_uid": t.DelegatorUID,
+			"shares":        t.Shares.String(),
+			"debond_end":    t.DebondEnd,
+		}
+		items = append(items, i)
+	}
+	return items
+}

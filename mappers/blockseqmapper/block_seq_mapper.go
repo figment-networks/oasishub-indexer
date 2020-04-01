@@ -78,12 +78,15 @@ func FromData(blockSyncable syncabledomain.Syncable) (*blockdomain.BlockSeq, err
 	return e, nil
 }
 
-func ToView(s *syncabledomain.Syncable) map[string]interface{} {
+func ToView(s *blockdomain.BlockSeq) map[string]interface{} {
 	return map[string]interface{}{
-		"id":        s.ID,
-		"height":    s.Height,
-		"time":      s.Time,
-		"report_id": s.ReportID,
-		"chain_id":  s.ChainId,
+		"id":       s.ID,
+		"height":   s.Height,
+		"time":     s.Time,
+		"chain_id": s.ChainId,
+
+		"transactions_count": s.TransactionsCount,
+		"app_version":        s.AppVersion,
+		"block_version":      s.BlockVersion,
 	}
 }

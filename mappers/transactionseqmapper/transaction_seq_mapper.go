@@ -93,3 +93,25 @@ func FromData(transactionsSyncable syncabledomain.Syncable) ([]*transactiondomai
 	}
 	return transactions, nil
 }
+
+func ToView(ts []*transactiondomain.TransactionSeq) []map[string]interface{} {
+	var items []map[string]interface{}
+	for _, t := range ts {
+		i := map[string]interface{}{
+			"id":         t.ID,
+			"height":     t.Height,
+			"time":       t.Time,
+			"chain_id":   t.ChainId,
+
+			"public_key": t.PublicKey,
+			"hash":       t.Hash,
+			"nonce":      t.Nonce,
+			"gas_price":  t.GasPrice,
+			"gas_limit":  t.GasLimit,
+			"fee":        t.Fee,
+			"method":     t.Method,
+		}
+		items = append(items, i)
+	}
+	return items
+}

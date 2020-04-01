@@ -59,7 +59,7 @@ func (r *dbRepo) GetByHeight(h types.Height) ([]*transactiondomain.TransactionSe
 	query := heightQuery(h)
 	var seqs []orm.TransactionSeqModel
 
-	if err := r.client.Where(&query).Take(&seqs).Error; err != nil {
+	if err := r.client.Where(&query).Find(&seqs).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError(fmt.Sprintf("could not find transaction sequences with height %d", h), errors.NotFoundError, err)
 		}

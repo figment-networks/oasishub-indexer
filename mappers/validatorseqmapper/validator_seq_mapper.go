@@ -125,3 +125,23 @@ func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncable
 	}
 	return validators, nil
 }
+
+func ToView(ts []*validatordomain.ValidatorSeq) []map[string]interface{} {
+	var items []map[string]interface{}
+	for _, t := range ts {
+		i := map[string]interface{}{
+			"id":       t.ID,
+			"height":   t.Height,
+			"time":     t.Time,
+			"chain_id": t.ChainId,
+
+			"entity_uid": t.EntityUID,
+			"node_uid":   t.NodeUID,
+			"gas_price":  t.ConsensusUID,
+			"gas_limit":  t.VotingPower,
+			"precommit":  t.Precommit,
+		}
+		items = append(items, i)
+	}
+	return items
+}

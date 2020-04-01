@@ -22,7 +22,7 @@ func FromPersistence(o orm.DelegationSeqModel) (*delegationdomain.DelegationSeq,
 		}),
 		ValidatorUID: o.ValidatorUID,
 		DelegatorUID: o.DelegatorUID,
-		Shares: o.Shares,
+		Shares:       o.Shares,
 	}
 
 	if !e.Valid() {
@@ -48,7 +48,7 @@ func ToPersistence(r *delegationdomain.DelegationSeq) (*orm.DelegationSeqModel, 
 		},
 		ValidatorUID: r.ValidatorUID,
 		DelegatorUID: r.DelegatorUID,
-		Shares: r.Shares,
+		Shares:       r.Shares,
 	}, nil
 }
 
@@ -82,4 +82,22 @@ func FromData(stateSyncable *syncabledomain.Syncable) ([]*delegationdomain.Deleg
 		}
 	}
 	return delegations, nil
+}
+
+func ToView(ts []*delegationdomain.DelegationSeq) []map[string]interface{} {
+	var items []map[string]interface{}
+	for _, t := range ts {
+		i := map[string]interface{}{
+			"id":       t.ID,
+			"height":   t.Height,
+			"time":     t.Time,
+			"chain_id": t.ChainId,
+
+			"validator_uid": t.ValidatorUID,
+			"delegator_uid": t.DelegatorUID,
+			"shares":        t.Shares.String(),
+		}
+		items = append(items, i)
+	}
+	return items
 }

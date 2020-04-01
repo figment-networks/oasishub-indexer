@@ -1,40 +1,41 @@
-package getblockbyheight
+package getdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
-	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
 type UseCase interface {
-	Execute(height types.Height) (*blockdomain.BlockSeq, errors.ApplicationError)
+	Execute(height types.Height) ([]*delegationdomain.DelegationSeq, errors.ApplicationError)
 }
 
 type useCase struct {
 	syncableDbRepo    syncablerepo.DbRepo
 	syncableProxyRepo syncablerepo.ProxyRepo
-	blockSeqDbRepo       blockseqrepo.DbRepo
+	delegationDbRepo delegationseqrepo.DbRepo
 }
 
 func NewUseCase(
 	syncableDbRepo syncablerepo.DbRepo,
 	syncableProxyRepo syncablerepo.ProxyRepo,
-	blockSeqDbRepo blockseqrepo.DbRepo,
+	delegationDbRepo delegationseqrepo.DbRepo,
 ) UseCase {
 	return &useCase{
 		syncableDbRepo:    syncableDbRepo,
 		syncableProxyRepo: syncableProxyRepo,
-		blockSeqDbRepo:       blockSeqDbRepo,
+		delegationDbRepo: delegationDbRepo,
 	}
 }
 
-func (uc *useCase) Execute(height types.Height) (*blockdomain.BlockSeq, errors.ApplicationError) {
-	bs, err := uc.blockSeqDbRepo.GetByHeight(height)
+func (uc *useCase) Execute(height types.Height) ([]*delegationdomain.DelegationSeq, errors.ApplicationError) {
+	ds, err := uc.delegationDbRepo.GetByHeight(height)
 	if err != nil {
 		return nil, err
 	}
 
-	return bs, nil
+	return ds, nil
 }
+
