@@ -21,11 +21,13 @@ func FromPersistence(b orm.TransactionSeqModel) (*transactiondomain.TransactionS
 			Time:    b.Time,
 		}),
 
-		Hash:     b.Hash,
-		Fee:      b.Fee,
-		GasLimit: b.GasLimit,
-		GasPrice: b.GasPrice,
-		Method:   b.Method,
+		PublicKey: b.PublicKey,
+		Hash:      b.Hash,
+		Nonce:     b.Nonce,
+		Fee:       b.Fee,
+		GasLimit:  b.GasLimit,
+		GasPrice:  b.GasPrice,
+		Method:    b.Method,
 	}
 
 	if !e.Valid() {
@@ -48,11 +50,13 @@ func ToPersistence(e *transactiondomain.TransactionSeq) (*orm.TransactionSeqMode
 			Time:    e.Time,
 		},
 
-		Hash:     e.Hash,
-		Fee:      e.Fee,
-		GasLimit: e.GasLimit,
-		GasPrice: e.GasPrice,
-		Method:   e.Method,
+		PublicKey: e.PublicKey,
+		Hash:      e.Hash,
+		Nonce:     e.Nonce,
+		Fee:       e.Fee,
+		GasLimit:  e.GasLimit,
+		GasPrice:  e.GasPrice,
+		Method:    e.Method,
 	}, nil
 }
 
@@ -72,11 +76,13 @@ func FromData(transactionsSyncable syncabledomain.Syncable) ([]*transactiondomai
 				Time:    transactionsSyncable.Time,
 			}),
 
-			Hash:     types.Hash(rv.Hash),
-			Fee:      rv.Fee.Int64(),
-			GasLimit: rv.GasLimit,
-			GasPrice: rv.GasPrice.Int64(),
-			Method:   rv.Method,
+			PublicKey: types.PublicKey(rv.PublicKey),
+			Hash:      types.Hash(rv.Hash),
+			Nonce:     types.Nonce(rv.Nonce),
+			Fee:       rv.Fee.Int64(),
+			GasLimit:  rv.GasLimit,
+			GasPrice:  rv.GasPrice.Int64(),
+			Method:    rv.Method,
 		}
 
 		if !e.Valid() {

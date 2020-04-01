@@ -9,19 +9,24 @@ type TransactionSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	Hash     types.Hash
-	Fee      int64
-	GasLimit uint64
-	GasPrice int64
-	Method   string
+	PublicKey types.PublicKey
+	Hash      types.Hash
+	Nonce     types.Nonce
+	Fee       int64
+	GasLimit  uint64
+	GasPrice  int64
+	Method    string
 }
 
 func (ts *TransactionSeq) ValidOwn() bool {
-	return ts.Hash.Valid()
+	return ts.PublicKey.Valid() &&
+		ts.Hash.Valid() &&
+		ts.Nonce.Valid()
 }
 
 func (ts *TransactionSeq) EqualOwn(m TransactionSeq) bool {
-	return ts.Hash.Equal(m.Hash)
+	return ts.PublicKey.Equal(m.PublicKey) &&
+		ts.Hash.Equal(m.Hash)
 }
 
 func (ts *TransactionSeq) Valid() bool {
