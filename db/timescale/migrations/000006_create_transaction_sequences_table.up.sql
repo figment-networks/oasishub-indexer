@@ -1,0 +1,25 @@
+CREATE TABLE IF NOT EXISTS transaction_sequences
+(
+    id         uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    chain_id   TEXT                     NOT NULL,
+    height     DOUBLE PRECISION         NOT NULL,
+    time       TIMESTAMP WITH TIME ZONE NOT NULL,
+
+    hash       TEXT                     NOT NULL,
+    fee        BIGINT                   NOT NULL,
+    gas_limit  DOUBLE PRECISION         NOT NULL,
+    gas_price  BIGINT                   NOT NULL,
+    method     TEXT                     NOT NULL,
+
+    PRIMARY KEY (time, id)
+);
+
+-- Hypertable
+SELECT create_hypertable('transaction_sequences', 'time', if_not_exists => TRUE);
+
+-- Indexes
+CREATE index idx_transaction_sequences_chain_id on transaction_sequences (chain_id, time DESC);
+CREATE index idx_transaction_sequences_height on transaction_sequences (height, time DESC);

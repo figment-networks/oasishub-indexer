@@ -1,0 +1,62 @@
+version: '3'
+services:
+  redis:
+    image: redis:latest
+    networks:
+      - default
+    ports:
+      - "6379:6379"
+
+  db:
+    image: postgres:10-alpine
+    ports:
+      - "5432:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=oasishub
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+
+  timedb:
+    image: timescale/timescaledb:latest-pg10
+    ports:
+      - "5432:5432"
+    volumes:
+      - timedb-data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_DB=oasishub
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+
+  migrate:
+    image: migrate/migrate
+    volumes:
+      - ./db/timescale/migrations:/migrations
+    command: ls
+    entrypoint:
+      - migrate
+      - -path
+      - /migrations/
+      - -database
+      - postgres://postgres:password@timedb:5432/oasishub?sslmode=disable
+
+  # SERVICES
+  backend:
+    container_name: oasishub-backend
+    build: ./
+    command: /app/oasishub serve
+    ports:
+      - "8081:8081"
+    environment:
+      - GIN_MODE=debug
+      - DB_HOST=db
+      - DB_NAME=oasishub
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+    depends_on:
+      - db
+
+volumes:
+  db-data:
+  timedb-data:
