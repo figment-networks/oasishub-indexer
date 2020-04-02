@@ -88,6 +88,7 @@ func ToView(s *stakingdomain.StakingSeq) map[string]interface{} {
 		"height":                s.Height,
 		"time":                  s.Time,
 		"chain_id":              s.ChainId,
+
 		"total_supply":          s.TotalSupply.String(),
 		"common_pool":           s.CommonPool.String(),
 		"debonding_interval":    s.DebondingInterval,

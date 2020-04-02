@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
+	Execute(height *types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,8 +30,16 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	ds, err := uc.debondingDelegationDbRepo.GetByHeight(height)
+func (uc *useCase) Execute(height *types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
+	if height == nil {
+		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+		if err != nil {
+			return nil, err
+		}
+		height = h
+	}
+
+	ds, err := uc.debondingDelegationDbRepo.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}

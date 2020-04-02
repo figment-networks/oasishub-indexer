@@ -137,8 +137,8 @@ func ToView(ts []*validatordomain.ValidatorSeq) []map[string]interface{} {
 
 			"entity_uid": t.EntityUID,
 			"node_uid":   t.NodeUID,
-			"gas_price":  t.ConsensusUID,
-			"gas_limit":  t.VotingPower,
+			"consensus_uid":  t.ConsensusUID,
+			"voting_power":  t.VotingPower,
 			"precommit":  t.Precommit,
 		}
 		items = append(items, i)

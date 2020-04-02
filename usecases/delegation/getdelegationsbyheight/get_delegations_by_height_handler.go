@@ -18,19 +18,19 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 }
 
 type Request struct {
-	Height int64 `uri:"height" binding:"required"`
+	Height *types.Height `form:"height" binding:"-"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
-	if err := c.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		log.Error(err)
 		err := errors.NewError("invalid height", errors.ServerInvalidParamsError, err)
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
 
-	ds, err := h.useCase.Execute(types.Height(req.Height))
+	ds, err := h.useCase.Execute(req.Height)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)

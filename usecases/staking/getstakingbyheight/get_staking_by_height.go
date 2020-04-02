@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError)
+	Execute(height *types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,12 +30,20 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError) {
-	txs, err := uc.stakingDbRepo.GetByHeight(height)
+func (uc *useCase) Execute(height *types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError) {
+	if height == nil {
+		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+		if err != nil {
+			return nil, err
+		}
+		height = h
+	}
+
+	es, err := uc.stakingDbRepo.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
 
-	return txs, nil
+	return es, nil
 }
 

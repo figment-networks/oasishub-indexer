@@ -9,33 +9,41 @@ import (
 )
 
 type UseCase interface {
-	Execute(height types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError)
+	Execute(height *types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError)
 }
 
 type useCase struct {
 	syncableDbRepo    syncablerepo.DbRepo
 	syncableProxyRepo syncablerepo.ProxyRepo
-	validatorDbRepo validatorseqrepo.DbRepo
+	validatorSeqDbRepo validatorseqrepo.DbRepo
 }
 
 func NewUseCase(
 	syncableDbRepo syncablerepo.DbRepo,
 	syncableProxyRepo syncablerepo.ProxyRepo,
-	validatorDbRepo validatorseqrepo.DbRepo,
+	validatorSeqDbRepo validatorseqrepo.DbRepo,
 ) UseCase {
 	return &useCase{
 		syncableDbRepo:    syncableDbRepo,
 		syncableProxyRepo: syncableProxyRepo,
-		validatorDbRepo: validatorDbRepo,
+		validatorSeqDbRepo: validatorSeqDbRepo,
 	}
 }
 
-func (uc *useCase) Execute(height types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
-	txs, err := uc.validatorDbRepo.GetByHeight(height)
+func (uc *useCase) Execute(height *types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
+	if height == nil {
+		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+		if err != nil {
+			return nil, err
+		}
+		height = h
+	}
+
+	es, err := uc.validatorSeqDbRepo.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
 
-	return txs, nil
+	return es, nil
 }
 
