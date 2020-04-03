@@ -2,6 +2,8 @@ package blockdomain
 
 import (
 	"github.com/figment-networks/oasishub-indexer/domain/commons"
+	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
+	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
 	"github.com/figment-networks/oasishub-indexer/types"
 )
 
@@ -10,14 +12,20 @@ type BlockSeq struct {
 	*commons.Sequence
 
 	// Indexed data
-	AppVersion        int64
-	BlockVersion      int64
-	TransactionsCount types.Count
+	Hash              types.Hash      `json:"hash"`
+	ProposerEntityUID types.PublicKey `json:"proposer_entity_uid"`
+	AppVersion        int64           `json:"app_version"`
+	BlockVersion      int64           `json:"block_version"`
+	TransactionsCount types.Count     `json:"transactions_count"`
+
+	// Associations
+	Validators   []*validatordomain.ValidatorSeq     `json:"validators"`
+	Transactions []*transactiondomain.TransactionSeq `json:"transactions"`
 }
 
 // - METHODS
 func (b *BlockSeq) ValidOwn() bool {
-	return b.AppVersion >=0 &&
+	return b.AppVersion >= 0 &&
 		b.BlockVersion >= 0
 }
 
@@ -37,6 +45,3 @@ func (b *BlockSeq) Equal(m BlockSeq) bool {
 		b.Sequence.Equal(*m.Sequence) &&
 		b.EqualOwn(m)
 }
-
-
-

@@ -9,7 +9,7 @@ type EntityAgg struct {
 	*commons.DomainEntity
 	*commons.Aggregate
 
-	EntityUID types.PublicKey
+	EntityUID types.PublicKey `json:"entity_uid"`
 }
 
 // - METHODS

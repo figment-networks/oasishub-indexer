@@ -1,7 +1,6 @@
 package getstakingbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/stakingdomain"
 	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +8,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError)
+	Execute(height *types.Height) (*Response, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,7 +29,7 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) (*stakingdomain.StakingSeq, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationError) {
 	if height == nil {
 		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 		if err != nil {
@@ -39,11 +38,13 @@ func (uc *useCase) Execute(height *types.Height) (*stakingdomain.StakingSeq, err
 		height = h
 	}
 
-	es, err := uc.stakingDbRepo.GetByHeight(*height)
+	ss, err := uc.stakingDbRepo.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
 
-	return es, nil
+	resp := &Response{StakingSeq: ss}
+
+	return resp, nil
 }
 

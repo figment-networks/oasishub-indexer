@@ -6,11 +6,11 @@ import (
 )
 
 type DomainEntity struct {
-	ID        types.UUID
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	ID        types.UUID `json:"id"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt time.Time  `json:"updated_at"`
 
-	IsNew bool
+	IsNew bool `json:"-"`
 }
 
 type EntityProps struct {
@@ -26,8 +26,8 @@ func NewDomainEntity(props EntityProps) *DomainEntity {
 	}
 
 	return &DomainEntity{
-		ID:    id,
-		IsNew: isNew,
+		ID:        id,
+		IsNew:     isNew,
 		CreatedAt: time.Now(),
 	}
 }

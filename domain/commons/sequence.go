@@ -6,9 +6,9 @@ import (
 )
 
 type Sequence struct {
-	ChainId string
-	Height  types.Height
-	Time    time.Time
+	ChainId string       `json:"chain_id"`
+	Height  types.Height `json:"height"`
+	Time    time.Time    `json:"time"`
 }
 
 type SequenceProps struct {

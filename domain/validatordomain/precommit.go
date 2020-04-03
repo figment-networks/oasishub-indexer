@@ -1,9 +1,9 @@
 package validatordomain
 
 type Precommit struct {
-	Validated bool
-	Type      int64
-	Index     int64
+	Validated bool  `json:"validated"`
+	Type      int64 `json:"type"`
+	Index     int64 `json:"index"`
 }
 
 func (p Precommit) Valid() bool {
@@ -15,4 +15,3 @@ func (p Precommit) Equal(o Precommit) bool {
 	return p.Type == o.Type &&
 		p.Index == o.Index
 }
-

@@ -108,7 +108,7 @@ func (s *sequencer) sequenceBlock(p *payload) (*blockdomain.BlockSeq, errors.App
 	sequenced, err := s.blockSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		if err.Status() == errors.NotFoundError {
-			toSequence, err := blockseqmapper.FromData(*p.BlockSyncable)
+			toSequence, err := blockseqmapper.FromData(*p.BlockSyncable, *p.ValidatorsSyncable)
 			if err != nil {
 				return nil, err
 			}
@@ -129,7 +129,7 @@ func (s *sequencer) sequenceValidators(p *payload) ([]*validatordomain.Validator
 		return nil, err
 	}
 
-	toSequence, err := validatorseqmapper.FromData(*p.ValidatorsSyncable, *p.BlockSyncable)
+	toSequence, err := validatorseqmapper.FromData(*p.ValidatorsSyncable, *p.BlockSyncable, *p.StateSyncable)
 	if err != nil {
 		return nil, err
 	}

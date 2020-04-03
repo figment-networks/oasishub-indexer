@@ -9,9 +9,9 @@ type DelegationSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	ValidatorUID types.PublicKey
-	DelegatorUID types.PublicKey
-	Shares       types.Quantity
+	ValidatorUID types.PublicKey `json:"validator_uid"`
+	DelegatorUID types.PublicKey `json:"delegator_uid"`
+	Shares       types.Quantity  `json:"shares"`
 }
 
 // - METHODS
@@ -37,4 +37,3 @@ func (d *DelegationSeq) Equal(m DelegationSeq) bool {
 		d.DelegatorUID == m.DelegatorUID &&
 		d.EqualOwn(m)
 }
-

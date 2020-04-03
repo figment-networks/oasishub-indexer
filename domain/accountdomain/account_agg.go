@@ -9,13 +9,13 @@ type AccountAgg struct {
 	*commons.DomainEntity
 	*commons.Aggregate
 
-	PublicKey                      types.PublicKey
-	LastGeneralBalance             types.Quantity
-	LastGeneralNonce               types.Nonce
-	LastEscrowActiveBalance        types.Quantity
-	LastEscrowActiveTotalShares    types.Quantity
-	LastEscrowDebondingBalance     types.Quantity
-	LastEscrowDebondingTotalShares types.Quantity
+	PublicKey                      types.PublicKey `json:"public_key"`
+	LastGeneralBalance             types.Quantity  `json:"last_general_balance"`
+	LastGeneralNonce               types.Nonce     `json:"last_general_nonce"`
+	LastEscrowActiveBalance        types.Quantity  `json:"last_escrow_active_balance"`
+	LastEscrowActiveTotalShares    types.Quantity  `json:"last_escrow_active_total_shares"`
+	LastEscrowDebondingBalance     types.Quantity  `json:"last_escrow_debonding_balance"`
+	LastEscrowDebondingTotalShares types.Quantity  `json:"last_escrow_debonding_total_shares"`
 }
 
 // - METHODS

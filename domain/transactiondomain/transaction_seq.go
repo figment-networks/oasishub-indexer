@@ -9,13 +9,13 @@ type TransactionSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	PublicKey types.PublicKey
-	Hash      types.Hash
-	Nonce     types.Nonce
-	Fee       int64
-	GasLimit  uint64
-	GasPrice  int64
-	Method    string
+	PublicKey types.PublicKey `json:"public_key"`
+	Hash      types.Hash      `json:"hash"`
+	Nonce     types.Nonce     `json:"nonce"`
+	Fee       int64           `json:"fee"`
+	GasLimit  uint64          `json:"gas_limit"`
+	GasPrice  int64           `json:"gas_price"`
+	Method    string          `json:"method"`
 }
 
 func (ts *TransactionSeq) ValidOwn() bool {

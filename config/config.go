@@ -45,7 +45,7 @@ var (
 
 	defaultBatchSize = "batchSize"
 
-	defaultPipelineBatchSize int64 = 2
+	defaultPipelineBatchSize int64 = 100
 	defaultPingInterval            = "@every 20s"
 	defaultSyncInterval            = "@every 20s"
 	defaultProcessInterval         = "@every 20s"

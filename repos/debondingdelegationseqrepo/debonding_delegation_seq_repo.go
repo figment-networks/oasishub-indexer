@@ -15,6 +15,8 @@ type DbRepo interface {
 	// Queries
 	Exists(types.Height) bool
 	GetByHeight(types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
+	GetRecentByValidatorUID(types.PublicKey, int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
+	GetRecentByDelegatorUID(types.PublicKey, int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
 
 	// Commands
 	Create(*delegationdomain.DebondingDelegationSeq) errors.ApplicationError
@@ -30,6 +32,7 @@ func NewDbRepo(c *gorm.DB) DbRepo {
 	}
 }
 
+// - Queries
 func (r *dbRepo) Exists(h types.Height) bool {
 	query := heightQuery(h)
 	foundBlock := orm.DebondingDelegationSeqModel{}
@@ -64,6 +67,59 @@ func (r *dbRepo) GetByHeight(h types.Height) ([]*delegationdomain.DebondingDeleg
 	return resp, nil
 }
 
+func (r *dbRepo) GetRecentByValidatorUID(key types.PublicKey, limit int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
+	query := orm.DebondingDelegationSeqModel{
+		ValidatorUID:  key,
+	}
+	var seqs []orm.DebondingDelegationSeqModel
+
+	if err := r.client.Where(&query).Order("height DESC").Limit(limit).Find(&seqs).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError(fmt.Sprintf("could not find debinding delegation with for validator %s", key), errors.NotFoundError, err)
+		}
+		log.Error(err)
+		return nil, errors.NewError("error getting debonding delegation for validator", errors.QueryError, err)
+	}
+
+	var resp []*delegationdomain.DebondingDelegationSeq
+	for _, s := range seqs {
+		vs, err := debondingdelegationseqmapper.FromPersistence(s)
+		if err != nil {
+			return nil, err
+		}
+
+		resp = append(resp, vs)
+	}
+	return resp, nil
+}
+
+func (r *dbRepo) GetRecentByDelegatorUID(key types.PublicKey, limit int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
+	query := orm.DebondingDelegationSeqModel{
+		DelegatorUID:  key,
+	}
+	var seqs []orm.DebondingDelegationSeqModel
+
+	if err := r.client.Where(&query).Order("height DESC").Limit(limit).Find(&seqs).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError(fmt.Sprintf("could not find debinding delegation with for validator %s", key), errors.NotFoundError, err)
+		}
+		log.Error(err)
+		return nil, errors.NewError("error getting debonding delegation for validator", errors.QueryError, err)
+	}
+
+	var resp []*delegationdomain.DebondingDelegationSeq
+	for _, s := range seqs {
+		vs, err := debondingdelegationseqmapper.FromPersistence(s)
+		if err != nil {
+			return nil, err
+		}
+
+		resp = append(resp, vs)
+	}
+	return resp, nil
+}
+
+// - Commands
 func (r *dbRepo) Create(block *delegationdomain.DebondingDelegationSeq) errors.ApplicationError {
 	b, err := debondingdelegationseqmapper.ToPersistence(block)
 	if err != nil {

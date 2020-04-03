@@ -18,6 +18,9 @@ type DbRepo interface {
 	Exists(types.Height) bool
 	Count() (*int64, errors.ApplicationError)
 	GetByHeight(types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError)
+	GetTotalValidatedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalMissedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalProposedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
 
 	// Commands
 	Save(*validatordomain.ValidatorSeq) errors.ApplicationError
@@ -34,6 +37,7 @@ func NewDbRepo(c *gorm.DB) *dbRepo {
 	}
 }
 
+// - Queries
 func (r *dbRepo) Exists(h types.Height) bool {
 	query := heightQuery(h)
 	foundSyncableValidator := orm.ValidatorSeqModel{}
@@ -81,6 +85,60 @@ func (r *dbRepo) GetByHeight(h types.Height) ([]*validatordomain.ValidatorSeq, e
 	return resp, nil
 }
 
+func (r *dbRepo) GetTotalValidatedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError) {
+	v := true
+	q := orm.ValidatorSeqModel{
+		EntityUID:          key,
+		PrecommitValidated: &v,
+	}
+	var count int64
+	if err := r.client.Table(orm.ValidatorSeqModel{}.TableName()).Where(q).Count(&count).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError("could not get count of validated by entityUID", errors.NotFoundError, err)
+		}
+		log.Error(err)
+		return nil, errors.NewError("error getting count of validated by entityUID", errors.QueryError, err)
+	}
+
+	return &count, nil
+}
+
+func (r *dbRepo) GetTotalMissedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError) {
+	v := false
+	q := orm.ValidatorSeqModel{
+		EntityUID:          key,
+		PrecommitValidated: &v,
+	}
+	var count int64
+	if err := r.client.Table(orm.ValidatorSeqModel{}.TableName()).Where(q).Count(&count).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError("could not get count of not validated by entityUID", errors.NotFoundError, err)
+		}
+		log.Error(err)
+		return nil, errors.NewError("error getting count of not validated by entityUID", errors.QueryError, err)
+	}
+
+	return &count, nil
+}
+
+func (r *dbRepo) GetTotalProposedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError) {
+	q := orm.ValidatorSeqModel{
+		EntityUID: key,
+		Proposed:  true,
+	}
+	var count int64
+	if err := r.client.Table(orm.ValidatorSeqModel{}.TableName()).Where(q).Count(&count).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError("could not get count of proposed by entityUID", errors.NotFoundError, err)
+		}
+		log.Error(err)
+		return nil, errors.NewError("error getting count of proposed by entityUID", errors.QueryError, err)
+	}
+
+	return &count, nil
+}
+
+// - Commands
 func (r *dbRepo) Save(sv *validatordomain.ValidatorSeq) errors.ApplicationError {
 	pr, err := validatorseqmapper.ToPersistence(sv)
 	if err != nil {

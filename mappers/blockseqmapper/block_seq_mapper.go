@@ -21,6 +21,8 @@ func FromPersistence(o orm.BlockSeqModel) (*blockdomain.BlockSeq, errors.Applica
 			Time:    o.Time,
 		}),
 
+		Hash:              o.Hash,
+		ProposerEntityUID: o.ProposerEntityUID,
 		AppVersion:        o.AppVersion,
 		BlockVersion:      o.BlockVersion,
 		TransactionsCount: o.TransactionsCount,
@@ -46,14 +48,20 @@ func ToPersistence(b *blockdomain.BlockSeq) (*orm.BlockSeqModel, errors.Applicat
 			Time:    b.Time,
 		},
 
+		Hash:              b.Hash,
+		ProposerEntityUID: b.ProposerEntityUID,
 		AppVersion:        b.AppVersion,
 		BlockVersion:      b.BlockVersion,
 		TransactionsCount: b.TransactionsCount,
 	}, nil
 }
 
-func FromData(blockSyncable syncabledomain.Syncable) (*blockdomain.BlockSeq, errors.ApplicationError) {
+func FromData(blockSyncable syncabledomain.Syncable, validatorsSyncable syncabledomain.Syncable) (*blockdomain.BlockSeq, errors.ApplicationError) {
 	blockData, err := syncablemapper.UnmarshalBlockData(blockSyncable.Data)
+	if err != nil {
+		return nil, err
+	}
+	validatorsData, err := syncablemapper.UnmarshalValidatorsData(validatorsSyncable.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -66,9 +74,19 @@ func FromData(blockSyncable syncabledomain.Syncable) (*blockdomain.BlockSeq, err
 			Time:    blockSyncable.Time,
 		}),
 
+		Hash:              types.Hash(blockData.Data.Header.LastBlockID.Hash.String()),
 		AppVersion:        int64(blockData.Data.Header.Version.App),
 		BlockVersion:      int64(blockData.Data.Header.Version.Block),
 		TransactionsCount: types.Count(blockData.Data.Header.NumTxs),
+	}
+
+	// Get proposer validator data
+	for _, rv := range validatorsData.Data {
+		pa := blockData.Data.Header.ProposerAddress.String()
+
+		if pa == rv.Address {
+			e.ProposerEntityUID = types.PublicKey(rv.Node.EntityID.String())
+		}
 	}
 
 	if !e.Valid() {

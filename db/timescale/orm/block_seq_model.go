@@ -8,6 +8,8 @@ type BlockSeqModel struct {
 	EntityModel
 	SequenceModel
 
+	Hash              types.Hash
+	ProposerEntityUID types.PublicKey
 	AppVersion        int64
 	BlockVersion      int64
 	TransactionsCount types.Count

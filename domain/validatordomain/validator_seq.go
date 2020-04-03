@@ -9,18 +9,21 @@ type ValidatorSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	EntityUID    types.PublicKey
-	NodeUID      types.PublicKey
-	ConsensusUID types.PublicKey
-	Address      string
-	VotingPower  VotingPower
-	Precommit    *Precommit
+	EntityUID    types.PublicKey `json:"entity_uid"`
+	NodeUID      types.PublicKey `json:"node_uid"`
+	ConsensusUID types.PublicKey `json:"consensus_uid"`
+	Address      string          `json:"address"`
+	Proposed     bool            `json:"proposed"`
+	VotingPower  VotingPower     `json:"voting_power"`
+	TotalShares  types.Quantity  `json:"total_shares"`
+	Precommit    *Precommit      `json:"precommit"`
 }
 
 func (vs *ValidatorSeq) ValidOwn() bool {
 	return vs.EntityUID.Valid() &&
 		vs.NodeUID.Valid() &&
-		vs.VotingPower.Valid()
+		vs.VotingPower.Valid() &&
+		vs.TotalShares.Valid()
 }
 
 func (vs *ValidatorSeq) EqualOwn(m ValidatorSeq) bool {

@@ -21,6 +21,10 @@ type Request struct {
 	Height *types.Height `form:"height" binding:"-"`
 }
 
+type Response struct {
+
+}
+
 func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindQuery(&req); err != nil {

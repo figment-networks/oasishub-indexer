@@ -8,6 +8,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
+	"math/big"
 )
 
 func FromPersistence(o orm.ValidatorSeqModel) (*validatordomain.ValidatorSeq, errors.ApplicationError) {
@@ -20,11 +21,14 @@ func FromPersistence(o orm.ValidatorSeqModel) (*validatordomain.ValidatorSeq, er
 			Height:  o.Height,
 			Time:    o.Time,
 		}),
+
 		EntityUID:    o.EntityUID,
 		NodeUID:      o.NodeUID,
 		ConsensusUID: o.ConsensusUID,
 		Address:      o.Address,
 		VotingPower:  o.VotingPower,
+		TotalShares:  o.TotalShares,
+		Proposed:     o.Proposed,
 		Precommit:    &validatordomain.Precommit{},
 	}
 
@@ -67,6 +71,8 @@ func ToPersistence(e *validatordomain.ValidatorSeq) (*orm.ValidatorSeqModel, err
 		ConsensusUID: e.ConsensusUID,
 		Address:      e.Address,
 		VotingPower:  e.VotingPower,
+		TotalShares:  e.TotalShares,
+		Proposed:     e.Proposed,
 	}
 
 	if precommit != nil {
@@ -78,12 +84,16 @@ func ToPersistence(e *validatordomain.ValidatorSeq) (*orm.ValidatorSeqModel, err
 	return v, nil
 }
 
-func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncabledomain.Syncable) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
+func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncabledomain.Syncable, stateSyncable syncabledomain.Syncable) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
 	validatorsData, err := syncablemapper.UnmarshalValidatorsData(validatorsSyncable.Data)
 	if err != nil {
 		return nil, err
 	}
 	blockData, err := syncablemapper.UnmarshalBlockData(blockSyncable.Data)
+	if err != nil {
+		return nil, err
+	}
+	stateData, err := syncablemapper.UnmarshalStateData(stateSyncable.Data)
 	if err != nil {
 		return nil, err
 	}
@@ -105,17 +115,31 @@ func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncable
 			VotingPower:  validatordomain.VotingPower(rv.VotingPower),
 		}
 
-		// Block #1 does not have precommits
+		// Get precommit data
 		if len(blockData.Data.LastCommit.Precommits) > 0 {
 			precommit := blockData.Data.LastCommit.Precommits[i]
 
-			if precommit != nil {
-				e.Precommit = &validatordomain.Precommit{}
+			e.Precommit = &validatordomain.Precommit{}
+			if precommit == nil {
+				e.Precommit.Validated = false
+				e.Precommit.Index = int64(i)
+			} else {
 				e.Precommit.Validated = true
 				e.Precommit.Type = int64(precommit.Type)
 				e.Precommit.Index = int64(precommit.ValidatorIndex)
 			}
 		}
+
+		// Get proposed
+		e.Proposed = blockData.Data.Header.ProposerAddress.String() == e.Address
+
+		// Get total shares
+		delegations := stateData.Data.Staking.Delegations[rv.Node.EntityID]
+		totalShares := big.NewInt(0)
+		for _, d := range delegations {
+			totalShares = totalShares.Add(totalShares, d.Shares.ToBigInt())
+		}
+		e.TotalShares = types.NewQuantity(totalShares)
 
 		if !e.Valid() {
 			return nil, errors.NewErrorFromMessage("validator sequence not valid", errors.NotValid)
@@ -135,11 +159,12 @@ func ToView(ts []*validatordomain.ValidatorSeq) []map[string]interface{} {
 			"time":     t.Time,
 			"chain_id": t.ChainId,
 
-			"entity_uid": t.EntityUID,
-			"node_uid":   t.NodeUID,
-			"consensus_uid":  t.ConsensusUID,
+			"entity_uid":    t.EntityUID,
+			"node_uid":      t.NodeUID,
+			"consensus_uid": t.ConsensusUID,
 			"voting_power":  t.VotingPower,
-			"precommit":  t.Precommit,
+			"proposed":      t.Proposed,
+			"precommit":     t.Precommit,
 		}
 		items = append(items, i)
 	}

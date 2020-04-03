@@ -1,7 +1,7 @@
 package getblockbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/mappers/blockseqmapper"
+	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -21,6 +21,10 @@ type Request struct {
 	Height *types.Height `form:"height" binding:"-"`
 }
 
+type Response struct {
+	*blockdomain.BlockSeq
+}
+
 func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -30,12 +34,12 @@ func (h *httpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	returnedBlock, err := h.useCase.Execute(req.Height)
+	resp, err := h.useCase.Execute(req.Height)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, blockseqmapper.ToView(returnedBlock))
+	c.JSON(http.StatusOK, resp)
 }

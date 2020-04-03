@@ -9,10 +9,10 @@ type DebondingDelegationSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	ValidatorUID types.PublicKey
-	DelegatorUID types.PublicKey
-	Shares       types.Quantity
-	DebondEnd    int64
+	ValidatorUID types.PublicKey `json:"validator_uid"`
+	DelegatorUID types.PublicKey `json:"delegator_uid"`
+	Shares       types.Quantity  `json:"shares"`
+	DebondEnd    int64           `json:"debond_end"`
 }
 
 // - METHODS
@@ -38,4 +38,3 @@ func (d *DebondingDelegationSeq) Equal(m DebondingDelegationSeq) bool {
 		d.DelegatorUID == m.DelegatorUID &&
 		d.EqualOwn(m)
 }
-

@@ -1,8 +1,8 @@
-package getaccountbypublickey
+package getentitybyentityuid
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
 	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -19,13 +19,16 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 }
 
 type Request struct {
-	PublicKey types.PublicKey `form:"public_key" binding:"required"`
+	EntityUID types.PublicKey `form:"entity_uid" binding:"required"`
 }
 
 type Response struct {
-	*accountdomain.AccountAgg
+	*entitydomain.EntityAgg
 
 	LastHeight                 types.Height                               `json:"last_height"`
+	TotalValidated             int64                                      `json:"total_validated"`
+	TotalMissed                int64                                      `json:"total_missed"`
+	TotalProposed              int64                                      `json:"total_proposed"`
 	LastDelegations            []*delegationdomain.DelegationSeq          `json:"last_delegations"`
 	RecentDebondingDelegations []*delegationdomain.DebondingDelegationSeq `json:"recent_debonding_delegations"`
 }
@@ -34,17 +37,17 @@ func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindQuery(&req); err != nil {
 		log.Error(err)
-		err := errors.NewError("invalid public key", errors.ServerInvalidParamsError, err)
+		err := errors.NewError("invalid height", errors.ServerInvalidParamsError, err)
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
 
-	res, err := h.useCase.Execute(req.PublicKey)
+	resp, err := h.useCase.Execute(req.EntityUID)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, res)
+	c.JSON(http.StatusOK, resp)
 }

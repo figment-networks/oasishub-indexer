@@ -8,6 +8,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
@@ -21,6 +22,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecases/ping"
 	"github.com/figment-networks/oasishub-indexer/usecases/staking/getstakingbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/transaction/gettransactionsbyheight"
+	"github.com/figment-networks/oasishub-indexer/usecases/validator/getentitybyentityuid"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getvalidatorsbyheight"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
@@ -46,17 +48,19 @@ func main() {
 	delegationSeqDbRepo := delegationseqrepo.NewDbRepo(db.Client())
 	debondingDelegationSeqDbRepo := debondingdelegationseqrepo.NewDbRepo(db.Client())
 	accountAggDbRepo := accountaggrepo.NewDbRepo(db.Client())
+	entityAggDbRepo := entityaggrepo.NewDbRepo(db.Client())
 
 	//USE CASES
-	getBlockByHeight := getblockbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, blockSeqDbRepo)
+	getBlockByHeight := getblockbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, blockSeqDbRepo, validatorSeqDbRepo, transactionSeqDbRepo)
 	getBlockTimes := getblocktimes.NewUseCase(blockSeqDbRepo)
 	getBlockTimesForInterval := getblocktimesforinterval.NewUseCase(blockSeqDbRepo)
 	getTransactionsByHeight := gettransactionsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, transactionSeqDbRepo)
-	getValidatorsByHeight := getvalidatorsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, validatorSeqDbRepo)
+	getValidatorsByHeight := getvalidatorsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, validatorSeqDbRepo, delegationSeqDbRepo)
 	getStakingByHeight := getstakingbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, stakingSeqDbRepo)
 	getDelegationsByHeight := getdelegationsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, delegationSeqDbRepo)
 	getDebondingDelegationsByHeight := getdebondingdelegationsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, debondingDelegationSeqDbRepo)
-	getAccountByPublicKey := getaccountbypublickey.NewUseCase(syncableDbRepo, syncableProxyRepo, accountAggDbRepo)
+	getAccountByPublicKey := getaccountbypublickey.NewUseCase(syncableDbRepo, syncableProxyRepo, accountAggDbRepo, delegationSeqDbRepo, debondingDelegationSeqDbRepo)
+	getEntityByEntityUID := getentitybyentityuid.NewUseCase(syncableDbRepo, syncableProxyRepo, entityAggDbRepo, validatorSeqDbRepo, delegationSeqDbRepo, debondingDelegationSeqDbRepo)
 
 	// HANDLERS
 	pingHandler := ping.NewHttpHandler()
@@ -69,6 +73,7 @@ func main() {
 	getDelegationsByHeightHandler := getdelegationsbyheight.NewHttpHandler(getDelegationsByHeight)
 	getDebondingDelegationsByHeightHandler := getdebondingdelegationsbyheight.NewHttpHandler(getDebondingDelegationsByHeight)
 	getAccountByPublicKeyHandler := getaccountbypublickey.NewHttpHandler(getAccountByPublicKey)
+	getEntityByEntityUIDHandler := getentitybyentityuid.NewHttpHandler(getEntityByEntityUID)
 
 	// ADD ROUTES
 	router = gin.Default()
@@ -77,11 +82,12 @@ func main() {
 	router.GET("/block_times/:limit", getAvgBlockTimesForRecentHandler.Handle)
 	router.GET("/block_times_interval/:interval", getAvgBlockTimesForIntervalHandler.Handle)
 	router.GET("/transactions", getTransactionsByHeightHandler.Handle)
+	router.GET("/entities", getEntityByEntityUIDHandler.Handle)
 	router.GET("/validators", getValidatorsByHeightHandler.Handle)
 	router.GET("/staking", getStakingByHeightHandler.Handle)
 	router.GET("/delegations", getDelegationsByHeightHandler.Handle)
 	router.GET("/debonding_delegations", getDebondingDelegationsByHeightHandler.Handle)
-	router.GET("/accounts/:public_key", getAccountByPublicKeyHandler.Handle)
+	router.GET("/accounts", getAccountByPublicKeyHandler.Handle)
 
 	log.Info(fmt.Sprintf("Starting application on port %s", config.AppPort()))
 

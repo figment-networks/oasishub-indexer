@@ -19,6 +19,8 @@ type ValidatorSeqModel struct {
 	ConsensusUID       types.PublicKey
 	Address            string
 	VotingPower        validatordomain.VotingPower
+	TotalShares        types.Quantity
+	Proposed           bool
 	PrecommitValidated *bool
 	PrecommitType      *int64
 	PrecommitIndex     *int64

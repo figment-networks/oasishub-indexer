@@ -6,8 +6,8 @@ import (
 )
 
 type Aggregate struct {
-	StartedAtHeight types.Height
-	StartedAt       time.Time
+	StartedAtHeight types.Height `json:"started_at_height"`
+	StartedAt       time.Time    `json:"started_at"`
 }
 
 type AggregateProps struct {
@@ -18,7 +18,7 @@ type AggregateProps struct {
 func NewAggregate(props AggregateProps) *Aggregate {
 	return &Aggregate{
 		StartedAtHeight: props.StartedAtHeight,
-		StartedAt: props.StartedAt,
+		StartedAt:       props.StartedAt,
 	}
 }
 

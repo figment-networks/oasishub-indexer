@@ -50,12 +50,11 @@ func (r *dbRepo) Exists(key types.PublicKey) bool {
 func (r *dbRepo) Count() (*int64, errors.ApplicationError) {
 	var count int64
 	if err := r.client.Table(orm.EntityAggModel{}.TableName()).Count(&count).Error; err != nil {
-		msg := fmt.Sprintf("could not get count")
-		log.Error(err)
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, errors.NewError(msg, errors.NotFoundError, err)
+			return nil, errors.NewError("could not get count for entity aggregate", errors.NotFoundError, err)
 		}
-		return nil, errors.NewError(msg, errors.QueryError, err)
+		log.Error(err)
+		return nil, errors.NewError("error getting count of entity aggregate", errors.QueryError, err)
 	}
 
 	return &count, nil
@@ -68,12 +67,11 @@ func (r *dbRepo) GetByEntityUID(key types.PublicKey) (*entitydomain.EntityAgg, e
 	var seq orm.EntityAggModel
 
 	if err := r.client.Where(&query).Take(&seq).Error; err != nil {
-		msg := fmt.Sprintf("could not find entity aggregate with key %s", key)
-		log.Error(err)
 		if gorm.IsRecordNotFoundError(err) {
-			return nil, errors.NewError(msg, errors.NotFoundError, err)
+			return nil, errors.NewError(fmt.Sprintf("could not find entity aggregate with key %s", key), errors.NotFoundError, err)
 		}
-		return nil, errors.NewError(msg, errors.QueryError, err)
+		log.Error(err)
+		return nil, errors.NewError("error getting entity aggregate by entity UID", errors.QueryError, err)
 	}
 	e, err := entityaggmapper.FromPersistence(seq)
 	if err != nil {
