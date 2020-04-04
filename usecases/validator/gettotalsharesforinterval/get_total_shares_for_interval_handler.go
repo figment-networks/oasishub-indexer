@@ -1,4 +1,4 @@
-package getblocktimesforinterval
+package gettotalsharesforinterval
 
 import (
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -6,10 +6,6 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 	"net/http"
-)
-
-const (
-	InvalidParamsError = "block_handler_invalid_params_error"
 )
 
 type httpHandler struct {
@@ -43,3 +39,4 @@ func (h *httpHandler) Handle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+

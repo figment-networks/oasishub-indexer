@@ -1,4 +1,4 @@
-package getblocktimesforinterval
+package getvalidatorsharesforinterval
 
 import (
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -6,10 +6,6 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 	"net/http"
-)
-
-const (
-	InvalidParamsError = "block_handler_invalid_params_error"
 )
 
 type httpHandler struct {
@@ -21,8 +17,9 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 }
 
 type Request struct {
-	Interval string `form:"interval" binding:"required"`
-	Period   string `form:"period" binding:"required"`
+	EntityUID types.PublicKey `form:"entity_uid" binding:"required"`
+	Interval  string          `form:"interval" binding:"required"`
+	Period    string          `form:"period" binding:"required"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {
@@ -34,7 +31,7 @@ func (h *httpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.useCase.Execute(req.Interval, req.Period)
+	resp, err := h.useCase.Execute(req.EntityUID, req.Interval, req.Period)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)

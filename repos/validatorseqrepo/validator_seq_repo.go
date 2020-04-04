@@ -11,6 +11,46 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+const (
+	totalSharesForIntervalQuery = `
+SELECT
+  time_bucket($1, time) AS time_interval,
+  SUM(a) as sum,
+  COUNT(*) as count,
+  SUM(a) / COUNT(*) AS avg
+FROM (
+  SELECT
+    MAX(time) as time,
+    SUM(total_shares) / COUNT(*) AS a
+  FROM validator_sequences
+    WHERE (
+      SELECT time
+      FROM validator_sequences
+      ORDER BY time DESC
+      LIMIT 1
+    ) - time < $2::INTERVAL
+  GROUP BY height
+  ORDER BY height
+) d
+GROUP BY time_interval
+ORDER BY time_interval;
+`
+	validatorSharesForIntervalQuery=`
+SELECT
+  time_bucket($2, time) AS time_interval,
+  SUM(total_shares) / COUNT(*) AS avg
+FROM validator_sequences
+  WHERE (
+      SELECT time
+      FROM validator_sequences
+      ORDER BY time DESC
+      LIMIT 1
+    ) - time < $3::INTERVAL AND entity_uid = $1
+GROUP BY time_interval
+ORDER BY time_interval ASC;
+`
+)
+
 var _ DbRepo = (*dbRepo)(nil)
 
 type DbRepo interface {
@@ -18,9 +58,11 @@ type DbRepo interface {
 	Exists(types.Height) bool
 	Count() (*int64, errors.ApplicationError)
 	GetByHeight(types.Height) ([]*validatordomain.ValidatorSeq, errors.ApplicationError)
-	GetTotalValidatedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
-	GetTotalMissedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
-	GetTotalProposedByEntityUID(key types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalValidatedByEntityUID(types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalMissedByEntityUID(types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalProposedByEntityUID(types.PublicKey) (*int64, errors.ApplicationError)
+	GetTotalSharesForInterval(string, string) ([]Row, errors.ApplicationError)
+	GetValidatorSharesForInterval(types.PublicKey, string, string) ([]Row, errors.ApplicationError)
 
 	// Commands
 	Save(*validatordomain.ValidatorSeq) errors.ApplicationError
@@ -136,6 +178,53 @@ func (r *dbRepo) GetTotalProposedByEntityUID(key types.PublicKey) (*int64, error
 	}
 
 	return &count, nil
+}
+
+type Row struct {
+	TimeInterval string         `json:"time_interval"`
+	Avg          types.Quantity `json:"avg"`
+}
+
+func (r *dbRepo) GetTotalSharesForInterval(interval string, period string) ([]Row, errors.ApplicationError) {
+	rows, err := r.client.Raw(totalSharesForIntervalQuery, interval, period).Rows()
+	if err != nil {
+		log.Error(err)
+		return nil, errors.NewError("could not query total shares for interval", errors.QueryError, err)
+	}
+	defer rows.Close()
+
+	var res []Row
+	for rows.Next() {
+		var row Row
+		if err := r.client.ScanRows(rows, &row); err != nil {
+			log.Error(err)
+			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
+		}
+
+		res = append(res, row)
+	}
+	return res, nil
+}
+
+func (r *dbRepo) GetValidatorSharesForInterval(key types.PublicKey, interval string, period string) ([]Row, errors.ApplicationError) {
+	rows, err := r.client.Raw(validatorSharesForIntervalQuery, key, interval, period).Rows()
+	if err != nil {
+		log.Error(err)
+		return nil, errors.NewError("could not query validator shares for interval", errors.QueryError, err)
+	}
+	defer rows.Close()
+
+	var res []Row
+	for rows.Next() {
+		var row Row
+		if err := r.client.ScanRows(rows, &row); err != nil {
+			log.Error(err)
+			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
+		}
+
+		res = append(res, row)
+	}
+	return res, nil
 }
 
 // - Commands

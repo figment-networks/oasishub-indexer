@@ -28,12 +28,19 @@ SELECT
   ) t;
 `
 	blockTimesForIntervalQuery = `
-SELECT 
-  time_bucket(?, time) AS interval, 
-  COUNT(*) AS count, 
-  EXTRACT(EPOCH FROM ((MAX(time) - MIN(time)) / COUNT(*))) AS avg
+SELECT
+  time_bucket($1, time) AS time_interval,
+  COUNT(*) AS count,
+  EXTRACT(EPOCH FROM (last(time, time) - first(time, time)) / COUNT(*)) AS avg
 FROM block_sequences
-GROUP BY interval;
+  WHERE (
+    SELECT time
+    FROM block_sequences
+    ORDER BY time DESC
+    LIMIT 1
+  ) - $2::INTERVAL < time
+GROUP BY time_interval
+ORDER BY time_interval ASC;
 `
 )
 
@@ -44,7 +51,7 @@ type DbRepo interface {
 	GetByHeight(types.Height) (*blockdomain.BlockSeq, errors.ApplicationError)
 	GetMostRecent(BlockDbQuery) (*blockdomain.BlockSeq, errors.ApplicationError)
 	GetAvgBlockTimesForRecentBlocks(int64) Result
-	GetAvgBlockTimesForInterval(string) ([]Row, errors.ApplicationError)
+	GetAvgBlockTimesForInterval(string, string) ([]Row, errors.ApplicationError)
 
 	// Commands
 	Save(*blockdomain.BlockSeq) errors.ApplicationError
@@ -136,13 +143,13 @@ func (r *dbRepo) GetAvgBlockTimesForRecentBlocks(limit int64) Result {
 }
 
 type Row struct {
-	Interval string  `json:"interval"`
-	Count    int64   `json:"count"`
-	Avg      float64 `json:"avg"`
+	TimeInterval string  `json:"time_interval"`
+	Count        int64   `json:"count"`
+	Avg          float64 `json:"avg"`
 }
 
-func (r *dbRepo) GetAvgBlockTimesForInterval(interval string) ([]Row, errors.ApplicationError) {
-	rows, err := r.client.Raw(blockTimesForIntervalQuery, interval).Rows()
+func (r *dbRepo) GetAvgBlockTimesForInterval(interval string, period string) ([]Row, errors.ApplicationError) {
+	rows, err := r.client.Debug().Raw(blockTimesForIntervalQuery, interval, period).Rows()
 	if err != nil {
 		log.Error(err)
 		return nil, errors.NewError("could not query block times for interval", errors.QueryError, err)
@@ -153,7 +160,7 @@ func (r *dbRepo) GetAvgBlockTimesForInterval(interval string) ([]Row, errors.App
 	for rows.Next() {
 		var row Row
 		if err := r.client.ScanRows(rows, &row); err != nil {
-			log.Error(err, log.Field("resource", "block_seq"))
+			log.Error(err)
 			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
 		}
 

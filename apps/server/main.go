@@ -23,7 +23,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecases/staking/getstakingbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/transaction/gettransactionsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getentitybyentityuid"
+	"github.com/figment-networks/oasishub-indexer/usecases/validator/gettotalsharesforinterval"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getvalidatorsbyheight"
+	"github.com/figment-networks/oasishub-indexer/usecases/validator/getvalidatorsharesforinterval"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 )
@@ -56,6 +58,8 @@ func main() {
 	getBlockTimesForInterval := getblocktimesforinterval.NewUseCase(blockSeqDbRepo)
 	getTransactionsByHeight := gettransactionsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, transactionSeqDbRepo)
 	getValidatorsByHeight := getvalidatorsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, validatorSeqDbRepo, delegationSeqDbRepo)
+	getValidatorSharesByInterval := getvalidatorsharesforinterval.NewUseCase(syncableDbRepo, syncableProxyRepo, validatorSeqDbRepo)
+	getTotalSharesByInterval := gettotalsharesforinterval.NewUseCase(syncableDbRepo, syncableProxyRepo, validatorSeqDbRepo)
 	getStakingByHeight := getstakingbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, stakingSeqDbRepo)
 	getDelegationsByHeight := getdelegationsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, delegationSeqDbRepo)
 	getDebondingDelegationsByHeight := getdebondingdelegationsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, debondingDelegationSeqDbRepo)
@@ -69,6 +73,8 @@ func main() {
 	getAvgBlockTimesForIntervalHandler := getblocktimesforinterval.NewHttpHandler(getBlockTimesForInterval)
 	getTransactionsByHeightHandler := gettransactionsbyheight.NewHttpHandler(getTransactionsByHeight)
 	getValidatorsByHeightHandler := getvalidatorsbyheight.NewHttpHandler(getValidatorsByHeight)
+	getValidatorSharesByIntervalHandler := getvalidatorsharesforinterval.NewHttpHandler(getValidatorSharesByInterval)
+	getTotalSharesByIntervalHandler := gettotalsharesforinterval.NewHttpHandler(getTotalSharesByInterval)
 	getStakingByHeightHandler := getstakingbyheight.NewHttpHandler(getStakingByHeight)
 	getDelegationsByHeightHandler := getdelegationsbyheight.NewHttpHandler(getDelegationsByHeight)
 	getDebondingDelegationsByHeightHandler := getdebondingdelegationsbyheight.NewHttpHandler(getDebondingDelegationsByHeight)
@@ -80,10 +86,12 @@ func main() {
 	router.GET("/ping", pingHandler.Handle)
 	router.GET("/blocks", getBlockByHeightHandler.Handle)
 	router.GET("/block_times/:limit", getAvgBlockTimesForRecentHandler.Handle)
-	router.GET("/block_times_interval/:interval", getAvgBlockTimesForIntervalHandler.Handle)
+	router.GET("/block_times_interval", getAvgBlockTimesForIntervalHandler.Handle)
 	router.GET("/transactions", getTransactionsByHeightHandler.Handle)
 	router.GET("/entities", getEntityByEntityUIDHandler.Handle)
 	router.GET("/validators", getValidatorsByHeightHandler.Handle)
+	router.GET("/validators/shares_interval", getValidatorSharesByIntervalHandler.Handle)
+	router.GET("/validators/total_shares_interval", getTotalSharesByIntervalHandler.Handle)
 	router.GET("/staking", getStakingByHeightHandler.Handle)
 	router.GET("/delegations", getDelegationsByHeightHandler.Handle)
 	router.GET("/debonding_delegations", getDebondingDelegationsByHeightHandler.Handle)

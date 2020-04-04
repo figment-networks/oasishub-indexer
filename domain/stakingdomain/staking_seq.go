@@ -9,10 +9,10 @@ type StakingSeq struct {
 	*commons.DomainEntity
 	*commons.Sequence
 
-	TotalSupply         types.Quantity
-	CommonPool          types.Quantity
-	DebondingInterval   uint64
-	MinDelegationAmount types.Quantity
+	TotalSupply         types.Quantity `json:"total_supply"`
+	CommonPool          types.Quantity `json:"common_pool"`
+	DebondingInterval   uint64         `json:"debonding_interval"`
+	MinDelegationAmount types.Quantity `json:"min_delegation_amount"`
 }
 
 func (ss *StakingSeq) ValidOwn() bool {

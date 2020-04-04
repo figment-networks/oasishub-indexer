@@ -6,7 +6,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(string) ([]blockseqrepo.Row, errors.ApplicationError)
+	Execute(string, string) ([]blockseqrepo.Row, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -19,6 +19,6 @@ func NewUseCase(blockDbRepo blockseqrepo.DbRepo) UseCase {
 	}
 }
 
-func (uc *useCase) Execute(interval string) ([]blockseqrepo.Row, errors.ApplicationError) {
-	return uc.blockDbRepo.GetAvgBlockTimesForInterval(interval)
+func (uc *useCase) Execute(interval string, period string) ([]blockseqrepo.Row, errors.ApplicationError) {
+	return uc.blockDbRepo.GetAvgBlockTimesForInterval(interval, period)
 }
