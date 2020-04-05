@@ -1,7 +1,7 @@
 package getvalidatorsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
+	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -22,7 +22,7 @@ type Request struct {
 }
 
 type Response struct {
-	Validators []*validatordomain.ValidatorSeq `json:"validators"`
+	Validators []validatorseq.Model `json:"validators"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

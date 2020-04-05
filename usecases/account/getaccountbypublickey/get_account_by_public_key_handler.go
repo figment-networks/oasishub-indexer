@@ -1,8 +1,9 @@
 package getaccountbypublickey
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/models/accountagg"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -23,11 +24,11 @@ type Request struct {
 }
 
 type Response struct {
-	*accountdomain.AccountAgg
+	*accountagg.Model
 
 	LastHeight                 types.Height                               `json:"last_height"`
-	LastDelegations            []*delegationdomain.DelegationSeq          `json:"last_delegations"`
-	RecentDebondingDelegations []*delegationdomain.DebondingDelegationSeq `json:"recent_debonding_delegations"`
+	LastDelegations            []delegationseq.Model          `json:"last_delegations"`
+	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

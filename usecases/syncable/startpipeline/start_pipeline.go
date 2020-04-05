@@ -4,8 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/models/report"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
@@ -78,7 +77,7 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 		return err
 	}
 
-	report, err := uc.createReport(i.StartHeight(), i.EndHeight())
+	r, err := uc.createReport(i.StartHeight(), i.EndHeight())
 	if err != nil {
 		return err
 	}
@@ -94,12 +93,12 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 		uc.delegationSeqDbRepo,
 		uc.debondingDelegationSeqDbRepo,
 		uc.entityAggDbRepo,
-		*report,
+		*r,
 	)
 	resp := p.Start(ctx, i)
 
 	if resp.Error == nil {
-		err = uc.completeReport(report, resp)
+		err = uc.completeReport(r, resp)
 		if err != nil {
 			return err
 		}
@@ -151,20 +150,19 @@ func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, er
 	return i, nil
 }
 
-func (uc *useCase) createReport(start types.Height, end types.Height) (*reportdomain.Report, errors.ApplicationError) {
-	report := &reportdomain.Report{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{}),
+func (uc *useCase) createReport(start types.Height, end types.Height) (*report.Model, errors.ApplicationError) {
+	r := &report.Model{
 		StartHeight: start,
 		EndHeight:   end,
 	}
-	err := uc.reportDbRepo.Create(report)
+	err := uc.reportDbRepo.Create(r)
 	if err != nil {
 		return nil, err
 	}
-	return report, nil
+	return r, nil
 }
 
-func (uc *useCase) completeReport(report *reportdomain.Report, resp Results) errors.ApplicationError {
+func (uc *useCase) completeReport(report *report.Model, resp Results) errors.ApplicationError {
 	report.Complete(resp.SuccessCount, resp.ErrorCount, resp.Error, resp.Details)
 
 	return uc.reportDbRepo.Save(report)

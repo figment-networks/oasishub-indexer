@@ -1,7 +1,6 @@
 package getdebondingdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/mappers/debondingdelegationseqmapper"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -37,7 +36,7 @@ func (h *httpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, debondingdelegationseqmapper.ToView(ds))
+	c.JSON(http.StatusOK, ds)
 }
 
 

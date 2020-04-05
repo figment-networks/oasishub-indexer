@@ -1,7 +1,6 @@
 package gettransactionsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/mappers/transactionseqmapper"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -41,6 +40,6 @@ func (h *httpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, transactionseqmapper.ToView(txs))
+	c.JSON(http.StatusOK, txs)
 }
 

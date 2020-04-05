@@ -1,62 +1,15 @@
 package blockseqmapper
 
 import (
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/blockseq"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
-func FromPersistence(o orm.BlockSeqModel) (*blockdomain.BlockSeq, errors.ApplicationError) {
-	e := &blockdomain.BlockSeq{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{
-			ID: o.ID,
-		}),
-		Sequence: commons.NewSequence(commons.SequenceProps{
-			ChainId: o.ChainId,
-			Height:  o.Height,
-			Time:    o.Time,
-		}),
-
-		Hash:              o.Hash,
-		ProposerEntityUID: o.ProposerEntityUID,
-		AppVersion:        o.AppVersion,
-		BlockVersion:      o.BlockVersion,
-		TransactionsCount: o.TransactionsCount,
-	}
-
-	if !e.Valid() {
-		return nil, errors.NewErrorFromMessage("block sequence not valid", errors.NotValid)
-	}
-
-	return e, nil
-}
-
-func ToPersistence(b *blockdomain.BlockSeq) (*orm.BlockSeqModel, errors.ApplicationError) {
-	if !b.Valid() {
-		return nil, errors.NewErrorFromMessage("block sequence not valid", errors.NotValid)
-	}
-
-	return &orm.BlockSeqModel{
-		EntityModel: orm.EntityModel{ID: b.ID},
-		SequenceModel: orm.SequenceModel{
-			ChainId: b.ChainId,
-			Height:  b.Height,
-			Time:    b.Time,
-		},
-
-		Hash:              b.Hash,
-		ProposerEntityUID: b.ProposerEntityUID,
-		AppVersion:        b.AppVersion,
-		BlockVersion:      b.BlockVersion,
-		TransactionsCount: b.TransactionsCount,
-	}, nil
-}
-
-func FromData(blockSyncable syncabledomain.Syncable, validatorsSyncable syncabledomain.Syncable) (*blockdomain.BlockSeq, errors.ApplicationError) {
+func ToSequence(blockSyncable syncable.Model, validatorsSyncable syncable.Model) (*blockseq.Model, errors.ApplicationError) {
 	blockData, err := syncablemapper.UnmarshalBlockData(blockSyncable.Data)
 	if err != nil {
 		return nil, err
@@ -66,13 +19,12 @@ func FromData(blockSyncable syncabledomain.Syncable, validatorsSyncable syncable
 		return nil, err
 	}
 
-	e := &blockdomain.BlockSeq{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{}),
-		Sequence: commons.NewSequence(commons.SequenceProps{
+	e := &blockseq.Model{
+		Sequence: &shared.Sequence{
 			ChainId: blockSyncable.ChainId,
 			Height:  blockSyncable.Height,
 			Time:    blockSyncable.Time,
-		}),
+		},
 
 		Hash:              types.Hash(blockData.Data.Header.LastBlockID.Hash.String()),
 		AppVersion:        int64(blockData.Data.Header.Version.App),
@@ -96,7 +48,7 @@ func FromData(blockSyncable syncabledomain.Syncable, validatorsSyncable syncable
 	return e, nil
 }
 
-func ToView(s *blockdomain.BlockSeq) map[string]interface{} {
+func ToView(s *blockseq.Model) map[string]interface{} {
 	return map[string]interface{}{
 		"id":       s.ID,
 		"height":   s.Height,

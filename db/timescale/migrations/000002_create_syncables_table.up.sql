@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS syncables
 (
-    id                   uuid NOT NULL DEFAULT uuid_generate_v4(),
+    id                   BIGSERIAL NOT NULL,
     created_at           TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at           TIMESTAMP WITH TIME ZONE NOT NULL,
 
@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS syncables
     height               DOUBLE PRECISION NOT NULL,
     time                 TIMESTAMP WITH TIME ZONE NOT NULL,
 
-    report_id            uuid,
+    report_id            NUMERIC,
     type                 VARCHAR(100),
     data                 JSONB,
     processed_at         TIMESTAMP WITH TIME ZONE,

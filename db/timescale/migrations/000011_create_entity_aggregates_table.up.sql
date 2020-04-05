@@ -1,16 +1,16 @@
 CREATE TABLE IF NOT EXISTS entity_aggregates
 (
 --     Domain entity
-    id                                 uuid                     NOT NULL DEFAULT uuid_generate_v4(),
-    created_at                         TIMESTAMP WITH TIME ZONE NOT NULL,
-    updated_at                         TIMESTAMP WITH TIME ZONE NOT NULL,
+    id                BIGSERIAL                NOT NULL,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE NOT NULL,
 
 -- Aggregate
-    started_at_height                  NUMERIC                  NOT NULL,
-    started_at                         TIMESTAMP WITH TIME ZONE NOT NULL,
+    started_at_height NUMERIC                  NOT NULL,
+    started_at        TIMESTAMP WITH TIME ZONE NOT NULL,
 
 -- Custom
-    entity_uid                         TEXT,
+    entity_uid        TEXT,
 
     PRIMARY KEY (id)
 );

@@ -1,77 +1,31 @@
 package debondingdelegationseqmapper
 
 import (
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
-func FromPersistence(o orm.DebondingDelegationSeqModel) (*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	e := &delegationdomain.DebondingDelegationSeq{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{
-			ID: o.ID,
-		}),
-		Sequence: commons.NewSequence(commons.SequenceProps{
-			ChainId: o.ChainId,
-			Height:  o.Height,
-			Time:    o.Time,
-		}),
-		ValidatorUID: o.ValidatorUID,
-		DelegatorUID: o.DelegatorUID,
-		Shares:       o.Shares,
-		DebondEnd:    o.DebondEnd,
-	}
-
-	if !e.Valid() {
-		return nil, errors.NewErrorFromMessage("debonding delegation sequence not valid", errors.NotValid)
-	}
-
-	return e, nil
-}
-
-func ToPersistence(r *delegationdomain.DebondingDelegationSeq) (*orm.DebondingDelegationSeqModel, errors.ApplicationError) {
-	if !r.Valid() {
-		return nil, errors.NewErrorFromMessage("debonding delegation sequence not valid", errors.NotValid)
-	}
-
-	return &orm.DebondingDelegationSeqModel{
-		EntityModel: orm.EntityModel{
-			ID: r.ID,
-		},
-		SequenceModel: orm.SequenceModel{
-			ChainId: r.ChainId,
-			Height:  r.Height,
-			Time:    r.Time,
-		},
-		ValidatorUID: r.ValidatorUID,
-		DelegatorUID: r.DelegatorUID,
-		Shares:       r.Shares,
-		DebondEnd:    r.DebondEnd,
-	}, nil
-}
-
-func FromData(stateSyncable *syncabledomain.Syncable) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
+func ToSequence(stateSyncable *syncable.Model) ([]debondingdelegationseq.Model, errors.ApplicationError) {
 	stateData, err := syncablemapper.UnmarshalStateData(stateSyncable.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	var delegations []*delegationdomain.DebondingDelegationSeq
+	var delegations []debondingdelegationseq.Model
 	for validatorUID, delegationsMap := range stateData.Data.Staking.DebondingDelegations {
 		for delegatorUID, infoArray := range delegationsMap {
 			//TODO: Why is it array?
 			info := infoArray[0]
-			acc := &delegationdomain.DebondingDelegationSeq{
-				DomainEntity: commons.NewDomainEntity(commons.EntityProps{}),
-				Sequence: commons.NewSequence(commons.SequenceProps{
+			acc := debondingdelegationseq.Model{
+				Sequence: &shared.Sequence{
 					ChainId: stateSyncable.ChainId,
 					Height:  stateSyncable.Height,
 					Time:    stateSyncable.Time,
-				}),
+				},
 
 				ValidatorUID: types.PublicKey(validatorUID.String()),
 				DelegatorUID: types.PublicKey(delegatorUID.String()),
@@ -89,7 +43,7 @@ func FromData(stateSyncable *syncabledomain.Syncable) ([]*delegationdomain.Debon
 	return delegations, nil
 }
 
-func ToView(ts []*delegationdomain.DebondingDelegationSeq) []map[string]interface{} {
+func ToView(ts []*debondingdelegationseq.Model) []map[string]interface{} {
 	var items []map[string]interface{}
 	for _, t := range ts {
 		i := map[string]interface{}{

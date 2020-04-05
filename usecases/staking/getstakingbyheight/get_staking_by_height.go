@@ -43,7 +43,7 @@ func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationE
 		return nil, err
 	}
 
-	resp := &Response{StakingSeq: ss}
+	resp := &Response{Model: ss}
 
 	return resp, nil
 }

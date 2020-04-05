@@ -1,90 +1,16 @@
 package validatorseqmapper
 
 import (
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
-	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
+	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"math/big"
 )
 
-func FromPersistence(o orm.ValidatorSeqModel) (*validatordomain.ValidatorSeq, errors.ApplicationError) {
-	e := &validatordomain.ValidatorSeq{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{
-			ID: o.ID,
-		}),
-		Sequence: commons.NewSequence(commons.SequenceProps{
-			ChainId: o.ChainId,
-			Height:  o.Height,
-			Time:    o.Time,
-		}),
-
-		EntityUID:    o.EntityUID,
-		NodeUID:      o.NodeUID,
-		ConsensusUID: o.ConsensusUID,
-		Address:      o.Address,
-		VotingPower:  o.VotingPower,
-		TotalShares:  o.TotalShares,
-		Proposed:     o.Proposed,
-		Precommit:    &validatordomain.Precommit{},
-	}
-
-	if o.PrecommitValidated != nil {
-		e.Precommit.Validated = *o.PrecommitValidated
-
-	}
-	if o.PrecommitType != nil {
-		e.Precommit.Type = *o.PrecommitType
-
-	}
-	if o.PrecommitIndex != nil {
-		e.Precommit.Index = *o.PrecommitIndex
-	}
-
-	if !e.Valid() {
-		return nil, errors.NewErrorFromMessage("validator sequence not valid", errors.NotValid)
-	}
-
-	return e, nil
-}
-
-func ToPersistence(e *validatordomain.ValidatorSeq) (*orm.ValidatorSeqModel, errors.ApplicationError) {
-	if !e.Valid() {
-		return nil, errors.NewErrorFromMessage("validator sequence not valid", errors.NotValid)
-	}
-
-	precommit := e.Precommit
-
-	v := &orm.ValidatorSeqModel{
-		EntityModel: orm.EntityModel{ID: e.ID},
-		SequenceModel: orm.SequenceModel{
-			ChainId: e.ChainId,
-			Height:  e.Height,
-			Time:    e.Time,
-		},
-
-		EntityUID:    e.EntityUID,
-		NodeUID:      e.NodeUID,
-		ConsensusUID: e.ConsensusUID,
-		Address:      e.Address,
-		VotingPower:  e.VotingPower,
-		TotalShares:  e.TotalShares,
-		Proposed:     e.Proposed,
-	}
-
-	if precommit != nil {
-		v.PrecommitValidated = &precommit.Validated
-		v.PrecommitType = &precommit.Type
-		v.PrecommitIndex = &precommit.Index
-	}
-
-	return v, nil
-}
-
-func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncabledomain.Syncable, stateSyncable syncabledomain.Syncable) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
+func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model, stateSyncable syncable.Model) ([]validatorseq.Model, errors.ApplicationError) {
 	validatorsData, err := syncablemapper.UnmarshalValidatorsData(validatorsSyncable.Data)
 	if err != nil {
 		return nil, err
@@ -98,36 +24,46 @@ func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncable
 		return nil, err
 	}
 
-	var validators []*validatordomain.ValidatorSeq
+	var validators []validatorseq.Model
 	for i, rv := range validatorsData.Data {
-		e := &validatordomain.ValidatorSeq{
-			DomainEntity: commons.NewDomainEntity(commons.EntityProps{}),
-			Sequence: commons.NewSequence(commons.SequenceProps{
+		e := validatorseq.Model{
+			Sequence: &shared.Sequence{
 				ChainId: validatorsSyncable.ChainId,
 				Height:  validatorsSyncable.Height,
 				Time:    validatorsSyncable.Time,
-			}),
+			},
 
 			EntityUID:    types.PublicKey(rv.Node.EntityID.String()),
 			NodeUID:      types.PublicKey(rv.ID.String()),
 			ConsensusUID: types.PublicKey(rv.Node.Consensus.ID.String()),
 			Address:      rv.Address,
-			VotingPower:  validatordomain.VotingPower(rv.VotingPower),
+			VotingPower:  validatorseq.VotingPower(rv.VotingPower),
 		}
 
 		// Get precommit data
 		if len(blockData.Data.LastCommit.Precommits) > 0 {
-			precommit := blockData.Data.LastCommit.Precommits[i]
-
-			e.Precommit = &validatordomain.Precommit{}
-			if precommit == nil {
-				e.Precommit.Validated = false
-				e.Precommit.Index = int64(i)
+			var validated bool
+			var index int64
+			var pType int64
+			// Account for situation when there is more validators than precommits
+			// It means that last x validators did not have chance to vote. In that case set validated to null.
+			if i > len(blockData.Data.LastCommit.Precommits) - 1 {
+				index = int64(i)
 			} else {
-				e.Precommit.Validated = true
-				e.Precommit.Type = int64(precommit.Type)
-				e.Precommit.Index = int64(precommit.ValidatorIndex)
+				precommit := blockData.Data.LastCommit.Precommits[i]
+
+				if precommit == nil {
+					validated = false
+					index = int64(i)
+				} else {
+					validated = true
+					index = int64(precommit.ValidatorIndex)
+					pType = int64(precommit.Type)
+				}
 			}
+			e.PrecommitValidated = &validated
+			e.PrecommitIndex = &index
+			e.PrecommitType = &pType
 		}
 
 		// Get proposed
@@ -150,7 +86,7 @@ func FromData(validatorsSyncable syncabledomain.Syncable, blockSyncable syncable
 	return validators, nil
 }
 
-func ToView(ts []*validatordomain.ValidatorSeq) []map[string]interface{} {
+func ToView(ts []*validatorseq.Model) []map[string]interface{} {
 	var items []map[string]interface{}
 	for _, t := range ts {
 		i := map[string]interface{}{
@@ -164,7 +100,6 @@ func ToView(ts []*validatordomain.ValidatorSeq) []map[string]interface{} {
 			"consensus_uid": t.ConsensusUID,
 			"voting_power":  t.VotingPower,
 			"proposed":      t.Proposed,
-			"precommit":     t.Precommit,
 		}
 		items = append(items, i)
 	}

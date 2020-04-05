@@ -2,60 +2,25 @@ package blockseqrepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
-	"github.com/figment-networks/oasishub-indexer/mappers/blockseqmapper"
+	"github.com/figment-networks/oasishub-indexer/models/blockseq"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
-	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
-)
-
-const (
-	blockTimesForRecentBlocksQuery = `
-SELECT 
-  MIN(height) start_height, 
-  MAX(height) end_height, 
-  MIN(time) start_time,
-  MAX(time) end_time,
-  COUNT(*) count, 
-  EXTRACT(EPOCH FROM MAX(time) - MIN(time)) AS diff, 
-  EXTRACT(EPOCH FROM ((MAX(time) - MIN(time)) / COUNT(*))) AS avg
-  FROM ( 
-    SELECT * FROM block_sequences
-    ORDER BY height DESC
-    LIMIT ?
-  ) t;
-`
-	blockTimesForIntervalQuery = `
-SELECT
-  time_bucket($1, time) AS time_interval,
-  COUNT(*) AS count,
-  EXTRACT(EPOCH FROM (last(time, time) - first(time, time)) / COUNT(*)) AS avg
-FROM block_sequences
-  WHERE (
-    SELECT time
-    FROM block_sequences
-    ORDER BY time DESC
-    LIMIT 1
-  ) - $2::INTERVAL < time
-GROUP BY time_interval
-ORDER BY time_interval ASC;
-`
 )
 
 type DbRepo interface {
 	// Queries
 	Exists(types.Height) bool
 	Count() (*int64, errors.ApplicationError)
-	GetByHeight(types.Height) (*blockdomain.BlockSeq, errors.ApplicationError)
-	GetMostRecent(BlockDbQuery) (*blockdomain.BlockSeq, errors.ApplicationError)
+	GetByHeight(types.Height) (*blockseq.Model, errors.ApplicationError)
+	GetMostRecent(BlockDbQuery) (*blockseq.Model, errors.ApplicationError)
 	GetAvgBlockTimesForRecentBlocks(int64) Result
 	GetAvgBlockTimesForInterval(string, string) ([]Row, errors.ApplicationError)
 
 	// Commands
-	Save(*blockdomain.BlockSeq) errors.ApplicationError
-	Create(*blockdomain.BlockSeq) errors.ApplicationError
+	Save(*blockseq.Model) errors.ApplicationError
+	Create(*blockseq.Model) errors.ApplicationError
 }
 
 type dbRepo struct {
@@ -69,10 +34,10 @@ func NewDbRepo(c *gorm.DB) DbRepo {
 }
 
 func (r *dbRepo) Exists(h types.Height) bool {
-	query := heightQuery(h)
-	foundBlock := orm.BlockSeqModel{}
+	q := heightQuery(h)
+	m := blockseq.Model{}
 
-	if err := r.client.Where(&query).Take(&foundBlock).Error; err != nil {
+	if err := r.client.Where(&q).First(&m).Error; err != nil {
 		return false
 	}
 	return true
@@ -80,49 +45,37 @@ func (r *dbRepo) Exists(h types.Height) bool {
 
 func (r *dbRepo) Count() (*int64, errors.ApplicationError) {
 	var count int64
-	if err := r.client.Table(orm.BlockSeqModel{}.TableName()).Count(&count).Error; err != nil {
+	if err := r.client.Table(blockseq.Model{}.TableName()).Count(&count).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError("block sequence not found", errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError("error getting count of block sequences", errors.QueryError, err)
 	}
-
 	return &count, nil
 }
 
-func (r *dbRepo) GetByHeight(h types.Height) (*blockdomain.BlockSeq, errors.ApplicationError) {
-	query := heightQuery(h)
-	seq := orm.BlockSeqModel{}
+func (r *dbRepo) GetByHeight(h types.Height) (*blockseq.Model, errors.ApplicationError) {
+	q := heightQuery(h)
+	m := blockseq.Model{}
 
-	if err := r.client.Where(&query).Take(&seq).Error; err != nil {
+	if err := r.client.Where(&q).First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError("block sequence not found", errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError(fmt.Sprintf("could not find block sequence with height %d", h), errors.QueryError, err)
 	}
-	m, err := blockseqmapper.FromPersistence(seq)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	return &m, nil
 }
 
-func (r *dbRepo) GetMostRecent(q BlockDbQuery) (*blockdomain.BlockSeq, errors.ApplicationError) {
-	seq := orm.BlockSeqModel{}
-	if err := r.client.Where(q.String()).Order("height desc").Take(&seq).Error; err != nil {
+func (r *dbRepo) GetMostRecent(q BlockDbQuery) (*blockseq.Model, errors.ApplicationError) {
+	m := blockseq.Model{}
+	if err := r.client.Where(q.String()).Order("height desc").First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError("most recent block sequence not found", errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError("could not find most recent block sequence", errors.QueryError, err)
 	}
-	m, err := blockseqmapper.FromPersistence(seq)
-	if err != nil {
-		return nil, err
-	}
-	return m, nil
+	return &m, nil
 }
 
 type Result struct {
@@ -136,10 +89,10 @@ type Result struct {
 }
 
 func (r *dbRepo) GetAvgBlockTimesForRecentBlocks(limit int64) Result {
-	var result Result
-	r.client.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&result)
+	var res Result
+	r.client.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&res)
 
-	return result
+	return res
 }
 
 type Row struct {
@@ -151,7 +104,6 @@ type Row struct {
 func (r *dbRepo) GetAvgBlockTimesForInterval(interval string, period string) ([]Row, errors.ApplicationError) {
 	rows, err := r.client.Debug().Raw(blockTimesForIntervalQuery, interval, period).Rows()
 	if err != nil {
-		log.Error(err)
 		return nil, errors.NewError("could not query block times for interval", errors.QueryError, err)
 	}
 	defer rows.Close()
@@ -160,7 +112,6 @@ func (r *dbRepo) GetAvgBlockTimesForInterval(interval string, period string) ([]
 	for rows.Next() {
 		var row Row
 		if err := r.client.ScanRows(rows, &row); err != nil {
-			log.Error(err)
 			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
 		}
 
@@ -169,27 +120,15 @@ func (r *dbRepo) GetAvgBlockTimesForInterval(interval string, period string) ([]
 	return res, nil
 }
 
-func (r *dbRepo) Save(block *blockdomain.BlockSeq) errors.ApplicationError {
-	pr, err := blockseqmapper.ToPersistence(block)
-	if err != nil {
-		return err
-	}
-
-	if err := r.client.Save(pr).Error; err != nil {
-		log.Error(err)
+func (r *dbRepo) Save(m *blockseq.Model) errors.ApplicationError {
+	if err := r.client.Save(m).Error; err != nil {
 		return errors.NewError("could not save block sequence", errors.SaveError, err)
 	}
 	return nil
 }
 
-func (r *dbRepo) Create(block *blockdomain.BlockSeq) errors.ApplicationError {
-	b, err := blockseqmapper.ToPersistence(block)
-	if err != nil {
-		return err
-	}
-
-	if err := r.client.Create(b).Error; err != nil {
-		log.Error(err)
+func (r *dbRepo) Create(m *blockseq.Model) errors.ApplicationError {
+	if err := r.client.Create(m).Error; err != nil {
 		return errors.NewError("could not create block sequence", errors.CreateError, err)
 	}
 	return nil
@@ -199,19 +138,19 @@ type BlockDbQuery struct {
 	Processed bool
 }
 
-func (q *BlockDbQuery) String() string {
-	query := ""
-	if q.Processed {
-		query += "processed_at IS NOT NULL"
+func (bq *BlockDbQuery) String() string {
+	q := ""
+	if bq.Processed {
+		q += "processed_at IS NOT NULL"
 	}
-	return query
+	return q
 }
 
 /*************** Private ***************/
 
-func heightQuery(h types.Height) orm.BlockSeqModel {
-	return orm.BlockSeqModel{
-		SequenceModel: orm.SequenceModel{
+func heightQuery(h types.Height) blockseq.Model {
+	return blockseq.Model{
+		Sequence: &shared.Sequence{
 			Height: h,
 		},
 	}

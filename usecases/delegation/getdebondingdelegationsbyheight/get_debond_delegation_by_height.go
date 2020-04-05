@@ -1,7 +1,7 @@
 package getdebondingdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
+	Execute(height *types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,7 +30,7 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError) {
 	if height == nil {
 		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 		if err != nil {

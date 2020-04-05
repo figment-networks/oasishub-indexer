@@ -2,17 +2,18 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/stakingdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
-	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/blockseqmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/debondingdelegationseqmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/delegationseqmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/stakingseqmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/transactionseqmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/validatorseqmapper"
+	"github.com/figment-networks/oasishub-indexer/models/blockseq"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/stakingseq"
+	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
+	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
@@ -104,11 +105,11 @@ func (s *sequencer) Process(ctx context.Context, p pipeline.Payload) (pipeline.P
 
 /*************** Private ***************/
 
-func (s *sequencer) sequenceBlock(p *payload) (*blockdomain.BlockSeq, errors.ApplicationError) {
+func (s *sequencer) sequenceBlock(p *payload) (*blockseq.Model, errors.ApplicationError) {
 	sequenced, err := s.blockSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		if err.Status() == errors.NotFoundError {
-			toSequence, err := blockseqmapper.FromData(*p.BlockSyncable, *p.ValidatorsSyncable)
+			toSequence, err := blockseqmapper.ToSequence(*p.BlockSyncable, *p.ValidatorsSyncable)
 			if err != nil {
 				return nil, err
 			}
@@ -122,14 +123,14 @@ func (s *sequencer) sequenceBlock(p *payload) (*blockdomain.BlockSeq, errors.App
 	return sequenced, nil
 }
 
-func (s *sequencer) sequenceValidators(p *payload) ([]*validatordomain.ValidatorSeq, errors.ApplicationError) {
-	var res []*validatordomain.ValidatorSeq
+func (s *sequencer) sequenceValidators(p *payload) ([]validatorseq.Model, errors.ApplicationError) {
+	var res []validatorseq.Model
 	sequenced, err := s.validatorSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	toSequence, err := validatorseqmapper.FromData(*p.ValidatorsSyncable, *p.BlockSyncable, *p.StateSyncable)
+	toSequence, err := validatorseqmapper.ToSequence(*p.ValidatorsSyncable, *p.BlockSyncable, *p.StateSyncable)
 	if err != nil {
 		return nil, err
 	}
@@ -144,9 +145,9 @@ func (s *sequencer) sequenceValidators(p *payload) ([]*validatordomain.Validator
 		return sequenced, nil
 	}
 
-	isSequenced := func(vs *validatordomain.ValidatorSeq) bool {
+	isSequenced := func(vs validatorseq.Model) bool {
 		for _, sv := range sequenced {
-			if sv.Equal(*vs) {
+			if sv.Equal(vs) {
 				return true
 			}
 		}
@@ -155,25 +156,24 @@ func (s *sequencer) sequenceValidators(p *payload) ([]*validatordomain.Validator
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.validatorSeqDbRepo.Create(vs); err != nil {
+			if err := s.validatorSeqDbRepo.Create(&vs); err != nil {
 				return nil, err
 			}
 		}
 		res = append(res, vs)
 
 	}
-
 	return res, nil
 }
 
-func (s *sequencer) sequenceTransactions(p *payload) ([]*transactiondomain.TransactionSeq, errors.ApplicationError) {
-	var res []*transactiondomain.TransactionSeq
+func (s *sequencer) sequenceTransactions(p *payload) ([]transactionseq.Model, errors.ApplicationError) {
+	var res []transactionseq.Model
 	sequenced, err := s.transactionSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	toSequence, err := transactionseqmapper.FromData(*p.TransactionsSyncable)
+	toSequence, err := transactionseqmapper.ToSequence(*p.TransactionsSyncable)
 	if err != nil {
 		return nil, err
 	}
@@ -188,9 +188,9 @@ func (s *sequencer) sequenceTransactions(p *payload) ([]*transactiondomain.Trans
 		return sequenced, nil
 	}
 
-	isSequenced := func(vs *transactiondomain.TransactionSeq) bool {
+	isSequenced := func(vs transactionseq.Model) bool {
 		for _, sv := range sequenced {
-			if sv.Equal(*vs) {
+			if sv.Equal(vs) {
 				return true
 			}
 		}
@@ -199,22 +199,21 @@ func (s *sequencer) sequenceTransactions(p *payload) ([]*transactiondomain.Trans
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.transactionSeqDbRepo.Create(vs); err != nil {
+			if err := s.transactionSeqDbRepo.Create(&vs); err != nil {
 				return nil, err
 			}
 		}
 		res = append(res, vs)
 
 	}
-
 	return res, nil
 }
 
-func (s *sequencer) sequenceStaking(p *payload) (*stakingdomain.StakingSeq, errors.ApplicationError) {
+func (s *sequencer) sequenceStaking(p *payload) (*stakingseq.Model, errors.ApplicationError) {
 	sequenced, err := s.stakingSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		if err.Status() == errors.NotFoundError {
-			toSequence, err := stakingseqmapper.FromData(*p.StateSyncable)
+			toSequence, err := stakingseqmapper.ToSequence(*p.StateSyncable)
 			if err != nil {
 				return nil, err
 			}
@@ -228,14 +227,14 @@ func (s *sequencer) sequenceStaking(p *payload) (*stakingdomain.StakingSeq, erro
 	return sequenced, nil
 }
 
-func (s *sequencer) sequenceDelegations(p *payload) ([]*delegationdomain.DelegationSeq, errors.ApplicationError) {
-	var res []*delegationdomain.DelegationSeq
+func (s *sequencer) sequenceDelegations(p *payload) ([]delegationseq.Model, errors.ApplicationError) {
+	var res []delegationseq.Model
 	sequenced, err := s.delegationSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	toSequence, err := delegationseqmapper.FromData(p.StateSyncable)
+	toSequence, err := delegationseqmapper.ToSequence(p.StateSyncable)
 	if err != nil {
 		return nil, err
 	}
@@ -250,9 +249,9 @@ func (s *sequencer) sequenceDelegations(p *payload) ([]*delegationdomain.Delegat
 		return sequenced, nil
 	}
 
-	isSequenced := func(vs *delegationdomain.DelegationSeq) bool {
+	isSequenced := func(vs delegationseq.Model) bool {
 		for _, sv := range sequenced {
-			if sv.Equal(*vs) {
+			if sv.Equal(vs) {
 				return true
 			}
 		}
@@ -261,7 +260,7 @@ func (s *sequencer) sequenceDelegations(p *payload) ([]*delegationdomain.Delegat
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.delegationSeqDbRepo.Create(vs); err != nil {
+			if err := s.delegationSeqDbRepo.Create(&vs); err != nil {
 				return nil, err
 			}
 		}
@@ -270,14 +269,14 @@ func (s *sequencer) sequenceDelegations(p *payload) ([]*delegationdomain.Delegat
 	return res, nil
 }
 
-func (s *sequencer) sequenceDebondingDelegations(p *payload) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	var res []*delegationdomain.DebondingDelegationSeq
+func (s *sequencer) sequenceDebondingDelegations(p *payload) ([]debondingdelegationseq.Model, errors.ApplicationError) {
+	var res []debondingdelegationseq.Model
 	sequenced, err := s.debondingDelegationSeqDbRepo.GetByHeight(p.CurrentHeight)
 	if err != nil {
 		return nil, err
 	}
 
-	toSequence, err := debondingdelegationseqmapper.FromData(p.StateSyncable)
+	toSequence, err := debondingdelegationseqmapper.ToSequence(p.StateSyncable)
 	if err != nil {
 		return nil, err
 	}
@@ -292,9 +291,9 @@ func (s *sequencer) sequenceDebondingDelegations(p *payload) ([]*delegationdomai
 		return sequenced, nil
 	}
 
-	isSequenced := func(vs *delegationdomain.DebondingDelegationSeq) bool {
+	isSequenced := func(vs debondingdelegationseq.Model) bool {
 		for _, sv := range sequenced {
-			if sv.Equal(*vs) {
+			if sv.Equal(vs) {
 				return true
 			}
 		}
@@ -303,7 +302,7 @@ func (s *sequencer) sequenceDebondingDelegations(p *payload) ([]*delegationdomai
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.debondingDelegationSeqDbRepo.Create(vs); err != nil {
+			if err := s.debondingDelegationSeqDbRepo.Create(&vs); err != nil {
 				return nil, err
 			}
 		}

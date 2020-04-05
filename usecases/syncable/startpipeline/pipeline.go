@@ -2,7 +2,7 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/models/report"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
@@ -33,7 +33,7 @@ type processingPipeline struct {
 	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo
 	entityAggDbRepo              entityaggrepo.DbRepo
 
-	report   reportdomain.Report
+	report   report.Model
 	pipeline *pipeline.Pipeline
 }
 
@@ -58,7 +58,7 @@ func NewPipeline(
 	delegationSeqDbRepo delegationseqrepo.DbRepo,
 	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo,
 	entityAggDbRepo entityaggrepo.DbRepo,
-	report reportdomain.Report,
+	report report.Model,
 ) Pipeline {
 	// Assemble pipeline
 	p := pipeline.New(
@@ -91,6 +91,5 @@ func (c *processingPipeline) Start(ctx context.Context, iter pipeline.Iterator) 
 		errMsg := err.Error()
 		r.Error = &errMsg
 	}
-
 	return r
 }

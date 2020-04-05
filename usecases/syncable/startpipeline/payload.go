@@ -1,14 +1,15 @@
 package startpipeline
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
-	"github.com/figment-networks/oasishub-indexer/domain/stakingdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
-	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
-	"github.com/figment-networks/oasishub-indexer/domain/validatordomain"
+	"github.com/figment-networks/oasishub-indexer/models/accountagg"
+	"github.com/figment-networks/oasishub-indexer/models/blockseq"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/entityagg"
+	"github.com/figment-networks/oasishub-indexer/models/stakingseq"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
+	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
+	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 	"sync"
@@ -29,22 +30,22 @@ type payload struct {
 	CurrentHeight types.Height
 	RetrievedAt   time.Time
 
-	BlockSyncable        *syncabledomain.Syncable
-	StateSyncable        *syncabledomain.Syncable
-	ValidatorsSyncable   *syncabledomain.Syncable
-	TransactionsSyncable *syncabledomain.Syncable
+	BlockSyncable        *syncable.Model
+	StateSyncable        *syncable.Model
+	ValidatorsSyncable   *syncable.Model
+	TransactionsSyncable *syncable.Model
 
-	NewAggregatedAccounts     []*accountdomain.AccountAgg
-	UpdatedAggregatedAccounts []*accountdomain.AccountAgg
-	NewAggregatedEntities     []*entitydomain.EntityAgg
-	UpdatedAggregatedEntities []*entitydomain.EntityAgg
+	NewAggregatedAccounts     []accountagg.Model
+	UpdatedAggregatedAccounts []accountagg.Model
+	NewAggregatedEntities     []entityagg.Model
+	UpdatedAggregatedEntities []entityagg.Model
 
-	BlockSequence                *blockdomain.BlockSeq
-	ValidatorSequences           []*validatordomain.ValidatorSeq
-	TransactionSequences         []*transactiondomain.TransactionSeq
-	StakingSequence              *stakingdomain.StakingSeq
-	DelegationSequences          []*delegationdomain.DelegationSeq
-	DebondingDelegationSequences []*delegationdomain.DebondingDelegationSeq
+	BlockSequence                *blockseq.Model
+	StakingSequence              *stakingseq.Model
+	ValidatorSequences           []validatorseq.Model
+	TransactionSequences         []transactionseq.Model
+	DelegationSequences          []delegationseq.Model
+	DebondingDelegationSequences []debondingdelegationseq.Model
 }
 
 func (p *payload) Clone() pipeline.Payload {
@@ -58,10 +59,31 @@ func (p *payload) Clone() pipeline.Payload {
 	newP.ValidatorsSyncable = p.ValidatorsSyncable
 	newP.TransactionsSyncable = p.TransactionsSyncable
 
+	newP.NewAggregatedAccounts = append([]accountagg.Model(nil), p.NewAggregatedAccounts...)
+	newP.UpdatedAggregatedAccounts = append([]accountagg.Model(nil), p.UpdatedAggregatedAccounts...)
+	newP.NewAggregatedEntities = append([]entityagg.Model(nil), p.NewAggregatedEntities...)
+	newP.UpdatedAggregatedEntities = append([]entityagg.Model(nil), p.UpdatedAggregatedEntities...)
+
+	newP.BlockSequence = p.BlockSequence
+	newP.StakingSequence = p.StakingSequence
+	newP.ValidatorSequences = append([]validatorseq.Model(nil), p.ValidatorSequences...)
+	newP.TransactionSequences = append([]transactionseq.Model(nil), p.TransactionSequences...)
+	newP.DelegationSequences = append([]delegationseq.Model(nil), p.DelegationSequences...)
+	newP.DebondingDelegationSequences = append([]debondingdelegationseq.Model(nil), p.DebondingDelegationSequences...)
+
 	return newP
 }
 
 func (p *payload) MarkAsProcessed() {
 	// Reset
+	p.NewAggregatedAccounts = p.NewAggregatedAccounts[:0]
+	p.UpdatedAggregatedAccounts = p.UpdatedAggregatedAccounts[:0]
+	p.NewAggregatedEntities = p.NewAggregatedEntities[:0]
+	p.UpdatedAggregatedEntities = p.UpdatedAggregatedEntities[:0]
+	p.ValidatorSequences = p.ValidatorSequences[:0]
+	p.TransactionSequences = p.TransactionSequences[:0]
+	p.DelegationSequences = p.DelegationSequences[:0]
+	p.DebondingDelegationSequences = p.DebondingDelegationSequences[:0]
+
 	payloadPool.Put(p)
 }

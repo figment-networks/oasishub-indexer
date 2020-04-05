@@ -3,9 +3,9 @@ package syncablerepo
 import (
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/clients/restclient"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -18,10 +18,8 @@ const (
 
 type ProxyRepo interface {
 	//Queries
-	GetHead() (*syncabledomain.Syncable, errors.ApplicationError)
-	GetByHeight(syncabledomain.Type, types.Height) (*syncabledomain.Syncable, errors.ApplicationError)
-	GetDataByHeight(syncabledomain.Type, types.Height) ([]byte, errors.ApplicationError)
-	GetSequencePropsByHeight(types.Height) (*commons.SequenceProps, errors.ApplicationError)
+	GetHead() (*syncable.Model, errors.ApplicationError)
+	GetByHeight(syncable.Type, types.Height) (*syncable.Model, errors.ApplicationError)
 }
 
 type proxyRepo struct {
@@ -34,50 +32,51 @@ func NewProxyRepo(rest restclient.HttpGetter) ProxyRepo {
 	}
 }
 
-func (r *proxyRepo) GetHead() (*syncabledomain.Syncable, errors.ApplicationError) {
-	return r.GetByHeight(syncabledomain.BlockType, LatestHeight)
+func (r *proxyRepo) GetHead() (*syncable.Model, errors.ApplicationError) {
+	return r.GetByHeight(syncable.BlockType, LatestHeight)
 }
 
-func (r *proxyRepo) GetByHeight(t syncabledomain.Type, h types.Height) (*syncabledomain.Syncable, errors.ApplicationError) {
-	sequenceProps, err := r.GetSequencePropsByHeight(h)
+func (r *proxyRepo) GetByHeight(t syncable.Type, h types.Height) (*syncable.Model, errors.ApplicationError) {
+	sequenceProps, err := r.getSequencePropsByHeight(h)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := r.GetDataByHeight(t, h)
+	bytes, err := r.getRawDataByHeight(t, h)
 	if err != nil {
 		return nil, err
 	}
 
-	return syncablemapper.FromData(t, *sequenceProps, data)
+	return syncablemapper.FromProxy(t, *sequenceProps, bytes)
 }
 
-func (r *proxyRepo) GetDataByHeight(syncableType syncabledomain.Type, height types.Height) ([]byte, errors.ApplicationError) {
-	var url string
-	switch syncableType {
-	case syncabledomain.BlockType:
-		url = fmt.Sprintf("block/%d", height)
-	case syncabledomain.StateType:
-		url = fmt.Sprintf("consensus/%d/state", height)
-	case syncabledomain.ValidatorsType:
-		url = fmt.Sprintf("validators/%d", height)
-	case syncabledomain.TransactionsType:
-		url = fmt.Sprintf("transactions/%d", height)
-	default:
-		return nil, errors.NewErrorFromMessage(fmt.Sprintf("syncable type %s not found", syncableType), errors.ProxyRequestError)
-	}
-	return r.makeRequest(url)
-}
+/*************** Private ***************/
 
-func (r *proxyRepo) GetSequencePropsByHeight(h types.Height) (*commons.SequenceProps, errors.ApplicationError) {
-	bytes, err := r.GetDataByHeight(syncabledomain.BlockType, h)
+func (r *proxyRepo) getSequencePropsByHeight(h types.Height) (*shared.Sequence, errors.ApplicationError) {
+	//TODO: Can be cached
+	bytes, err := r.getRawDataByHeight(syncable.BlockType, h)
 	if err != nil {
 		return nil, err
 	}
 	return syncablemapper.ToSequenceProps(bytes)
 }
 
-/*************** Private ***************/
+func (r *proxyRepo) getRawDataByHeight(syncableType syncable.Type, height types.Height) ([]byte, errors.ApplicationError) {
+	var url string
+	switch syncableType {
+	case syncable.BlockType:
+		url = fmt.Sprintf("block/%d", height)
+	case syncable.StateType:
+		url = fmt.Sprintf("consensus/%d/state", height)
+	case syncable.ValidatorsType:
+		url = fmt.Sprintf("validators/%d", height)
+	case syncable.TransactionsType:
+		url = fmt.Sprintf("transactions/%d", height)
+	default:
+		return nil, errors.NewErrorFromMessage(fmt.Sprintf("syncable type %s not found", syncableType), errors.ProxyRequestError)
+	}
+	return r.makeRequest(url)
+}
 
 func (r *proxyRepo) makeRequest(url string) ([]byte, errors.ApplicationError) {
 	log.Info(fmt.Sprintf("making request to node to get syncable at %s", url), log.Field("type", "proxy"))

@@ -1,6 +1,6 @@
 CREATE TABLE IF NOT EXISTS debonding_delegation_sequences
 (
-    id            uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    id            BIGSERIAL                NOT NULL,
     created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at    TIMESTAMP WITH TIME ZONE NOT NULL,
 

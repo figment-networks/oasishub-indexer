@@ -63,7 +63,7 @@ func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationE
 	}
 	bs.Transactions = ts
 
-	resp := &Response{BlockSeq: bs}
+	resp := &Response{Model: bs}
 
 	return resp, nil
 }

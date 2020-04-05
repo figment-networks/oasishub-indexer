@@ -1,7 +1,7 @@
 package getdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) ([]*delegationdomain.DelegationSeq, errors.ApplicationError)
+	Execute(height *types.Height) ([]delegationseq.Model, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,7 +30,7 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) ([]*delegationdomain.DelegationSeq, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) ([]delegationseq.Model, errors.ApplicationError) {
 	if height == nil {
 		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 		if err != nil {

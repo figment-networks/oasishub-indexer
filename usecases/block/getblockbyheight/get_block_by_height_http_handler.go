@@ -1,7 +1,7 @@
 package getblockbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/blockdomain"
+	"github.com/figment-networks/oasishub-indexer/models/blockseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -22,7 +22,7 @@ type Request struct {
 }
 
 type Response struct {
-	*blockdomain.BlockSeq
+	*blockseq.Model
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

@@ -2,7 +2,7 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub-indexer/domain/reportdomain"
+	"github.com/figment-networks/oasishub-indexer/models/report"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
@@ -15,13 +15,13 @@ type Sink interface {
 
 type sink struct {
 	syncableDbRepo syncablerepo.DbRepo
-	report         reportdomain.Report
+	report         report.Model
 
 	count    int64
 	payloads []*payload
 }
 
-func NewSink(syncableDbRepo syncablerepo.DbRepo, report reportdomain.Report) Sink {
+func NewSink(syncableDbRepo syncablerepo.DbRepo, report report.Model) Sink {
 	return &sink{
 		syncableDbRepo: syncableDbRepo,
 		report:         report,

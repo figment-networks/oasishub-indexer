@@ -2,24 +2,22 @@ package debondingdelegationseqrepo
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
-	"github.com/figment-networks/oasishub-indexer/mappers/debondingdelegationseqmapper"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
-	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/jinzhu/gorm"
 )
 
 type DbRepo interface {
 	// Queries
 	Exists(types.Height) bool
-	GetByHeight(types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
-	GetRecentByValidatorUID(types.PublicKey, int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
-	GetRecentByDelegatorUID(types.PublicKey, int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError)
+	GetByHeight(types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError)
+	GetRecentByValidatorUID(types.PublicKey, int64) ([]debondingdelegationseq.Model, errors.ApplicationError)
+	GetRecentByDelegatorUID(types.PublicKey, int64) ([]debondingdelegationseq.Model, errors.ApplicationError)
 
 	// Commands
-	Create(*delegationdomain.DebondingDelegationSeq) errors.ApplicationError
+	Create(*debondingdelegationseq.Model) errors.ApplicationError
 }
 
 type dbRepo struct {
@@ -34,100 +32,61 @@ func NewDbRepo(c *gorm.DB) DbRepo {
 
 // - Queries
 func (r *dbRepo) Exists(h types.Height) bool {
-	query := heightQuery(h)
-	foundBlock := orm.DebondingDelegationSeqModel{}
+	q := heightQuery(h)
+	m := debondingdelegationseq.Model{}
 
-	if err := r.client.Where(&query).Take(&foundBlock).Error; err != nil {
+	if err := r.client.Where(&q).Find(&m).Error; err != nil {
 		return false
 	}
 	return true
 }
 
-func (r *dbRepo) GetByHeight(h types.Height) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	query := heightQuery(h)
-	var seqs []orm.DebondingDelegationSeqModel
+func (r *dbRepo) GetByHeight(h types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError) {
+	q := heightQuery(h)
+	var ms []debondingdelegationseq.Model
 
-	if err := r.client.Where(&query).Find(&seqs).Error; err != nil {
+	if err := r.client.Where(&q).Find(&ms).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError(fmt.Sprintf("could not find debinding delegation with height %d", h), errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError("error getting debonding delegation by height", errors.QueryError, err)
 	}
-
-	var resp []*delegationdomain.DebondingDelegationSeq
-	for _, s := range seqs {
-		vs, err := debondingdelegationseqmapper.FromPersistence(s)
-		if err != nil {
-			return nil, err
-		}
-
-		resp = append(resp, vs)
-	}
-	return resp, nil
+	return ms, nil
 }
 
-func (r *dbRepo) GetRecentByValidatorUID(key types.PublicKey, limit int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	query := orm.DebondingDelegationSeqModel{
+func (r *dbRepo) GetRecentByValidatorUID(key types.PublicKey, limit int64) ([]debondingdelegationseq.Model, errors.ApplicationError) {
+	q := debondingdelegationseq.Model{
 		ValidatorUID:  key,
 	}
-	var seqs []orm.DebondingDelegationSeqModel
+	var ms []debondingdelegationseq.Model
 
-	if err := r.client.Where(&query).Order("height DESC").Limit(limit).Find(&seqs).Error; err != nil {
+	if err := r.client.Where(&q).Order("height DESC").Limit(limit).Find(&ms).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError(fmt.Sprintf("could not find debinding delegation with for validator %s", key), errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError("error getting debonding delegation for validator", errors.QueryError, err)
 	}
-
-	var resp []*delegationdomain.DebondingDelegationSeq
-	for _, s := range seqs {
-		vs, err := debondingdelegationseqmapper.FromPersistence(s)
-		if err != nil {
-			return nil, err
-		}
-
-		resp = append(resp, vs)
-	}
-	return resp, nil
+	return ms, nil
 }
 
-func (r *dbRepo) GetRecentByDelegatorUID(key types.PublicKey, limit int64) ([]*delegationdomain.DebondingDelegationSeq, errors.ApplicationError) {
-	query := orm.DebondingDelegationSeqModel{
+func (r *dbRepo) GetRecentByDelegatorUID(key types.PublicKey, limit int64) ([]debondingdelegationseq.Model, errors.ApplicationError) {
+	q := debondingdelegationseq.Model{
 		DelegatorUID:  key,
 	}
-	var seqs []orm.DebondingDelegationSeqModel
+	var ms []debondingdelegationseq.Model
 
-	if err := r.client.Where(&query).Order("height DESC").Limit(limit).Find(&seqs).Error; err != nil {
+	if err := r.client.Where(&q).Order("height DESC").Limit(limit).Find(&ms).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError(fmt.Sprintf("could not find debinding delegation with for validator %s", key), errors.NotFoundError, err)
 		}
-		log.Error(err)
 		return nil, errors.NewError("error getting debonding delegation for validator", errors.QueryError, err)
 	}
-
-	var resp []*delegationdomain.DebondingDelegationSeq
-	for _, s := range seqs {
-		vs, err := debondingdelegationseqmapper.FromPersistence(s)
-		if err != nil {
-			return nil, err
-		}
-
-		resp = append(resp, vs)
-	}
-	return resp, nil
+	return ms, nil
 }
 
 // - Commands
-func (r *dbRepo) Create(block *delegationdomain.DebondingDelegationSeq) errors.ApplicationError {
-	b, err := debondingdelegationseqmapper.ToPersistence(block)
-	if err != nil {
-		return err
-	}
-
-	if err := r.client.Create(b).Error; err != nil {
-		log.Error(err)
+func (r *dbRepo) Create(m *debondingdelegationseq.Model) errors.ApplicationError {
+	if err := r.client.Create(m).Error; err != nil {
 		return errors.NewError("could not create debonding delegation", errors.CreateError, err)
 	}
 	return nil
@@ -135,9 +94,9 @@ func (r *dbRepo) Create(block *delegationdomain.DebondingDelegationSeq) errors.A
 
 /*************** Private ***************/
 
-func heightQuery(h types.Height) orm.DebondingDelegationSeqModel {
-	return orm.DebondingDelegationSeqModel{
-		SequenceModel: orm.SequenceModel{
+func heightQuery(h types.Height) debondingdelegationseq.Model {
+	return debondingdelegationseq.Model{
+		Sequence: &shared.Sequence{
 			Height: h,
 		},
 	}

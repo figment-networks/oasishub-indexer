@@ -1,8 +1,9 @@
 package getentitybyentityuid
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/delegationdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/entityagg"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -23,14 +24,14 @@ type Request struct {
 }
 
 type Response struct {
-	*entitydomain.EntityAgg
+	*entityagg.Model
 
 	LastHeight                 types.Height                               `json:"last_height"`
 	TotalValidated             int64                                      `json:"total_validated"`
 	TotalMissed                int64                                      `json:"total_missed"`
 	TotalProposed              int64                                      `json:"total_proposed"`
-	LastDelegations            []*delegationdomain.DelegationSeq          `json:"last_delegations"`
-	RecentDebondingDelegations []*delegationdomain.DebondingDelegationSeq `json:"recent_debonding_delegations"`
+	LastDelegations            []delegationseq.Model          `json:"last_delegations"`
+	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

@@ -43,7 +43,7 @@ func (uc *useCase) Execute(key types.PublicKey) (*Response, errors.ApplicationEr
 		return nil, err
 	}
 
-	resp := &Response{AccountAgg: aa}
+	resp := &Response{Model: aa}
 
 	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 	if err != nil {

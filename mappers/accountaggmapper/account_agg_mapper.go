@@ -1,77 +1,27 @@
 package accountaggmapper
 
 import (
-	"github.com/figment-networks/oasishub-indexer/db/timescale/orm"
-	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/commons"
-	"github.com/figment-networks/oasishub-indexer/domain/syncabledomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/accountagg"
+	"github.com/figment-networks/oasishub-indexer/models/shared"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
-func FromPersistence(o orm.AccountAggModel) (*accountdomain.AccountAgg, errors.ApplicationError) {
-	e := &accountdomain.AccountAgg{
-		DomainEntity: commons.NewDomainEntity(commons.EntityProps{
-			ID: o.ID,
-		}),
-		Aggregate: commons.NewAggregate(commons.AggregateProps{
-			StartedAtHeight: o.StartedAtHeight,
-			StartedAt:       o.StartedAt,
-		}),
-		PublicKey:                      o.PublicKey,
-		LastGeneralBalance:             o.LastGeneralBalance,
-		LastGeneralNonce:               o.LastGeneralNonce,
-		LastEscrowActiveBalance:        o.LastEscrowActiveBalance,
-		LastEscrowActiveTotalShares:    o.LastEscrowActiveTotalShares,
-		LastEscrowDebondingBalance:     o.LastEscrowDebondingBalance,
-		LastEscrowDebondingTotalShares: o.LastEscrowDebondingTotalShares,
-	}
-
-	if !e.Valid() {
-		return nil, errors.NewErrorFromMessage("account aggregator not valid", errors.NotValid)
-	}
-
-	return e, nil
-}
-
-func ToPersistence(ag *accountdomain.AccountAgg) (*orm.AccountAggModel, errors.ApplicationError) {
-	if !ag.Valid() {
-		return nil, errors.NewErrorFromMessage("account aggregator not valid", errors.NotValid)
-	}
-
-	return &orm.AccountAggModel{
-		EntityModel: orm.EntityModel{
-			ID: ag.ID,
-		},
-		AggregateModel: orm.AggregateModel{
-			StartedAtHeight: ag.StartedAtHeight,
-			StartedAt:       ag.StartedAt,
-		},
-		PublicKey:                      ag.PublicKey,
-		LastGeneralBalance:             ag.LastGeneralBalance,
-		LastGeneralNonce:               ag.LastGeneralNonce,
-		LastEscrowActiveBalance:        ag.LastEscrowActiveBalance,
-		LastEscrowActiveTotalShares:    ag.LastEscrowActiveTotalShares,
-		LastEscrowDebondingBalance:     ag.LastEscrowDebondingBalance,
-		LastEscrowDebondingTotalShares: ag.LastEscrowDebondingTotalShares,
-	}, nil
-}
-
-func FromData(stateSyncable *syncabledomain.Syncable) ([]*accountdomain.AccountAgg, errors.ApplicationError) {
+func ToAggregate(stateSyncable *syncable.Model) ([]accountagg.Model, errors.ApplicationError) {
 	stateData, err := syncablemapper.UnmarshalStateData(stateSyncable.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	var accounts []*accountdomain.AccountAgg
+	var accounts []accountagg.Model
 	for publicKey, info := range stateData.Data.Staking.Ledger {
-		acc := &accountdomain.AccountAgg{
-			DomainEntity: commons.NewDomainEntity(commons.EntityProps{}),
-			Aggregate: commons.NewAggregate(commons.AggregateProps{
+		acc := accountagg.Model{
+			Aggregate: &shared.Aggregate{
 				StartedAtHeight: stateSyncable.Height,
 				StartedAt:       stateSyncable.Time,
-			}),
+			},
 
 			PublicKey:                      types.PublicKey(publicKey.String()),
 			LastGeneralBalance:             types.NewQuantity(info.General.Balance.ToBigInt()),
@@ -91,7 +41,7 @@ func FromData(stateSyncable *syncabledomain.Syncable) ([]*accountdomain.AccountA
 	return accounts, nil
 }
 
-func ToView(s *accountdomain.AccountAgg) map[string]interface{} {
+func ToView(s *accountagg.Model) map[string]interface{} {
 	return map[string]interface{}{
 		"id":                s.ID,
 		"started_at_height": s.StartedAtHeight,

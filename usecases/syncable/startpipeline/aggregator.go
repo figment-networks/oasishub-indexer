@@ -2,10 +2,10 @@ package startpipeline
 
 import (
 	"context"
-	"github.com/figment-networks/oasishub-indexer/domain/accountdomain"
-	"github.com/figment-networks/oasishub-indexer/domain/entitydomain"
 	"github.com/figment-networks/oasishub-indexer/mappers/accountaggmapper"
 	"github.com/figment-networks/oasishub-indexer/mappers/entityaggmapper"
+	"github.com/figment-networks/oasishub-indexer/models/accountagg"
+	"github.com/figment-networks/oasishub-indexer/models/entityagg"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
@@ -53,19 +53,19 @@ func (a *aggregator) Process(ctx context.Context, p pipeline.Payload) (pipeline.
 	return payload, nil
 }
 
-func (a *aggregator) aggregateAccounts(p *payload) ([]*accountdomain.AccountAgg, []*accountdomain.AccountAgg, errors.ApplicationError) {
-	accounts, err := accountaggmapper.FromData(p.StateSyncable)
+func (a *aggregator) aggregateAccounts(p *payload) ([]accountagg.Model, []accountagg.Model, errors.ApplicationError) {
+	accounts, err := accountaggmapper.ToAggregate(p.StateSyncable)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var created []*accountdomain.AccountAgg
-	var updated []*accountdomain.AccountAgg
+	var created []accountagg.Model
+	var updated []accountagg.Model
 	for _, account := range accounts {
 		existing, err := a.accountAggDbRepo.GetByPublicKey(account.PublicKey)
 		if err != nil {
 			if err.Status() == errors.NotFoundError {
-				if err := a.accountAggDbRepo.Create(account); err != nil {
+				if err := a.accountAggDbRepo.Create(&account); err != nil {
 					return nil, nil, err
 				}
 				created = append(created, account)
@@ -73,7 +73,7 @@ func (a *aggregator) aggregateAccounts(p *payload) ([]*accountdomain.AccountAgg,
 				return nil, nil, err
 			}
 		} else {
-			existing.Update(account)
+			existing.UpdateAggAttrs(&account)
 
 			if err := a.accountAggDbRepo.Save(existing); err != nil {
 				return nil, nil, err
@@ -84,19 +84,19 @@ func (a *aggregator) aggregateAccounts(p *payload) ([]*accountdomain.AccountAgg,
 	return created, updated, nil
 }
 
-func (a *aggregator) aggregateEntities(p *payload) ([]*entitydomain.EntityAgg, []*entitydomain.EntityAgg, errors.ApplicationError) {
-	entities, err := entityaggmapper.FromData(p.StateSyncable)
+func (a *aggregator) aggregateEntities(p *payload) ([]entityagg.Model, []entityagg.Model, errors.ApplicationError) {
+	entities, err := entityaggmapper.ToAggregate(p.StateSyncable)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	var created []*entitydomain.EntityAgg
-	var updated []*entitydomain.EntityAgg
+	var created []entityagg.Model
+	var updated []entityagg.Model
 	for _, entity := range entities {
 		existing, err := a.entityAggDbRepo.GetByEntityUID(entity.EntityUID)
 		if err != nil {
 			if err.Status() == errors.NotFoundError {
-				if err := a.entityAggDbRepo.Create(entity); err != nil {
+				if err := a.entityAggDbRepo.Create(&entity); err != nil {
 					return nil, nil, err
 				}
 				created = append(created, entity)
@@ -104,7 +104,7 @@ func (a *aggregator) aggregateEntities(p *payload) ([]*entitydomain.EntityAgg, [
 				return nil, nil, err
 			}
 		} else {
-			existing.Update(entity)
+			existing.UpdateAggAttrs(entity)
 
 			if err := a.entityAggDbRepo.Save(existing); err != nil {
 				return nil, nil, err

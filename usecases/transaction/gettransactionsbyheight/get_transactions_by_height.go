@@ -1,7 +1,7 @@
 package gettransactionsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/domain/transactiondomain"
+	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) ([]*transactiondomain.TransactionSeq, errors.ApplicationError)
+	Execute(height *types.Height) ([]transactionseq.Model, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,7 +30,7 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) ([]*transactiondomain.TransactionSeq, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) ([]transactionseq.Model, errors.ApplicationError) {
 	if height == nil {
 		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 		if err != nil {

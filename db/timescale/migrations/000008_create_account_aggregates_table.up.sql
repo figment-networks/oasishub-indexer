@@ -1,7 +1,7 @@
 CREATE TABLE IF NOT EXISTS account_aggregates
 (
 --     Domain entity
-    id                                 uuid                     NOT NULL DEFAULT uuid_generate_v4(),
+    id                                 BIGSERIAL                NOT NULL,
     created_at                         TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at                         TIMESTAMP WITH TIME ZONE NOT NULL,
 
