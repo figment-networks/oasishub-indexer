@@ -12,7 +12,7 @@ require (
 	github.com/lib/pq v1.3.0
 	github.com/oasislabs/oasis-core/go v0.0.0-20200304114707-807935769a93
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rollbar/rollbar-go v1.2.0 // indirect
+	github.com/rollbar/rollbar-go v1.2.0
 	github.com/satori/go.uuid v1.2.0
 	github.com/spf13/cobra v0.0.6
 	github.com/spf13/viper v1.6.2

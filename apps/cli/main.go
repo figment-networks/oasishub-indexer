@@ -14,7 +14,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/usecases/syncable/startpipeline"
+	"github.com/figment-networks/oasishub-indexer/usecases/pipeline/startpipeline"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/spf13/cobra"

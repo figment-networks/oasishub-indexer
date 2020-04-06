@@ -22,7 +22,7 @@ services:
     image: migrate/migrate
     volumes:
       - ./db/timescale/migrations:/migrations
-    command: ls
+    command: version
     entrypoint:
       - migrate
       - -path
@@ -30,11 +30,9 @@ services:
       - -database
       - postgres://postgres:password@timedb:5432/oasishub?sslmode=disable
 
-  # SERVICES
   server:
     container_name: oasishub-indexer-server
     build: .
-    command: /app/oasishub serve
     ports:
       - "8081:8081"
     environment:
@@ -44,19 +42,19 @@ services:
       - DB_USER=postgres
       - DB_PASSWORD=password
     depends_on:
-      - db
+      - timedb
 
   job:
     container_name: oasishub-indexer-job
     build: .
-    command: /app/oasishub serve
+    command: /go/bin/job
     environment:
       - DB_HOST=db
       - DB_NAME=oasishub
       - DB_USER=postgres
       - DB_PASSWORD=password
     depends_on:
-      - db
+      - timedb
 
 volumes:
   timedb-data:

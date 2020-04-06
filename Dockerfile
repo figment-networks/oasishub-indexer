@@ -9,14 +9,28 @@ COPY ./go.sum .
 
 RUN go mod download
 
-COPY ./apps/server .
-RUN go build -o /go/bin/server
+COPY . .
 
-COPY ./apps/job .
-RUN go build -o /go/bin/job
+RUN GIT_SHA=$(git rev-parse --short HEAD) && \
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux
 
-COPY ./apps/cli .
-RUN go build -o /go/bin/cli
+#Build server
+RUN go build -a \
+    -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
+    -o /go/bin/server \
+    ./apps/server
+
+#Build job
+RUN go build -a \
+    -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
+    -o /go/bin/job \
+    ./apps/job
+
+#Build cli
+RUN go build -a \
+    -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
+    -o /go/bin/cli \
+    ./apps/cli
 
 FROM alpine:3.10
 
@@ -25,4 +39,4 @@ COPY --from=builder /go/bin/job /go/bin/job
 COPY --from=builder /go/bin/cli /go/bin/cli
 
 EXPOSE 8081
-ENTRYPOINT ["/go/bin/server"]
+CMD ["/go/bin/server"]
