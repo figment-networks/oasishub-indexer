@@ -1,7 +1,7 @@
 package getdebondingdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/mappers/debondingdelegationseqmapper"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError)
+	Execute(height *types.Height) (*debondingdelegationseqmapper.ListView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,21 +30,28 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) ([]debondingdelegationseq.Model, errors.ApplicationError) {
-	if height == nil {
-		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
-		if err != nil {
-			return nil, err
-		}
-		height = h
-	}
-
-	ds, err := uc.debondingDelegationDbRepo.GetByHeight(*height)
+func (uc *useCase) Execute(height *types.Height) (*debondingdelegationseqmapper.ListView, errors.ApplicationError) {
+	// Get last indexed height
+	lastH, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 	if err != nil {
 		return nil, err
 	}
 
-	return ds, nil
+	// Show last synced height, if not provided
+	if height == nil {
+		height = lastH
+	}
+
+	if height.Larger(*lastH) {
+		return nil, errors.NewErrorFromMessage("height is not indexed", errors.ServerInvalidParamsError)
+	}
+
+	dds, err := uc.debondingDelegationDbRepo.GetByHeight(*height)
+	if err != nil {
+		return nil, err
+	}
+
+	return debondingdelegationseqmapper.ToListView(dds), nil
 }
 
 

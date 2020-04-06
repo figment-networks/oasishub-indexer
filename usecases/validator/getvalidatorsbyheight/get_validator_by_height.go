@@ -1,6 +1,7 @@
 package getvalidatorsbyheight
 
 import (
+	"github.com/figment-networks/oasishub-indexer/mappers/validatorseqmapper"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
@@ -8,8 +9,10 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
 
+var _ UseCase = (*useCase)(nil)
+
 type UseCase interface {
-	Execute(height *types.Height) (*Response, errors.ApplicationError)
+	Execute(height *types.Height) (*validatorseqmapper.ListView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -33,13 +36,20 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) (*validatorseqmapper.ListView, errors.ApplicationError) {
+	// Get last indexed height
+	lastH, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	// Show last synced height, if not provided
 	if height == nil {
-		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
-		if err != nil {
-			return nil, err
-		}
-		height = h
+		height = lastH
+	}
+
+	if height.Larger(*lastH) {
+		return nil, errors.NewErrorFromMessage("height is not indexed", errors.ServerInvalidParamsError)
 	}
 
 	vs, err := uc.validatorSeqDbRepo.GetByHeight(*height)
@@ -47,9 +57,6 @@ func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationE
 		return nil, err
 	}
 
-	resp := &Response{
-		Validators: vs,
-	}
-	return resp, nil
+	return validatorseqmapper.ToListView(vs), nil
 }
 

@@ -3,6 +3,8 @@ package accountaggmapper
 import (
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
 	"github.com/figment-networks/oasishub-indexer/models/accountagg"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -23,13 +25,13 @@ func ToAggregate(stateSyncable *syncable.Model) ([]accountagg.Model, errors.Appl
 				StartedAt:       stateSyncable.Time,
 			},
 
-			PublicKey:                      types.PublicKey(publicKey.String()),
-			LastGeneralBalance:             types.NewQuantity(info.General.Balance.ToBigInt()),
-			LastGeneralNonce:               types.Nonce(info.General.Nonce),
-			LastEscrowActiveBalance:        types.NewQuantity(info.Escrow.Active.Balance.ToBigInt()),
-			LastEscrowActiveTotalShares:    types.NewQuantity(info.Escrow.Active.TotalShares.ToBigInt()),
-			LastEscrowDebondingBalance:     types.NewQuantity(info.Escrow.Debonding.Balance.ToBigInt()),
-			LastEscrowDebondingTotalShares: types.NewQuantity(info.Escrow.Debonding.TotalShares.ToBigInt()),
+			PublicKey:                         types.PublicKey(publicKey.String()),
+			CurrentGeneralBalance:             types.NewQuantity(info.General.Balance.ToBigInt()),
+			CurrentGeneralNonce:               types.Nonce(info.General.Nonce),
+			CurrentEscrowActiveBalance:        types.NewQuantity(info.Escrow.Active.Balance.ToBigInt()),
+			CurrentEscrowActiveTotalShares:    types.NewQuantity(info.Escrow.Active.TotalShares.ToBigInt()),
+			CurrentEscrowDebondingBalance:     types.NewQuantity(info.Escrow.Debonding.Balance.ToBigInt()),
+			CurrentEscrowDebondingTotalShares: types.NewQuantity(info.Escrow.Debonding.TotalShares.ToBigInt()),
 		}
 
 		if !acc.Valid() {
@@ -41,18 +43,18 @@ func ToAggregate(stateSyncable *syncable.Model) ([]accountagg.Model, errors.Appl
 	return accounts, nil
 }
 
-func ToView(s *accountagg.Model) map[string]interface{} {
-	return map[string]interface{}{
-		"id":                s.ID,
-		"started_at_height": s.StartedAtHeight,
-		"started_at":        s.StartedAt,
+type DetailsView struct {
+	*accountagg.Model
 
-		"public_key":                         s.PublicKey,
-		"last_general_balance":               s.LastGeneralBalance.String(),
-		"last_general_nonce":                 s.LastGeneralNonce,
-		"last_escrow_active_balance":         s.LastEscrowActiveBalance.String(),
-		"last_escrow_active_total_shares":    s.LastEscrowActiveTotalShares.String(),
-		"last_escrow_debonding_balance":      s.LastEscrowDebondingBalance.String(),
-		"last_escrow_debonding_total_shares": s.LastEscrowDebondingTotalShares.String(),
+	CurrentDelegations         []delegationseq.Model          `json:"current_delegations"`
+	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
+}
+
+func ToDetailsView(s *accountagg.Model, ds []delegationseq.Model, dds []debondingdelegationseq.Model) *DetailsView {
+	return &DetailsView{
+		Model:                      s,
+
+		CurrentDelegations:         ds,
+		RecentDebondingDelegations: dds,
 	}
 }

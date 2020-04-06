@@ -1,6 +1,8 @@
 package getblockbyheight
 
 import (
+	"github.com/figment-networks/oasishub-indexer/mappers/blockseqmapper"
+	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
@@ -10,7 +12,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) (*Response, errors.ApplicationError)
+	Execute(height *types.Height) (*blockseqmapper.DetailsView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -37,13 +39,34 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) (*blockseqmapper.DetailsView, errors.ApplicationError) {
+	// Get last indexed height
+	lastH, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	// Show last synced height, if not provided
 	if height == nil {
-		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
-		if err != nil {
+		height = lastH
+	}
+
+	if height.Larger(*lastH) {
+		return nil, errors.NewErrorFromMessage("height is not indexed", errors.ServerInvalidParamsError)
+	}
+
+	// First check if syncable is in database
+	s, err := uc.syncableDbRepo.GetByHeight(syncable.BlockType, *height)
+	if err != nil {
+		if err.Status() == errors.NotFoundError {
+			// If it is not there get it from proxy
+			s, err = uc.syncableProxyRepo.GetByHeight(syncable.BlockType, *height)
+			if err != nil {
+				return nil, err
+			}
+		} else {
 			return nil, err
 		}
-		height = h
 	}
 
 	bs, err := uc.blockSeqDbRepo.GetByHeight(*height)
@@ -55,15 +78,11 @@ func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationE
 	if err != nil {
 		return nil, err
 	}
-	bs.Validators = vs
 
 	ts, err := uc.transactionSeqDbRepo.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
-	bs.Transactions = ts
 
-	resp := &Response{Model: bs}
-
-	return resp, nil
+	return blockseqmapper.ToDetailsView(bs, *s, vs, ts)
 }

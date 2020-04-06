@@ -15,7 +15,7 @@ type DbRepo interface {
 	Exists(types.Height) bool
 	GetByHeight(types.Height) ([]delegationseq.Model, errors.ApplicationError)
 	GetLastByValidatorUID(types.PublicKey) ([]delegationseq.Model, errors.ApplicationError)
-	GetLastByDelegatorUID(types.PublicKey) ([]delegationseq.Model, errors.ApplicationError)
+	GetCurrentByDelegatorUID(types.PublicKey) ([]delegationseq.Model, errors.ApplicationError)
 
 	// Commands
 	Create(*delegationseq.Model) errors.ApplicationError
@@ -71,7 +71,7 @@ func (r *dbRepo) GetLastByValidatorUID(key types.PublicKey) ([]delegationseq.Mod
 	return ms, nil
 }
 
-func (r *dbRepo) GetLastByDelegatorUID(key types.PublicKey) ([]delegationseq.Model, errors.ApplicationError) {
+func (r *dbRepo) GetCurrentByDelegatorUID(key types.PublicKey) ([]delegationseq.Model, errors.ApplicationError) {
 	q := delegationseq.Model{
 		DelegatorUID:  key,
 	}

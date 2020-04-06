@@ -17,7 +17,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecases/block/getblockbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/block/getblocktimes"
 	"github.com/figment-networks/oasishub-indexer/usecases/block/getblocktimesforinterval"
-	"github.com/figment-networks/oasishub-indexer/usecases/delegation/getdebondingdelegationsbyheight"
+	"github.com/figment-networks/oasishub-indexer/usecases/debondingdelegation/getdebondingdelegationsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/delegation/getdelegationsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/ping"
 	"github.com/figment-networks/oasishub-indexer/usecases/staking/getstakingbyheight"

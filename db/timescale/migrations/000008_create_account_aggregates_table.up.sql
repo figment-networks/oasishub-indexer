@@ -11,12 +11,12 @@ CREATE TABLE IF NOT EXISTS account_aggregates
 
 -- Custom
     public_key                         TEXT,
-    last_general_balance               DECIMAL(65, 0)           NOT NULL,
-    last_general_nonce                 NUMERIC                  NOT NULL,
-    last_escrow_active_balance         DECIMAL(65, 0)           NOT NULL,
-    last_escrow_active_total_shares    DECIMAL(65, 0)           NOT NULL,
-    last_escrow_debonding_balance      DECIMAL(65, 0)           NOT NULL,
-    last_escrow_debonding_total_shares DECIMAL(65, 0)           NOT NULL,
+    current_general_balance               DECIMAL(65, 0)           NOT NULL,
+    current_general_nonce                 NUMERIC                  NOT NULL,
+    current_escrow_active_balance         DECIMAL(65, 0)           NOT NULL,
+    current_escrow_active_total_shares    DECIMAL(65, 0)           NOT NULL,
+    current_escrow_debonding_balance      DECIMAL(65, 0)           NOT NULL,
+    current_escrow_debonding_total_shares DECIMAL(65, 0)           NOT NULL,
 
     PRIMARY KEY (id)
 );

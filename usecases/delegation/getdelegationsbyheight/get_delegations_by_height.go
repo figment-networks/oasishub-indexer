@@ -1,7 +1,7 @@
 package getdelegationsbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
+	"github.com/figment-networks/oasishub-indexer/mappers/delegationseqmapper"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -9,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) ([]delegationseq.Model, errors.ApplicationError)
+	Execute(height *types.Height) (*delegationseqmapper.ListView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -30,13 +30,20 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) ([]delegationseq.Model, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) (*delegationseqmapper.ListView, errors.ApplicationError) {
+	// Get last indexed height
+	lastH, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	// Show last synced height, if not provided
 	if height == nil {
-		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
-		if err != nil {
-			return nil, err
-		}
-		height = h
+		height = lastH
+	}
+
+	if height.Larger(*lastH) {
+		return nil, errors.NewErrorFromMessage("height is not indexed", errors.ServerInvalidParamsError)
 	}
 
 	ds, err := uc.delegationDbRepo.GetByHeight(*height)
@@ -44,6 +51,6 @@ func (uc *useCase) Execute(height *types.Height) ([]delegationseq.Model, errors.
 		return nil, err
 	}
 
-	return ds, nil
+	return delegationseqmapper.ToListView(ds), nil
 }
 

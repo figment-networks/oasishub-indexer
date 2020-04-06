@@ -5,6 +5,8 @@ import (
 	"github.com/figment-networks/oasishub-indexer/models/blockseq"
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
+	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
+	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 )
@@ -48,15 +50,36 @@ func ToSequence(blockSyncable syncable.Model, validatorsSyncable syncable.Model)
 	return e, nil
 }
 
-func ToView(s *blockseq.Model) map[string]interface{} {
-	return map[string]interface{}{
-		"id":       s.ID,
-		"height":   s.Height,
-		"time":     s.Time,
-		"chain_id": s.ChainId,
+type DetailsView struct {
+	*shared.Model
+	*shared.Sequence
 
-		"transactions_count": s.TransactionsCount,
-		"app_version":        s.AppVersion,
-		"block_version":      s.BlockVersion,
+	Hash              types.Hash      `json:"hash"`
+	ProposerEntityUID types.PublicKey `json:"proposer_entity_uid"`
+	AppVersion        int64           `json:"app_version"`
+	BlockVersion      int64           `json:"block_version"`
+	TransactionsCount types.Count     `json:"transactions_count"`
+
+	Validators   []validatorseq.Model   `json:"validators"`
+	Transactions []transactionseq.Model `json:"transactions"`
+}
+
+func ToDetailsView(m *blockseq.Model, s syncable.Model, vs []validatorseq.Model, ts []transactionseq.Model) (*DetailsView, errors.ApplicationError) {
+	blockData, err := syncablemapper.UnmarshalBlockData(s.Data)
+	if err != nil {
+		return nil, err
 	}
+
+	return &DetailsView{
+		Model: m.Model,
+		Sequence: m.Sequence,
+
+		Hash:              types.Hash(blockData.Data.Header.LastBlockID.Hash.String()),
+		AppVersion:        int64(blockData.Data.Header.Version.App),
+		BlockVersion:      int64(blockData.Data.Header.Version.Block),
+		TransactionsCount: types.Count(blockData.Data.Header.NumTxs),
+
+		Validators: vs,
+		Transactions: ts,
+	}, nil
 }

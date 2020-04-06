@@ -43,21 +43,12 @@ func ToSequence(stateSyncable *syncable.Model) ([]debondingdelegationseq.Model, 
 	return delegations, nil
 }
 
-func ToView(ts []*debondingdelegationseq.Model) []map[string]interface{} {
-	var items []map[string]interface{}
-	for _, t := range ts {
-		i := map[string]interface{}{
-			"id":       t.ID,
-			"height":   t.Height,
-			"time":     t.Time,
-			"chain_id": t.ChainId,
+type ListView struct {
+	Items []debondingdelegationseq.Model `json:"items"`
+}
 
-			"validator_uid": t.ValidatorUID,
-			"delegator_uid": t.DelegatorUID,
-			"shares":        t.Shares.String(),
-			"debond_end":    t.DebondEnd,
-		}
-		items = append(items, i)
+func ToListView(ms []debondingdelegationseq.Model) *ListView {
+	return &ListView{
+		Items: ms,
 	}
-	return items
 }

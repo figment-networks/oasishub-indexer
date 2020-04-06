@@ -1,7 +1,6 @@
 package getstakingbyheight
 
 import (
-	"github.com/figment-networks/oasishub-indexer/models/stakingseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -19,10 +18,6 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 
 type Request struct {
 	Height *types.Height `form:"height" binding:"-"`
-}
-
-type Response struct {
-	*stakingseq.Model
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

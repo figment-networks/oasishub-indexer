@@ -2,8 +2,6 @@ package blockseq
 
 import (
 	"github.com/figment-networks/oasishub-indexer/models/shared"
-	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
-	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 )
 
@@ -17,10 +15,6 @@ type Model struct {
 	AppVersion        int64           `json:"app_version"`
 	BlockVersion      int64           `json:"block_version"`
 	TransactionsCount types.Count     `json:"transactions_count"`
-
-	// Associations
-	Validators   []validatorseq.Model     `json:"validators"`
-	Transactions []transactionseq.Model `json:"transactions"`
 }
 
 // - METHODS

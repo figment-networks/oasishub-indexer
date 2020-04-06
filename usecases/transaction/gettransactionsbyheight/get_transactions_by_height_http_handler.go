@@ -20,10 +20,6 @@ type Request struct {
 	Height *types.Height `form:"height" binding:"-"`
 }
 
-type Response struct {
-
-}
-
 func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -33,13 +29,13 @@ func (h *httpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	txs, err := h.useCase.Execute(req.Height)
+	resp, err := h.useCase.Execute(req.Height)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, txs)
+	c.JSON(http.StatusOK, resp)
 }
 

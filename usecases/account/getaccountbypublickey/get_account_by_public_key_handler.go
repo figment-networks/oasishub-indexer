@@ -1,9 +1,6 @@
 package getaccountbypublickey
 
 import (
-	"github.com/figment-networks/oasishub-indexer/models/accountagg"
-	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
-	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -21,14 +18,6 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 
 type Request struct {
 	PublicKey types.PublicKey `form:"public_key" binding:"required"`
-}
-
-type Response struct {
-	*accountagg.Model
-
-	LastHeight                 types.Height                               `json:"last_height"`
-	LastDelegations            []delegationseq.Model          `json:"last_delegations"`
-	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {

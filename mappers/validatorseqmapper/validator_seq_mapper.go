@@ -2,6 +2,9 @@ package validatorseqmapper
 
 import (
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
+	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
+	"github.com/figment-networks/oasishub-indexer/models/entityagg"
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
@@ -47,7 +50,7 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 			var pType int64
 			// Account for situation when there is more validators than precommits
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
-			if i > len(blockData.Data.LastCommit.Precommits) - 1 {
+			if i > len(blockData.Data.LastCommit.Precommits)-1 {
 				index = int64(i)
 			} else {
 				precommit := blockData.Data.LastCommit.Precommits[i]
@@ -86,22 +89,39 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 	return validators, nil
 }
 
-func ToView(ts []*validatorseq.Model) []map[string]interface{} {
-	var items []map[string]interface{}
-	for _, t := range ts {
-		i := map[string]interface{}{
-			"id":       t.ID,
-			"height":   t.Height,
-			"time":     t.Time,
-			"chain_id": t.ChainId,
+type ListView struct {
+	Items []validatorseq.Model `json:"items"`
+}
 
-			"entity_uid":    t.EntityUID,
-			"node_uid":      t.NodeUID,
-			"consensus_uid": t.ConsensusUID,
-			"voting_power":  t.VotingPower,
-			"proposed":      t.Proposed,
-		}
-		items = append(items, i)
+func ToListView(ms []validatorseq.Model) *ListView {
+	return &ListView{
+		Items: ms,
 	}
-	return items
+}
+
+type DetailsView struct {
+	*shared.Model
+	*shared.Aggregate
+
+	EntityUID types.PublicKey `json:"entity_uid"`
+
+	TotalValidated             int64                          `json:"total_validated"`
+	TotalMissed                int64                          `json:"total_missed"`
+	TotalProposed              int64                          `json:"total_proposed"`
+	CurrentDelegations         []delegationseq.Model          `json:"current_delegations"`
+	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
+}
+
+func ToDetailsView(m entityagg.Model, totV int64, totM int64, totP int64, currDs []delegationseq.Model, recDds []debondingdelegationseq.Model) *DetailsView {
+	return &DetailsView{
+		Model:     m.Model,
+		Aggregate: m.Aggregate,
+
+		TotalValidated: totV,
+		TotalMissed:    totM,
+		TotalProposed:  totP,
+
+		CurrentDelegations:         currDs,
+		RecentDebondingDelegations: recDds,
+	}
 }

@@ -42,24 +42,12 @@ func ToSequence(transactionsSyncable syncable.Model) ([]transactionseq.Model, er
 	return transactions, nil
 }
 
-func ToView(ts []*transactionseq.Model) []map[string]interface{} {
-	var items []map[string]interface{}
-	for _, t := range ts {
-		i := map[string]interface{}{
-			"id":         t.ID,
-			"height":     t.Height,
-			"time":       t.Time,
-			"chain_id":   t.ChainId,
+type ListView struct {
+	Items []transactionseq.Model `json:"items"`
+}
 
-			"public_key": t.PublicKey,
-			"hash":       t.Hash,
-			"nonce":      t.Nonce,
-			"gas_price":  t.GasPrice,
-			"gas_limit":  t.GasLimit,
-			"fee":        t.Fee,
-			"method":     t.Method,
-		}
-		items = append(items, i)
+func ToListView(ts []transactionseq.Model) *ListView {
+	return &ListView{
+		Items: ts,
 	}
-	return items
 }

@@ -1,6 +1,7 @@
 package getaccountbypublickey
 
 import (
+	"github.com/figment-networks/oasishub-indexer/mappers/accountaggmapper"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
@@ -10,7 +11,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(key types.PublicKey) (*Response, errors.ApplicationError)
+	Execute(key types.PublicKey) (*accountaggmapper.DetailsView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -37,31 +38,21 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(key types.PublicKey) (*Response, errors.ApplicationError) {
+func (uc *useCase) Execute(key types.PublicKey) (*accountaggmapper.DetailsView, errors.ApplicationError) {
 	aa, err := uc.accountSeqDbRepo.GetByPublicKey(key)
 	if err != nil {
 		return nil, err
 	}
 
-	resp := &Response{Model: aa}
-
-	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+	ds, err := uc.delegationSeqDbRepo.GetCurrentByDelegatorUID(key)
 	if err != nil {
 		return nil, err
 	}
-	resp.LastHeight = *h
-
-	ds, err := uc.delegationSeqDbRepo.GetLastByDelegatorUID(key)
-	if err != nil {
-		return nil, err
-	}
-	resp.LastDelegations = ds
 
 	dds, err := uc.debondingDelegationSeqDbRepo.GetRecentByDelegatorUID(key, 5)
 	if err != nil {
 		return nil, err
 	}
-	resp.RecentDebondingDelegations = dds
 
-	return resp, nil
+	return accountaggmapper.ToDetailsView(aa, ds, dds), nil
 }

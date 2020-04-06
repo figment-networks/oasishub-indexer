@@ -10,6 +10,10 @@ func (h Height) Equal(o Height) bool {
 	return h == o
 }
 
+func (h Height) Larger(o Height) bool {
+	return h > o
+}
+
 func (h Height) Int64() int64 {
 	return int64(h)
 }

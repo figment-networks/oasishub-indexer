@@ -1,6 +1,7 @@
 package getstakingbyheight
 
 import (
+	"github.com/figment-networks/oasishub-indexer/mappers/stakingseqmapper"
 	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -8,7 +9,7 @@ import (
 )
 
 type UseCase interface {
-	Execute(height *types.Height) (*Response, errors.ApplicationError)
+	Execute(height *types.Height) (*stakingseqmapper.DetailsView, errors.ApplicationError)
 }
 
 type useCase struct {
@@ -29,13 +30,20 @@ func NewUseCase(
 	}
 }
 
-func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationError) {
+func (uc *useCase) Execute(height *types.Height) (*stakingseqmapper.DetailsView, errors.ApplicationError) {
+	// Get last indexed height
+	lastH, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+	if err != nil {
+		return nil, err
+	}
+
+	// Show last synced height, if not provided
 	if height == nil {
-		h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
-		if err != nil {
-			return nil, err
-		}
-		height = h
+		height = lastH
+	}
+
+	if height.Larger(*lastH) {
+		return nil, errors.NewErrorFromMessage("height is not indexed", errors.ServerInvalidParamsError)
 	}
 
 	ss, err := uc.stakingDbRepo.GetByHeight(*height)
@@ -43,8 +51,6 @@ func (uc *useCase) Execute(height *types.Height) (*Response, errors.ApplicationE
 		return nil, err
 	}
 
-	resp := &Response{Model: ss}
-
-	return resp, nil
+	return stakingseqmapper.ToDetailsView(ss), nil
 }
 
