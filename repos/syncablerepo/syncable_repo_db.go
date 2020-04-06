@@ -22,7 +22,7 @@ type DbRepo interface {
 	Save(*syncable.Model) errors.ApplicationError
 	Create(*syncable.Model) errors.ApplicationError
 	Upsert(syncable.Type, types.Height, *syncable.Model) errors.ApplicationError
-	DeleteLast(syncable.Type, int64) errors.ApplicationError
+	DeletePrevByHeight(types.Height) errors.ApplicationError
 }
 
 type dbRepo struct {
@@ -139,16 +139,9 @@ func (r *dbRepo) Upsert(t syncable.Type, h types.Height, m *syncable.Model) erro
 	return nil
 }
 
-func (r *dbRepo) DeleteLast(t syncable.Type, offset int64) errors.ApplicationError {
-	q := typeQuery(t)
-	var ms []syncable.Model
-	var ids []int64
-	if err := r.client.Where(&q).Order("id asc").Offset(offset).Find(&ms).Pluck("id", &ids).Error; err != nil {
-		return errors.NewError(fmt.Sprintf("could not get syncable ids with offset %d", offset), errors.QueryError, err)
-	}
-
-	if err := r.client.Where(ids).Delete(&syncable.Model{}).Error; err != nil {
-		return errors.NewError("could not delete syncable", errors.DeleteError, err)
+func (r *dbRepo) DeletePrevByHeight(maxHeight types.Height) errors.ApplicationError {
+	if err := r.client.Debug().Where("height <= ?", maxHeight).Delete(&syncable.Model{}).Error; err != nil {
+		return errors.NewError("could not delete syncables", errors.DeleteError, err)
 	}
 	return nil
 }

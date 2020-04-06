@@ -143,7 +143,7 @@ func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, er
 		endH = types.Height(startH.Int64()+batchSize) - 1
 	}
 
-	log.Debug(fmt.Sprintf("iterator: %d - %d", startH, endH))
+	log.Info(fmt.Sprintf("iterator: %d - %d", startH, endH))
 
 	i := iterators.NewHeightIterator(startH, endH)
 

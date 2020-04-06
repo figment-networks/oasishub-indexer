@@ -27,6 +27,7 @@ const (
 
 	// Pipeline errors
 	PipelineProcessingError = "pipeline_processing_error"
+	CleanupError = "pipeline_cleanup_error"
 
 	// Handler errors
 	ServerInvalidParamsError = "server_handler_invalid_params_error"

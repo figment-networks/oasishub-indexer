@@ -16,13 +16,11 @@ const (
 	batchSize = "CLI_BATCH_SIZE_ARG"
 
 	// Job
-	pingInterval      = "PING_INTERVAL"
-	syncInterval      = "SYNC_INTERVAL"
-	processInterval   = "PROCESS_INTERVAL"
-	cleanupInterval   = "CLEANUP_INTERVAL"
-	pipelineBatchSize = "BLOCK_SYNC_BATCH_SIZE"
-	firstBlockHeight  = "FIRST_BLOCK_HEIGHT"
-	cleanupThreshold  = "CLEANUP_THRESHOLD"
+	pipelineBatchSize  = "BLOCK_SYNC_BATCH_SIZE"
+	processingInterval = "PROCESSING_INTERVAL"
+	cleanupInterval    = "CLEANUP_INTERVAL"
+	firstBlockHeight   = "FIRST_BLOCK_HEIGHT"
+	cleanupThreshold   = "CLEANUP_THRESHOLD"
 
 	// Database
 	dbUser        = "DB_USER"
@@ -30,7 +28,7 @@ const (
 	dbHost        = "DB_HOST"
 	dbName        = "DB_NAME"
 	dbDetailedLog = "DB_DETAILED_LOG"
-	dbSSLMode	  = "DB_SSL_MODE"
+	dbSSLMode     = "DB_SSL_MODE"
 
 	production  = "production"
 	development = "development"
@@ -45,13 +43,11 @@ var (
 
 	defaultBatchSize = "batchSize"
 
-	defaultPipelineBatchSize int64 = 1
-	defaultPingInterval            = "@every 20s"
-	defaultSyncInterval            = "@every 20s"
-	defaultProcessInterval         = "@every 20s"
-	defaultCleanupInterval         = "@every 20s"
-	defaultFirstBlockHeight  int64 = 1
-	defaultCleanupThreshold  int64 = 1000
+	defaultPipelineBatchSize  int64 = 1
+	defaultProcessingInterval       = "@every 13s"
+	defaultCleanupInterval          = "@every 5s"
+	defaultFirstBlockHeight   int64 = 1
+	defaultCleanupThreshold   int64 = 5
 
 	defaultDbUser        = "postgres"
 	defaultDbPassword    = "password"
@@ -59,7 +55,6 @@ var (
 	defaultDbName        = "app"
 	defaultSSLMode       = "disable"
 	dbDefaultDetailedLog = false
-
 )
 
 func init() {
@@ -72,9 +67,7 @@ func init() {
 	viper.SetDefault(batchSize, defaultBatchSize)
 
 	viper.SetDefault(pipelineBatchSize, defaultPipelineBatchSize)
-	viper.SetDefault(pingInterval, defaultPingInterval)
-	viper.SetDefault(syncInterval, defaultSyncInterval)
-	viper.SetDefault(processInterval, defaultProcessInterval)
+	viper.SetDefault(processingInterval, defaultProcessingInterval)
 	viper.SetDefault(cleanupInterval, defaultCleanupInterval)
 	viper.SetDefault(firstBlockHeight, defaultFirstBlockHeight)
 	viper.SetDefault(cleanupThreshold, defaultCleanupThreshold)
@@ -95,9 +88,7 @@ func init() {
 	viper.BindEnv(batchSize)
 
 	viper.BindEnv(pipelineBatchSize)
-	viper.BindEnv(pingInterval)
-	viper.BindEnv(syncInterval)
-	viper.BindEnv(processInterval)
+	viper.BindEnv(processingInterval)
 	viper.BindEnv(cleanupInterval)
 	viper.BindEnv(firstBlockHeight)
 	viper.BindEnv(cleanupThreshold)
@@ -138,16 +129,8 @@ func PipelineBatchSize() int64 {
 	return viper.GetInt64(pipelineBatchSize)
 }
 
-func PingInterval() string {
-	return viper.GetString(pingInterval)
-}
-
-func SyncInterval() string {
-	return viper.GetString(syncInterval)
-}
-
-func ProcessInterval() string {
-	return viper.GetString(processInterval)
+func ProcessingInterval() string {
+	return viper.GetString(processingInterval)
 }
 
 func CleanupInterval() string {
