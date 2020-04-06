@@ -9,12 +9,20 @@ COPY ./go.sum .
 
 RUN go mod download
 
-COPY . .
+COPY ./apps/server .
+RUN go build -o /go/bin/server
 
-RUN go build -o oasishub
+COPY ./apps/job .
+RUN go build -o /go/bin/job
 
-#FROM golang:1.13.7-alpine3.10
-#COPY --from=builder /app/oasishub /app/
+COPY ./apps/cli .
+RUN go build -o /go/bin/cli
+
+FROM alpine:3.10
+
+COPY --from=builder /go/bin/server /go/bin/server
+COPY --from=builder /go/bin/job /go/bin/job
+COPY --from=builder /go/bin/cli /go/bin/cli
 
 EXPOSE 8081
-#ENTRYPOINT ["/app/oasishub"]
+ENTRYPOINT ["/go/bin/server"]

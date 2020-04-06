@@ -7,17 +7,6 @@ services:
     ports:
       - "6379:6379"
 
-  db:
-    image: postgres:10-alpine
-    ports:
-      - "5432:5432"
-    volumes:
-      - db-data:/var/lib/postgresql/data/
-    environment:
-      - POSTGRES_DB=oasishub
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
-
   timedb:
     image: timescale/timescaledb:latest-pg10
     ports:
@@ -42,9 +31,9 @@ services:
       - postgres://postgres:password@timedb:5432/oasishub?sslmode=disable
 
   # SERVICES
-  backend:
-    container_name: oasishub-backend
-    build: ./
+  server:
+    container_name: oasishub-indexer-server
+    build: .
     command: /app/oasishub serve
     ports:
       - "8081:8081"
@@ -57,6 +46,17 @@ services:
     depends_on:
       - db
 
+  job:
+    container_name: oasishub-indexer-job
+    build: .
+    command: /app/oasishub serve
+    environment:
+      - DB_HOST=db
+      - DB_NAME=oasishub
+      - DB_USER=postgres
+      - DB_PASSWORD=password
+    depends_on:
+      - db
+
 volumes:
-  db-data:
   timedb-data:
