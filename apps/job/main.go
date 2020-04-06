@@ -15,6 +15,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/usecases/syncable/cleanup"
 	"github.com/figment-networks/oasishub-indexer/usecases/syncable/startpipeline"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/robfig/cron/v3"
 )
@@ -27,6 +28,8 @@ var (
 )
 
 func main() {
+	defer errors.RecoverError()
+
 	// CLIENTS
 	node := shared.NewNodeClient()
 	db := shared.NewDbClient()
@@ -79,7 +82,6 @@ func main() {
 	job = cron.NewChain(cron.SkipIfStillRunning(cronLog)).Then(job)
 	_, err := cronJob.AddJob(config.ProcessingInterval(), job)
 	if err != nil {
-		log.Error(err)
 		panic(err)
 	}
 
@@ -88,9 +90,10 @@ func main() {
 	job = cron.NewChain(cron.SkipIfStillRunning(cronLog)).Then(job)
 	_, err = cronJob.AddJob(config.CleanupInterval(), job)
 	if err != nil {
-		log.Error(err)
 		panic(err)
 	}
+
+	log.Info("starting cron job")
 
 	cronJob.Start()
 

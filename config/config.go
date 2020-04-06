@@ -32,6 +32,9 @@ const (
 
 	production  = "production"
 	development = "development"
+
+	// Rollbar
+	rollbarAccessToken = "ROLLBAR_ACCESS_TOKEN"
 )
 
 var (
@@ -99,6 +102,8 @@ func init() {
 	viper.BindEnv(dbName)
 	viper.BindEnv(dbSSLMode)
 	viper.BindEnv(dbDetailedLog)
+
+	viper.BindEnv(rollbarAccessToken)
 }
 
 func AppPort() string {
@@ -167,4 +172,8 @@ func DbSSLMode() string {
 
 func DbDetailedLog() bool {
 	return viper.GetBool(dbDetailedLog)
+}
+
+func RollbarAccessToken() string {
+	return viper.GetString(rollbarAccessToken)
 }

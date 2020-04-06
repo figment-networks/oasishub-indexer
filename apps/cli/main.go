@@ -15,6 +15,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/usecases/syncable/startpipeline"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -30,6 +31,8 @@ var (
 )
 
 func main() {
+	defer errors.RecoverError()
+
 	// CLIENTS
 	node := shared.NewNodeClient()
 	db := shared.NewDbClient()
@@ -74,7 +77,6 @@ func main() {
 	rootCmd.AddCommand(pipelineCmd)
 
 	if err := rootCmd.Execute(); err != nil {
-		log.Error(err)
 		panic(err)
 	}
 }

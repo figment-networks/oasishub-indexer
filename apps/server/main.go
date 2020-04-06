@@ -26,6 +26,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/gettotalsharesforinterval"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getvalidatorsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getvalidatorsharesforinterval"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
 	"github.com/gin-gonic/gin"
 )
@@ -35,6 +36,8 @@ var (
 )
 
 func main() {
+	defer errors.RecoverError()
+
 	// CLIENTS
 	node := shared.NewNodeClient()
 	db := shared.NewDbClient()
@@ -97,7 +100,7 @@ func main() {
 	router.GET("/debonding_delegations", getDebondingDelegationsByHeightHandler.Handle)
 	router.GET("/accounts", getAccountByPublicKeyHandler.Handle)
 
-	log.Info(fmt.Sprintf("Starting application on port %s", config.AppPort()))
+	log.Info(fmt.Sprintf("Starting server on port %s", config.AppPort()))
 
 	// START SERVER
 	if err := router.Run(fmt.Sprintf(":%s", config.AppPort())); err != nil {
