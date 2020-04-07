@@ -2,8 +2,8 @@ package errors
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/pkg/errors"
 )
 
 const (
@@ -61,10 +61,12 @@ func (e applicationError) Status() string {
 }
 
 func NewError(message string, status string, err error) ApplicationError {
+	e := errors.Wrap(err, message)
+
 	return applicationError{
 		ErrMessage: message,
 		ErrStatus:  status,
-		ErrError:   err,
+		ErrError:   e,
 	}
 }
 

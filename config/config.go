@@ -54,7 +54,7 @@ var (
 
 	defaultDbUser        = "postgres"
 	defaultDbPassword    = "password"
-	defaultDbHost        = "db"
+	defaultDbHost        = "timedb"
 	defaultDbName        = "app"
 	defaultSSLMode       = "disable"
 	dbDefaultDetailedLog = false

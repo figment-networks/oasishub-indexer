@@ -11,23 +11,24 @@ RUN go mod download
 
 COPY . .
 
-RUN GIT_SHA=$(git rev-parse --short HEAD) && \
-    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux
 
-#Build server
-RUN go build -a \
+RUN GIT_SHA=$(git rev-parse --short HEAD) && \
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+    go build -a \
     -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
     -o /go/bin/server \
     ./apps/server
 
-#Build job
-RUN go build -a \
+RUN GIT_SHA=$(git rev-parse --short HEAD) && \
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+    go build -a \
     -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
     -o /go/bin/job \
     ./apps/job
 
-#Build cli
-RUN go build -a \
+RUN GIT_SHA=$(git rev-parse --short HEAD) && \
+    CGO_ENABLED=0 GOARCH=amd64 GOOS=linux \
+    go build -a \
     -ldflags "-extldflags '-static' -w -s -X main.appSha=$GIT_SHA" \
     -o /go/bin/cli \
     ./apps/cli
@@ -39,4 +40,4 @@ COPY --from=builder /go/bin/job /go/bin/job
 COPY --from=builder /go/bin/cli /go/bin/cli
 
 EXPOSE 8081
-CMD ["/go/bin/server"]
+ENTRYPOINT ["/go/bin/server"]
