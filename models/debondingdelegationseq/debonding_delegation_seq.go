@@ -38,7 +38,9 @@ func (d *Model) EqualOwn(m Model) bool {
 }
 
 func (d *Model) Equal(m Model) bool {
-	return d.Model.Equal(*m.Model) &&
+	return d.Model != nil &&
+		m.Model != nil &&
+		d.Model.Equal(*m.Model) &&
 		d.Sequence.Equal(*m.Sequence) &&
 		d.EqualOwn(m)
 }

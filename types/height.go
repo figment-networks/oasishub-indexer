@@ -6,6 +6,10 @@ func (h Height) Valid() bool {
 	return h >= 0
 }
 
+func (h Height) Add(o Height) Height {
+	return Height(int64(h) + int64(o))
+}
+
 func (h Height) Equal(o Height) bool {
 	return h == o
 }

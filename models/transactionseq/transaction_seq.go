@@ -35,13 +35,14 @@ func (ts *Model) EqualOwn(m Model) bool {
 }
 
 func (ts *Model) Valid() bool {
-	return ts.Model.Valid() &&
-		ts.Sequence.Valid() &&
+	return ts.Sequence.Valid() &&
 		ts.ValidOwn()
 }
 
 func (ts *Model) Equal(m Model) bool {
-	return ts.Model.Equal(*m.Model) &&
+	return ts.Model != nil &&
+		m.Model != nil &&
+		ts.Model.Equal(*m.Model) &&
 		ts.Sequence.Equal(*m.Sequence) &&
 		ts.EqualOwn(m)
 }

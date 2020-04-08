@@ -46,11 +46,11 @@ var (
 
 	defaultBatchSize = "batchSize"
 
-	defaultPipelineBatchSize  int64 = 10
-	defaultProcessingInterval       = "@every 20s"
-	defaultCleanupInterval          = "@every 100s"
+	defaultPipelineBatchSize  int64 = 55
+	defaultProcessingInterval       = "@every 10s"
+	defaultCleanupInterval          = "@every 10m"
 	defaultFirstBlockHeight   int64 = 1
-	defaultCleanupThreshold   int64 = 100
+	defaultCleanupThreshold   int64 = 1000
 
 	defaultDbUser        = "postgres"
 	defaultDbPassword    = "password"

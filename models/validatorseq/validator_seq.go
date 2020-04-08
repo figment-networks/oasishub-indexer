@@ -40,13 +40,14 @@ func (vs *Model) EqualOwn(m Model) bool {
 }
 
 func (vs *Model) Valid() bool {
-	return vs.Model.Valid() &&
-		vs.Sequence.Valid() &&
+	return vs.Sequence.Valid() &&
 		vs.ValidOwn()
 }
 
 func (vs *Model) Equal(m Model) bool {
-	return vs.Model.Equal(*m.Model) &&
+	return vs.Model != nil &&
+		m.Model != nil &&
+		vs.Model.Equal(*m.Model) &&
 		vs.Sequence.Equal(*m.Sequence) &&
 		vs.EqualOwn(m)
 }

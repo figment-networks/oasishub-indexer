@@ -1,8 +1,8 @@
 package iterators
 
 import (
-	"fmt"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
@@ -17,8 +17,8 @@ type HeightIterator struct {
 
 func NewHeightIterator(start types.Height, end types.Height) *HeightIterator {
 	var err error
-	if end < 0 {
-		err = fmt.Errorf("'end' is %d, should be >= 0", end)
+	if start > end {
+		err = errors.NewErrorFromMessage("iterator value is not valid", errors.IteratorError)
 	}
 	return &HeightIterator{
 		start:   start,
@@ -38,9 +38,6 @@ func (i *HeightIterator) Next() bool {
 
 // Value returns current even number
 func (i *HeightIterator) Value() types.Height {
-	if i.err != nil || i.current > i.end {
-		panic("value is not valid after iterator finished")
-	}
 	return i.current
 }
 

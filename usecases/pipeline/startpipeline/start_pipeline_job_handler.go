@@ -2,6 +2,7 @@ package startpipeline
 
 import (
 	"context"
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
@@ -24,6 +25,7 @@ func (h *jobHandler) Handle() {
 	err := h.useCase.Execute(ctx, batchSize)
 	if err != nil {
 		log.Error(err)
+		fmt.Printf("Error: %+v", err)
 		return
 	}
 }

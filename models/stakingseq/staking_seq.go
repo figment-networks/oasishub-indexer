@@ -36,7 +36,9 @@ func (ss *Model) Valid() bool {
 }
 
 func (ss *Model) Equal(m Model) bool {
-	return ss.Model.Equal(*m.Model) &&
+	return ss.Model != nil &&
+		m.Model != nil &&
+		ss.Model.Equal(*m.Model) &&
 		ss.Sequence.Equal(*m.Sequence) &&
 		ss.EqualOwn(m)
 }

@@ -33,6 +33,8 @@ const (
 	ServerInvalidParamsError = "server_handler_invalid_params_error"
 	CliInvalidParamsError    = "cli_handler_invalid_params_error"
 	JobInvalidParamsError    = "job_handler_invalid_params_error"
+
+	IteratorError = "iterator_error"
 )
 
 type ApplicationError interface {

@@ -39,7 +39,9 @@ func (r *Model) Valid() bool {
 }
 
 func (r *Model) Equal(m Model) bool {
-	return r.Model.Equal(*m.Model) &&
+	return r.Model != nil &&
+		m.Model != nil &&
+		r.Model.Equal(*m.Model) &&
 		r.EqualOwn(m)
 }
 

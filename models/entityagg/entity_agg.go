@@ -32,7 +32,9 @@ func (aa *Model) Valid() bool {
 }
 
 func (aa *Model) Equal(m Model) bool {
-	return aa.Model.Equal(*m.Model) &&
+	return aa.Model != nil &&
+		m.Model != nil &&
+		aa.Model.Equal(*m.Model) &&
 		aa.Aggregate.Equal(*m.Aggregate) &&
 		aa.EqualOwn(m)
 }
