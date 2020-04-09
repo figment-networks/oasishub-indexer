@@ -7,7 +7,7 @@ import (
 )
 
 func NewNodeClient() restclient.HttpGetter {
-	return restclient.New(restclient.Config{BaseUrl: config.NodeUrl()})
+	return restclient.New(restclient.Config{BaseUrl: config.ProxyUrl()})
 
 }
 

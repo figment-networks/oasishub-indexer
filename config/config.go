@@ -7,7 +7,7 @@ import (
 
 const (
 	appPort       = "PORT"
-	nodeUrl       = "NODE_URL"
+	proxyUrl       = "PROXY_URL"
 	logLevel      = "LOG_LEVEL"
 	logOutput     = "LOG_OUTPUT"
 	goEnvironment = "GO_ENVIRONMENT"
@@ -39,7 +39,7 @@ const (
 
 var (
 	defaultAppPort       = "8081"
-	defaultNodeUrl       = "http://localhost:8080"
+	defaultProxyUrl       = "http://localhost:8080"
 	defaultLogLevel      = "info"
 	defaultLogOutput     = "stdout"
 	defaultGoEnvironment = development
@@ -62,7 +62,7 @@ var (
 
 func init() {
 	viper.SetDefault(appPort, defaultAppPort)
-	viper.SetDefault(nodeUrl, defaultNodeUrl)
+	viper.SetDefault(proxyUrl, defaultProxyUrl)
 	viper.SetDefault(logLevel, defaultLogLevel)
 	viper.SetDefault(logOutput, defaultLogOutput)
 	viper.SetDefault(goEnvironment, defaultGoEnvironment)
@@ -83,7 +83,7 @@ func init() {
 	viper.SetDefault(dbDetailedLog, dbDefaultDetailedLog)
 
 	viper.BindEnv(appPort)
-	viper.BindEnv(nodeUrl)
+	viper.BindEnv(proxyUrl)
 	viper.BindEnv(logLevel)
 	viper.BindEnv(logOutput)
 	viper.BindEnv(goEnvironment)
@@ -110,8 +110,8 @@ func AppPort() string {
 	return viper.GetString(appPort)
 }
 
-func NodeUrl() string {
-	return viper.GetString(nodeUrl)
+func ProxyUrl() string {
+	return viper.GetString(proxyUrl)
 }
 
 func LogLevel() string {

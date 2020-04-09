@@ -50,7 +50,7 @@ services:
     build: .
     entrypoint: /go/bin/job
     environment:
-      - NODE_URL=http://host.docker.internal:8080
+      - PROXY_URL=http://host.docker.internal:8080
       - DB_HOST=timedb
       - DB_NAME=oasishub
       - DB_USER=postgres
