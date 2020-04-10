@@ -29,6 +29,8 @@ services:
       - /migrations/
       - -database
       - postgres://postgres:password@timedb:5432/oasishub?sslmode=disable
+    depends_on:
+      - timedb
 
   server:
     container_name: oasishub-indexer-server
