@@ -7,7 +7,7 @@ import (
 
 const (
 	appPort       = "PORT"
-	proxyUrl       = "PROXY_URL"
+	proxyUrl      = "PROXY_URL"
 	logLevel      = "LOG_LEVEL"
 	logOutput     = "LOG_OUTPUT"
 	goEnvironment = "GO_ENVIRONMENT"
@@ -39,14 +39,14 @@ const (
 
 var (
 	defaultAppPort       = "8081"
-	defaultProxyUrl       = "http://localhost:8080"
+	defaultProxyUrl      = "localhost:50051"
 	defaultLogLevel      = "info"
 	defaultLogOutput     = "stdout"
 	defaultGoEnvironment = development
 
 	defaultBatchSize = "batchSize"
 
-	defaultPipelineBatchSize  int64 = 55
+	defaultPipelineBatchSize  int64 = 2
 	defaultProcessingInterval       = "@every 10s"
 	defaultCleanupInterval          = "@every 10m"
 	defaultFirstBlockHeight   int64 = 1

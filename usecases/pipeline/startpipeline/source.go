@@ -8,7 +8,6 @@ import (
 
 type blockSource struct {
 	iter      *iterators.HeightIterator
-	batchSize int64
 }
 
 func NewBlockSource(i *iterators.HeightIterator) *blockSource {

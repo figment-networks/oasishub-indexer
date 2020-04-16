@@ -15,7 +15,7 @@ type Model struct {
 	Report      report.Model `gorm:"foreignkey"`
 	ReportID    *types.ID
 	Data        types.Jsonb
-	ProcessedAt *time.Time
+	ProcessedAt *types.Time
 }
 
 // - Methods
@@ -46,9 +46,9 @@ func (s *Model) Equal(m Model) bool {
 }
 
 func (s *Model) MarkProcessed(reportID types.ID) {
-	t := time.Now()
+	t := types.NewTimeFromTime(time.Now())
 	rid := reportID
 
-	s.ProcessedAt = &t
+	s.ProcessedAt = t
 	s.ReportID = &rid
 }

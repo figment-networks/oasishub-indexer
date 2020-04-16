@@ -12,9 +12,9 @@ type Model struct {
 	PublicKey types.PublicKey `json:"public_key"`
 	Hash      types.Hash      `json:"hash"`
 	Nonce     types.Nonce     `json:"nonce"`
-	Fee       int64           `json:"fee"`
+	Fee       types.Quantity  `json:"fee"`
 	GasLimit  uint64          `json:"gas_limit"`
-	GasPrice  int64           `json:"gas_price"`
+	GasPrice  types.Quantity  `json:"gas_price"`
 	Method    string          `json:"method"`
 }
 

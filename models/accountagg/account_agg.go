@@ -49,7 +49,6 @@ func (aa *Model) UpdateAggAttrs(u *Model) {
 	aa.CurrentGeneralBalance = u.CurrentGeneralBalance
 	aa.CurrentGeneralNonce = u.CurrentGeneralNonce
 	aa.CurrentEscrowActiveBalance = u.CurrentEscrowActiveBalance
-	aa.CurrentEscrowActiveBalance = u.CurrentEscrowActiveBalance
 	aa.CurrentEscrowActiveTotalShares = u.CurrentEscrowActiveTotalShares
 	aa.CurrentEscrowDebondingBalance = u.CurrentEscrowDebondingBalance
 	aa.CurrentEscrowDebondingTotalShares = u.CurrentEscrowDebondingTotalShares

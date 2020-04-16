@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS transaction_sequences
     public_key TEXT                     NOT NULL,
     hash       TEXT                     NOT NULL,
     nonce      NUMERIC                  NOT NULL,
-    fee        BIGINT                   NOT NULL,
+    fee        DECIMAL(65, 0)           NOT NULL,
     gas_limit  DOUBLE PRECISION         NOT NULL,
-    gas_price  BIGINT                   NOT NULL,
+    gas_price  DECIMAL(65, 0)           NOT NULL,
     method     TEXT                     NOT NULL,
 
     PRIMARY KEY (time, id)

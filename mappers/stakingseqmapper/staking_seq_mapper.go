@@ -22,10 +22,10 @@ func ToSequence(stateSyncable syncable.Model) (*stakingseq.Model, errors.Applica
 			Time:    stateSyncable.Time,
 		},
 
-		TotalSupply:         types.NewQuantity(stateData.Data.Staking.TotalSupply.ToBigInt()),
-		CommonPool:          types.NewQuantity(stateData.Data.Staking.CommonPool.ToBigInt()),
-		DebondingInterval:   uint64(stateData.Data.Staking.Parameters.DebondingInterval),
-		MinDelegationAmount: types.NewQuantity(stateData.Data.Staking.Parameters.MinDelegationAmount.ToBigInt()),
+		TotalSupply:         types.NewQuantityFromBytes(stateData.Staking.TotalSupply),
+		CommonPool:          types.NewQuantityFromBytes(stateData.Staking.CommonPool),
+		DebondingInterval:   uint64(stateData.Staking.Parameters.DebondingInterval),
+		MinDelegationAmount: types.NewQuantityFromBytes(stateData.Staking.Parameters.MinDelegationAmount),
 	}
 
 	if !e.Valid() {

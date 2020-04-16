@@ -7,6 +7,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/models/report"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/chainrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
@@ -26,7 +27,8 @@ type UseCase interface {
 }
 
 type useCase struct {
-	syncableDbRepo   syncablerepo.DbRepo
+	chainProxyRepo    chainrepo.ProxyRepo
+	syncableDbRepo    syncablerepo.DbRepo
 	syncableProxyRepo syncablerepo.ProxyRepo
 
 	blockSeqDbRepo               blockseqrepo.DbRepo
@@ -42,6 +44,7 @@ type useCase struct {
 }
 
 func NewUseCase(
+	chainProxyRepo chainrepo.ProxyRepo,
 	syncableDbRepo syncablerepo.DbRepo,
 	syncableProxyRepo syncablerepo.ProxyRepo,
 	blockSeqDbRepo blockseqrepo.DbRepo,
@@ -55,7 +58,8 @@ func NewUseCase(
 	reportDbRepo reportrepo.DbRepo,
 ) UseCase {
 	return &useCase{
-		syncableDbRepo:   syncableDbRepo,
+		chainProxyRepo:    chainProxyRepo,
+		syncableDbRepo:    syncableDbRepo,
 		syncableProxyRepo: syncableProxyRepo,
 
 		blockSeqDbRepo:               blockSeqDbRepo,
@@ -72,7 +76,12 @@ func NewUseCase(
 }
 
 func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.ApplicationError {
-	i, err := uc.buildIterator(batchSize)
+	chainId, err := uc.getCurrentChainId()
+	if err != nil {
+		return err
+	}
+
+	i, err := uc.buildIterator(*chainId, batchSize)
 	if err != nil {
 		return err
 	}
@@ -95,6 +104,10 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 		uc.entityAggDbRepo,
 		*r,
 	)
+
+	// Add chainId to context
+	ctx = context.WithValue(ctx, "chainId", chainId)
+
 	resp := p.Start(ctx, i)
 
 	if resp.Error == nil {
@@ -111,9 +124,17 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 
 /*************** Private ***************/
 
-func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, errors.ApplicationError) {
-	// Get start height.
-	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
+func (uc *useCase) getCurrentChainId() (*string, errors.ApplicationError) {
+	chain, err := uc.chainProxyRepo.GetCurrent()
+	if err != nil {
+		return nil, err
+	}
+	return &chain.Id, nil
+}
+
+func (uc *useCase) buildIterator(chainId string, batchSize int64) (*iterators.HeightIterator, errors.ApplicationError) {
+	// Get start height
+	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight(chainId)
 	var startH types.Height
 	if err != nil {
 		if err.Status() == errors.NotFoundError {
@@ -124,12 +145,18 @@ func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, er
 	} else {
 		startH = *h + 1
 	}
+
 	// Get end height. It is most recent height in the node
 	syncableFromNode, err := uc.syncableProxyRepo.GetHead()
 	if err != nil {
 		return nil, err
 	}
 	endH := syncableFromNode.Height
+
+	// Validation of chainId
+	if syncableFromNode.ChainId != chainId {
+		return nil, errors.NewErrorFromMessage(fmt.Sprintf("chainId not valid %s", chainId), errors.PipelineProcessingError)
+	}
 
 	// Validation of heights
 	blocksToSyncCount := int64(endH - startH)
@@ -146,7 +173,6 @@ func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, er
 	log.Info(fmt.Sprintf("iterator: %d - %d", startH, endH))
 
 	i := iterators.NewHeightIterator(startH, endH)
-
 	return i, nil
 }
 

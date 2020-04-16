@@ -14,6 +14,11 @@ func NewQuantity(i *big.Int) Quantity {
 	return Quantity{Int: *i}
 }
 
+func NewQuantityFromBytes(bytes []byte) Quantity {
+	b := big.Int{}
+	return Quantity{Int: *b.SetBytes(bytes)}
+}
+
 func (b *Quantity) Valid() bool {
 	return b.Int.Sign() >= 0
 }

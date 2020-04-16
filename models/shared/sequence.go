@@ -2,13 +2,12 @@ package shared
 
 import (
 	"github.com/figment-networks/oasishub-indexer/types"
-	"time"
 )
 
 type Sequence struct {
 	ChainId string       `json:"chain_id"`
 	Height  types.Height `json:"height"`
-	Time    time.Time    `json:"time"`
+	Time    types.Time   `json:"time"`
 }
 
 func (s *Sequence) Valid() bool {

@@ -1,10 +1,16 @@
 package main
 
 import (
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	"github.com/figment-networks/oasishub-indexer/apps/shared"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/chainrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
@@ -34,12 +40,21 @@ func main() {
 	defer errors.RecoverError()
 
 	// CLIENTS
-	node := shared.NewNodeClient()
+	proxy := shared.NewProxyClient()
+	defer proxy.Client().Close()
+
 	db := shared.NewDbClient()
+	defer db.Client().Close()
 
 	// REPOSITORIES
+	chainProxyRepo := chainrepo.NewProxyRepo(chainpb.NewChainServiceClient(proxy.Client()))
 	syncableDbRepo := syncablerepo.NewDbRepo(db.Client())
-	syncableProxyRepo := syncablerepo.NewProxyRepo(node)
+	syncableProxyRepo := syncablerepo.NewProxyRepo(
+		blockpb.NewBlockServiceClient(proxy.Client()),
+		statepb.NewStateServiceClient(proxy.Client()),
+		transactionpb.NewTransactionServiceClient(proxy.Client()),
+		validatorpb.NewValidatorServiceClient(proxy.Client()),
+	)
 	reportDbRepo := reportrepo.NewDbRepo(db.Client())
 
 	blockSeqDbRepo := blockseqrepo.NewDbRepo(db.Client())
@@ -54,6 +69,7 @@ func main() {
 
 	//USE CASES
 	startPipelineUseCase := startpipeline.NewUseCase(
+		chainProxyRepo,
 		syncableDbRepo,
 		syncableProxyRepo,
 		blockSeqDbRepo,

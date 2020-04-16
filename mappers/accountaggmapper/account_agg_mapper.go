@@ -18,20 +18,20 @@ func ToAggregate(stateSyncable *syncable.Model) ([]accountagg.Model, errors.Appl
 	}
 
 	var accounts []accountagg.Model
-	for publicKey, info := range stateData.Data.Staking.Ledger {
+	for publicKey, info := range stateData.Staking.Ledger {
 		acc := accountagg.Model{
 			Aggregate: &shared.Aggregate{
 				StartedAtHeight: stateSyncable.Height,
 				StartedAt:       stateSyncable.Time,
 			},
 
-			PublicKey:                         types.PublicKey(publicKey.String()),
-			CurrentGeneralBalance:             types.NewQuantity(info.General.Balance.ToBigInt()),
+			PublicKey:                         types.PublicKey(publicKey),
+			CurrentGeneralBalance:             types.NewQuantityFromBytes(info.General.Balance),
 			CurrentGeneralNonce:               types.Nonce(info.General.Nonce),
-			CurrentEscrowActiveBalance:        types.NewQuantity(info.Escrow.Active.Balance.ToBigInt()),
-			CurrentEscrowActiveTotalShares:    types.NewQuantity(info.Escrow.Active.TotalShares.ToBigInt()),
-			CurrentEscrowDebondingBalance:     types.NewQuantity(info.Escrow.Debonding.Balance.ToBigInt()),
-			CurrentEscrowDebondingTotalShares: types.NewQuantity(info.Escrow.Debonding.TotalShares.ToBigInt()),
+			CurrentEscrowActiveBalance:        types.NewQuantityFromBytes(info.Escrow.Active.Balance),
+			CurrentEscrowActiveTotalShares:    types.NewQuantityFromBytes(info.Escrow.Active.TotalShares),
+			CurrentEscrowDebondingBalance:     types.NewQuantityFromBytes(info.Escrow.Debonding.Balance),
+			CurrentEscrowDebondingTotalShares: types.NewQuantityFromBytes(info.Escrow.Debonding.TotalShares),
 		}
 
 		if !acc.Valid() {

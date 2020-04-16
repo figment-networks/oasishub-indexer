@@ -15,8 +15,8 @@ type DbRepo interface {
 	Exists(syncable.Type, types.Height) bool
 	Count(syncable.Type) (*int64, errors.ApplicationError)
 	GetByHeight(syncable.Type, types.Height) (*syncable.Model, errors.ApplicationError)
-	GetMostRecent(syncable.Type) (*syncable.Model, errors.ApplicationError)
-	GetMostRecentCommonHeight() (*types.Height, errors.ApplicationError)
+	GetMostRecent(string, syncable.Type) (*syncable.Model, errors.ApplicationError)
+	GetMostRecentCommonHeight(string) (*types.Height, errors.ApplicationError)
 
 	// Commands
 	Save(*syncable.Model) errors.ApplicationError
@@ -70,9 +70,13 @@ func (r *dbRepo) GetByHeight(t syncable.Type, h types.Height) (*syncable.Model, 
 	return &m, nil
 }
 
-func (r *dbRepo) GetMostRecent(t syncable.Type) (*syncable.Model, errors.ApplicationError) {
+func (r *dbRepo) GetMostRecent(chainId string, t syncable.Type) (*syncable.Model, errors.ApplicationError) {
 	q := typeQuery(t)
-	m := syncable.Model{}
+	m := syncable.Model{
+		Sequence: &shared.Sequence{
+			ChainId: chainId,
+		},
+	}
 	if err := r.client.Where(&q).Where("processed_at IS NOT NULL").Order("height desc").First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError("could not find most recent syncable", errors.NotFoundError, err)
@@ -82,10 +86,10 @@ func (r *dbRepo) GetMostRecent(t syncable.Type) (*syncable.Model, errors.Applica
 	return &m, nil
 }
 
-func (r *dbRepo) GetMostRecentCommonHeight() (*types.Height, errors.ApplicationError) {
+func (r *dbRepo) GetMostRecentCommonHeight(chainId string) (*types.Height, errors.ApplicationError) {
 	var syncables []*syncable.Model
 	for _, t := range syncable.Types {
-		s, err := r.GetMostRecent(t)
+		s, err := r.GetMostRecent(chainId, t)
 		if err != nil {
 			return nil, err
 		}

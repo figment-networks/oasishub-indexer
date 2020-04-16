@@ -13,7 +13,6 @@ import (
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 	"sync"
-	"time"
 )
 
 var (
@@ -28,7 +27,7 @@ type payload struct {
 	StartHeight   types.Height
 	EndHeight     types.Height
 	CurrentHeight types.Height
-	RetrievedAt   time.Time
+	RetrievedAt   types.Time
 
 	BlockSyncable        *syncable.Model
 	StateSyncable        *syncable.Model

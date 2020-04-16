@@ -18,7 +18,7 @@ type Model struct {
 	TotalShares  types.Quantity  `json:"total_shares"`
 	// When precommit_validated is null it means that validator did not have chance to validate the block
 	PrecommitValidated *bool  `json:"precommit_validated"`
-	PrecommitType      *int64 `json:"precommit_type"`
+	PrecommitType      *string `json:"precommit_type"`
 	PrecommitIndex     *int64 `json:"precommit_index"`
 }
 

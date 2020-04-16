@@ -12,7 +12,7 @@ type Model struct {
 	ValidatorUID types.PublicKey `json:"validator_uid"`
 	DelegatorUID types.PublicKey `json:"delegator_uid"`
 	Shares       types.Quantity  `json:"shares"`
-	DebondEnd    int64           `json:"debond_end"`
+	DebondEnd    uint64           `json:"debond_end"`
 }
 
 // - METHODS

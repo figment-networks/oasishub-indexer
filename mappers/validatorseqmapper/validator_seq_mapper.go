@@ -28,7 +28,7 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 	}
 
 	var validators []validatorseq.Model
-	for i, rv := range validatorsData.Data {
+	for i, rv := range validatorsData {
 		e := validatorseq.Model{
 			Sequence: &shared.Sequence{
 				ChainId: validatorsSyncable.ChainId,
@@ -36,32 +36,32 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 				Time:    validatorsSyncable.Time,
 			},
 
-			EntityUID:    types.PublicKey(rv.Node.EntityID.String()),
-			NodeUID:      types.PublicKey(rv.ID.String()),
-			ConsensusUID: types.PublicKey(rv.Node.Consensus.ID.String()),
+			EntityUID:    types.PublicKey(rv.Node.EntityId),
+			NodeUID:      types.PublicKey(rv.Id),
+			ConsensusUID: types.PublicKey(rv.Node.Consensus.Id),
 			Address:      rv.Address,
 			VotingPower:  validatorseq.VotingPower(rv.VotingPower),
 		}
 
 		// Get precommit data
-		if len(blockData.Data.LastCommit.Precommits) > 0 {
+		if len(blockData.LastCommit.Votes) > 0 {
 			var validated bool
 			var index int64
-			var pType int64
+			var pType string
 			// Account for situation when there is more validators than precommits
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
-			if i > len(blockData.Data.LastCommit.Precommits)-1 {
+			if i > len(blockData.LastCommit.Votes)-1 {
 				index = int64(i)
 			} else {
-				precommit := blockData.Data.LastCommit.Precommits[i]
+				precommit := blockData.LastCommit.Votes[i]
 
 				if precommit == nil {
 					validated = false
 					index = int64(i)
 				} else {
 					validated = true
-					index = int64(precommit.ValidatorIndex)
-					pType = int64(precommit.Type)
+					index = precommit.ValidatorIndex
+					pType = precommit.Type
 				}
 			}
 			e.PrecommitValidated = &validated
@@ -70,13 +70,14 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 		}
 
 		// Get proposed
-		e.Proposed = blockData.Data.Header.ProposerAddress.String() == e.Address
+		e.Proposed = blockData.Header.ProposerAddress == e.Address
 
 		// Get total shares
-		delegations := stateData.Data.Staking.Delegations[rv.Node.EntityID]
+		delegations := stateData.Staking.Delegations[rv.Node.EntityId]
 		totalShares := big.NewInt(0)
-		for _, d := range delegations {
-			totalShares = totalShares.Add(totalShares, d.Shares.ToBigInt())
+		for _, d := range delegations.Entries {
+			shares := types.NewQuantityFromBytes(d.Shares)
+			totalShares = totalShares.Add(totalShares, &shares.Int)
 		}
 		e.TotalShares = types.NewQuantity(totalShares)
 

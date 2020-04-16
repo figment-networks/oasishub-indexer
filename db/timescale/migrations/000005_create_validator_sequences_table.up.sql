@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS validator_sequences
     proposed            BOOLEAN                  NOT NULL,
     address             TEXT                     NOT NULL,
     precommit_validated BOOLEAN,
-    precommit_type      NUMERIC,
+    precommit_type      TEXT,
     precommit_index     DOUBLE PRECISION,
 
     PRIMARY KEY (time, id)

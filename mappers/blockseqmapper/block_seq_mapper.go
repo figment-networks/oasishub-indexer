@@ -28,18 +28,18 @@ func ToSequence(blockSyncable syncable.Model, validatorsSyncable syncable.Model)
 			Time:    blockSyncable.Time,
 		},
 
-		Hash:              types.Hash(blockData.Data.Header.LastBlockID.Hash.String()),
-		AppVersion:        int64(blockData.Data.Header.Version.App),
-		BlockVersion:      int64(blockData.Data.Header.Version.Block),
-		TransactionsCount: types.Count(blockData.Data.Header.NumTxs),
+		Hash:              types.Hash(blockData.Header.LastBlockId.Hash),
+		AppVersion:        int64(blockData.Header.Version.App),
+		BlockVersion:      int64(blockData.Header.Version.Block),
+		TransactionsCount: types.Count(blockData.Header.NumTxs),
 	}
 
 	// Get proposer validator data
-	for _, rv := range validatorsData.Data {
-		pa := blockData.Data.Header.ProposerAddress.String()
+	for _, rv := range validatorsData {
+		pa := blockData.Header.ProposerAddress
 
 		if pa == rv.Address {
-			e.ProposerEntityUID = types.PublicKey(rv.Node.EntityID.String())
+			e.ProposerEntityUID = types.PublicKey(rv.Node.EntityId)
 		}
 	}
 
@@ -74,10 +74,10 @@ func ToDetailsView(m *blockseq.Model, s syncable.Model, vs []validatorseq.Model,
 		Model: m.Model,
 		Sequence: m.Sequence,
 
-		Hash:              types.Hash(blockData.Data.Header.LastBlockID.Hash.String()),
-		AppVersion:        int64(blockData.Data.Header.Version.App),
-		BlockVersion:      int64(blockData.Data.Header.Version.Block),
-		TransactionsCount: types.Count(blockData.Data.Header.NumTxs),
+		Hash:              types.Hash(blockData.Header.LastBlockId.Hash),
+		AppVersion:        int64(blockData.Header.Version.App),
+		BlockVersion:      int64(blockData.Header.Version.Block),
+		TransactionsCount: types.Count(blockData.Header.NumTxs),
 
 		Validators: vs,
 		Transactions: ts,

@@ -16,7 +16,7 @@ func ToSequence(transactionsSyncable syncable.Model) ([]transactionseq.Model, er
 	}
 
 	var transactions []transactionseq.Model
-	for _, rv := range transactionsData.Data {
+	for _, rv := range transactionsData {
 		e := transactionseq.Model{
 			Sequence: &shared.Sequence{
 				ChainId: transactionsSyncable.ChainId,
@@ -27,9 +27,9 @@ func ToSequence(transactionsSyncable syncable.Model) ([]transactionseq.Model, er
 			PublicKey: types.PublicKey(rv.PublicKey),
 			Hash:      types.Hash(rv.Hash),
 			Nonce:     types.Nonce(rv.Nonce),
-			Fee:       rv.Fee.Int64(),
+			Fee:       types.NewQuantityFromBytes(rv.Fee),
 			GasLimit:  rv.GasLimit,
-			GasPrice:  rv.GasPrice.Int64(),
+			GasPrice:  types.NewQuantityFromBytes(rv.GasPrice),
 			Method:    rv.Method,
 		}
 

@@ -16,8 +16,8 @@ func ToSequence(stateSyncable *syncable.Model) ([]delegationseq.Model, errors.Ap
 	}
 
 	var delegations []delegationseq.Model
-	for validatorUID, delegationsMap := range stateData.Data.Staking.Delegations {
-		for delegatorUID, info := range delegationsMap {
+	for validatorUID, delegationsMap := range stateData.Staking.Delegations {
+		for delegatorUID, info := range delegationsMap.Entries {
 			acc := delegationseq.Model{
 				Sequence: &shared.Sequence{
 					ChainId: stateSyncable.ChainId,
@@ -25,9 +25,9 @@ func ToSequence(stateSyncable *syncable.Model) ([]delegationseq.Model, errors.Ap
 					Time:    stateSyncable.Time,
 				},
 
-				ValidatorUID: types.PublicKey(validatorUID.String()),
-				DelegatorUID: types.PublicKey(delegatorUID.String()),
-				Shares:       types.NewQuantity(info.Shares.ToBigInt()),
+				ValidatorUID: types.PublicKey(validatorUID),
+				DelegatorUID: types.PublicKey(delegatorUID),
+				Shares:       types.NewQuantityFromBytes(info.Shares),
 			}
 
 			if !acc.Valid() {

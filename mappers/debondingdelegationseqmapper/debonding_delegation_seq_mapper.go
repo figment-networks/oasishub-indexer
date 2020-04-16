@@ -16,28 +16,28 @@ func ToSequence(stateSyncable *syncable.Model) ([]debondingdelegationseq.Model, 
 	}
 
 	var delegations []debondingdelegationseq.Model
-	for validatorUID, delegationsMap := range stateData.Data.Staking.DebondingDelegations {
-		for delegatorUID, infoArray := range delegationsMap {
-			//TODO: Why is it array?
-			info := infoArray[0]
-			acc := debondingdelegationseq.Model{
-				Sequence: &shared.Sequence{
-					ChainId: stateSyncable.ChainId,
-					Height:  stateSyncable.Height,
-					Time:    stateSyncable.Time,
-				},
+	for validatorUID, delegationsMap := range stateData.Staking.DebondingDelegations {
+		for delegatorUID, infoArray := range delegationsMap.Entries {
+			for _, delegation := range infoArray.DebondingDelegations {
+				acc := debondingdelegationseq.Model{
+					Sequence: &shared.Sequence{
+						ChainId: stateSyncable.ChainId,
+						Height:  stateSyncable.Height,
+						Time:    stateSyncable.Time,
+					},
 
-				ValidatorUID: types.PublicKey(validatorUID.String()),
-				DelegatorUID: types.PublicKey(delegatorUID.String()),
-				Shares:       types.NewQuantity(info.Shares.ToBigInt()),
-				DebondEnd:    int64(info.DebondEndTime),
+					ValidatorUID: types.PublicKey(validatorUID),
+					DelegatorUID: types.PublicKey(delegatorUID),
+					Shares:       types.NewQuantityFromBytes(delegation.Shares),
+					DebondEnd:    delegation.DebondEndTime,
+				}
+
+				if !acc.Valid() {
+					return nil, errors.NewErrorFromMessage("debonding delegation sequence not valid", errors.NotValid)
+				}
+
+				delegations = append(delegations, acc)
 			}
-
-			if !acc.Valid() {
-				return nil, errors.NewErrorFromMessage("debonding delegation sequence not valid", errors.NotValid)
-			}
-
-			delegations = append(delegations, acc)
 		}
 	}
 	return delegations, nil

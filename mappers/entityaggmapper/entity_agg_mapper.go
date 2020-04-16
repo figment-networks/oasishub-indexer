@@ -16,14 +16,14 @@ func ToAggregate(stateSyncable *syncable.Model) ([]entityagg.Model, errors.Appli
 	}
 
 	var accounts []entityagg.Model
-	for _, entity := range stateData.Data.Registry.Entities {
+	for _, entity := range stateData.Registry.Entities {
 		acc := entityagg.Model{
 			Aggregate: &shared.Aggregate{
 				StartedAtHeight: stateSyncable.Height,
 				StartedAt:       stateSyncable.Time,
 			},
 
-			EntityUID: types.PublicKey(entity.Signature.PublicKey.String()),
+			EntityUID: types.PublicKey(entity.PublicKey),
 		}
 
 		if !acc.Valid() {

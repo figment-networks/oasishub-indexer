@@ -18,6 +18,7 @@ const (
 	//Proxy errors
 	ProxyRequestError         = "proxy_request_error"
 	ProxyInvalidResponseError = "proxy_invalid_response_error"
+	ProxyUnmarshalError       = "proxy_unmarshal_error"
 
 	//Domain errors
 	NotValid = "entity_not_valid"
@@ -27,7 +28,7 @@ const (
 
 	// Pipeline errors
 	PipelineProcessingError = "pipeline_processing_error"
-	CleanupError = "pipeline_cleanup_error"
+	CleanupError            = "pipeline_cleanup_error"
 
 	// Handler errors
 	ServerInvalidParamsError = "server_handler_invalid_params_error"

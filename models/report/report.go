@@ -16,7 +16,7 @@ type Model struct {
 	ErrorMsg     *string
 	Duration     *int64
 	Details      types.Jsonb
-	CompletedAt  *time.Time
+	CompletedAt  *types.Time
 }
 
 // - METHODS
@@ -46,13 +46,13 @@ func (r *Model) Equal(m Model) bool {
 }
 
 func (r *Model) Complete(successCount int64, errorCount int64, err *string, details []byte) {
-	completedAt := time.Now()
-	duration := completedAt.Sub(r.CreatedAt).Milliseconds()
+	completedAt := types.NewTimeFromTime(time.Now())
+	duration := completedAt.Duration(r.CreatedAt)
 
 	r.SuccessCount = &successCount
 	r.ErrorCount = &errorCount
 	r.ErrorMsg = err
 	r.Details = types.Jsonb{RawMessage: details}
 	r.Duration = &duration
-	r.CompletedAt = &completedAt
+	r.CompletedAt = completedAt
 }
