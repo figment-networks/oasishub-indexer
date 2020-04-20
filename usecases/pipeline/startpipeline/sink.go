@@ -10,18 +10,16 @@ import (
 type Sink interface {
 	Consume(context.Context, pipeline.Payload) error
 	Count() int64
-	Payloads() []*payload
 }
 
 type sink struct {
-	syncableDbRepo syncablerepo.DbRepo
+	syncableDbRepo syncablerepo.DbSaver
 	report         report.Model
 
 	count    int64
-	payloads []*payload
 }
 
-func NewSink(syncableDbRepo syncablerepo.DbRepo, report report.Model) Sink {
+func NewSink(syncableDbRepo syncablerepo.DbSaver, report report.Model) Sink {
 	return &sink{
 		syncableDbRepo: syncableDbRepo,
 		report:         report,
@@ -31,7 +29,6 @@ func NewSink(syncableDbRepo syncablerepo.DbRepo, report report.Model) Sink {
 func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 	payload := p.(*payload)
 	s.count = s.count + 1
-	s.payloads = append(s.payloads, payload)
 
 	block := payload.BlockSyncable
 	block.MarkProcessed(s.report.ID)
@@ -54,8 +51,4 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 
 func (s *sink) Count() int64 {
 	return s.count
-}
-
-func (s *sink) Payloads() []*payload {
-	return s.payloads
 }

@@ -3,15 +3,7 @@ package startpipeline
 import (
 	"context"
 	"github.com/figment-networks/oasishub-indexer/models/report"
-	"github.com/figment-networks/oasishub-indexer/repos/accountaggrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/blockseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
-	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/utils/iterators"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
@@ -21,23 +13,13 @@ type Pipeline interface {
 }
 
 type processingPipeline struct {
-	syncableDbRepo   syncablerepo.DbRepo
-	syncableProxyRepo syncablerepo.ProxyRepo
-
-	blockSeqDbRepo               blockseqrepo.DbRepo
-	validatorSeqDbRepo           validatorseqrepo.DbRepo
-	transactionSeqDbRepo         transactionseqrepo.DbRepo
-	stakingSeqDbRepo             stakingseqrepo.DbRepo
-	accountAggDbRepo             accountaggrepo.DbRepo
-	delegationSeqDbRepo          delegationseqrepo.DbRepo
-	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo
-	entityAggDbRepo              entityaggrepo.DbRepo
-
-	report   report.Model
+	config   Config
 	pipeline *pipeline.Pipeline
 }
 
-type Details struct {
+type Config struct {
+	Report         report.Model
+	SyncableDbRepo syncablerepo.DbRepo
 }
 
 type Results struct {
@@ -48,29 +30,14 @@ type Results struct {
 }
 
 func NewPipeline(
-	syncableDbRepo syncablerepo.DbRepo,
-	syncableProxyRepo syncablerepo.ProxyRepo,
-	blockSeqDbRepo blockseqrepo.DbRepo,
-	validatorSeqDbRepo validatorseqrepo.DbRepo,
-	transactionSeqDbRepo transactionseqrepo.DbRepo,
-	stakingSeqDbRepo stakingseqrepo.DbRepo,
-	accountAggDbRepo accountaggrepo.DbRepo,
-	delegationSeqDbRepo delegationseqrepo.DbRepo,
-	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo,
-	entityAggDbRepo entityaggrepo.DbRepo,
-	report report.Model,
+	config Config,
+	stages ...pipeline.StageRunner,
 ) Pipeline {
 	// Assemble pipeline
-	p := pipeline.New(
-		pipeline.FIFO(NewSyncer(syncableDbRepo, syncableProxyRepo)),
-		pipeline.FIFO(NewSequencer(blockSeqDbRepo, validatorSeqDbRepo, transactionSeqDbRepo, stakingSeqDbRepo, delegationSeqDbRepo, debondingDelegationSeqDbRepo)),
-		pipeline.FIFO(NewAggregator(accountAggDbRepo, entityAggDbRepo)),
-	)
+	p := pipeline.New(stages...)
 
 	return &processingPipeline{
-		syncableDbRepo: syncableDbRepo,
-
-		report:   report,
+		config:   config,
 		pipeline: p,
 	}
 }
@@ -80,7 +47,7 @@ func NewPipeline(
 func (c *processingPipeline) Start(ctx context.Context, iter pipeline.Iterator) Results {
 	i := iter.(*iterators.HeightIterator)
 	source := NewBlockSource(i)
-	sink := NewSink(c.syncableDbRepo, c.report)
+	sink := NewSink(c.config.SyncableDbRepo, c.config.Report)
 	err := c.pipeline.Process(ctx, source, sink)
 	//TODO: Add details to results
 	r := Results{

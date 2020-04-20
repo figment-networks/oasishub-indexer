@@ -6,6 +6,7 @@ require (
 	github.com/figment-networks/oasis-rpc-proxy v0.0.0-20200416164959-d7394fdbfe7f
 	github.com/gin-gonic/gin v1.5.0
 	github.com/gogo/protobuf v1.3.1
+	github.com/golang/mock v1.4.3
 	github.com/golang/protobuf v1.3.4
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/jinzhu/gorm v1.9.12

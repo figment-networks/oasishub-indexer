@@ -20,6 +20,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
 	"github.com/figment-networks/oasishub-indexer/utils/iterators"
 	"github.com/figment-networks/oasishub-indexer/utils/log"
+	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
 )
 
 type UseCase interface {
@@ -76,12 +77,7 @@ func NewUseCase(
 }
 
 func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.ApplicationError {
-	chainId, err := uc.getCurrentChainId()
-	if err != nil {
-		return err
-	}
-
-	i, err := uc.buildIterator(*chainId, batchSize)
+	i, err := uc.buildIterator(batchSize)
 	if err != nil {
 		return err
 	}
@@ -92,21 +88,15 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 	}
 
 	p := NewPipeline(
-		uc.syncableDbRepo,
-		uc.syncableProxyRepo,
-		uc.blockSeqDbRepo,
-		uc.validatorSeqDbRepo,
-		uc.transactionSeqDbRepo,
-		uc.stakingSeqDbRepo,
-		uc.accountAggDbRepo,
-		uc.delegationSeqDbRepo,
-		uc.debondingDelegationSeqDbRepo,
-		uc.entityAggDbRepo,
-		*r,
-	)
+		Config{
+			SyncableDbRepo: uc.syncableDbRepo,
+			Report:         *r,
+		},
 
-	// Add chainId to context
-	ctx = context.WithValue(ctx, "chainId", chainId)
+		pipeline.FIFO(NewSyncer(uc.syncableDbRepo, uc.syncableProxyRepo)),
+		pipeline.FIFO(NewSequencer(uc.blockSeqDbRepo, uc.validatorSeqDbRepo, uc.transactionSeqDbRepo, uc.stakingSeqDbRepo, uc.delegationSeqDbRepo, uc.debondingDelegationSeqDbRepo)),
+		pipeline.FIFO(NewAggregator(uc.accountAggDbRepo, uc.entityAggDbRepo)),
+	)
 
 	resp := p.Start(ctx, i)
 
@@ -132,9 +122,9 @@ func (uc *useCase) getCurrentChainId() (*string, errors.ApplicationError) {
 	return &chain.Id, nil
 }
 
-func (uc *useCase) buildIterator(chainId string, batchSize int64) (*iterators.HeightIterator, errors.ApplicationError) {
+func (uc *useCase) buildIterator(batchSize int64) (*iterators.HeightIterator, errors.ApplicationError) {
 	// Get start height
-	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight(chainId)
+	h, err := uc.syncableDbRepo.GetMostRecentCommonHeight()
 	var startH types.Height
 	if err != nil {
 		if err.Status() == errors.NotFoundError {
@@ -152,11 +142,6 @@ func (uc *useCase) buildIterator(chainId string, batchSize int64) (*iterators.He
 		return nil, err
 	}
 	endH := syncableFromNode.Height
-
-	// Validation of chainId
-	if syncableFromNode.ChainId != chainId {
-		return nil, errors.NewErrorFromMessage(fmt.Sprintf("chainId not valid wanted: %s, given: %+v", chainId, syncableFromNode.Sequence), errors.PipelineProcessingError)
-	}
 
 	// Validation of heights
 	blocksToSyncCount := int64(endH - startH)

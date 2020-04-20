@@ -15,14 +15,17 @@ type DbRepo interface {
 	Exists(syncable.Type, types.Height) bool
 	Count(syncable.Type) (*int64, errors.ApplicationError)
 	GetByHeight(syncable.Type, types.Height) (*syncable.Model, errors.ApplicationError)
-	GetMostRecent(string, syncable.Type) (*syncable.Model, errors.ApplicationError)
-	GetMostRecentCommonHeight(string) (*types.Height, errors.ApplicationError)
+	GetMostRecent(syncable.Type) (*syncable.Model, errors.ApplicationError)
+	GetMostRecentCommonHeight() (*types.Height, errors.ApplicationError)
 
 	// Commands
+	DbSaver
+	DeletePrevByHeight(types.Height) errors.ApplicationError
+}
+
+type DbSaver interface {
 	Save(*syncable.Model) errors.ApplicationError
 	Create(*syncable.Model) errors.ApplicationError
-	Upsert(syncable.Type, types.Height, *syncable.Model) errors.ApplicationError
-	DeletePrevByHeight(types.Height) errors.ApplicationError
 }
 
 type dbRepo struct {
@@ -70,15 +73,10 @@ func (r *dbRepo) GetByHeight(t syncable.Type, h types.Height) (*syncable.Model, 
 	return &m, nil
 }
 
-func (r *dbRepo) GetMostRecent(chainId string, t syncable.Type) (*syncable.Model, errors.ApplicationError) {
+func (r *dbRepo) GetMostRecent(t syncable.Type) (*syncable.Model, errors.ApplicationError) {
 	q := typeQuery(t)
-	cq := syncable.Model{
-		Sequence: &shared.Sequence{
-			ChainId: chainId,
-		},
-	}
 	m := syncable.Model{}
-	if err := r.client.Debug().Where(&q).Where(&cq).Where("processed_at IS NOT NULL").Order("height desc").First(&m).Error; err != nil {
+	if err := r.client.Debug().Where(&q).Where("processed_at IS NOT NULL").Order("height desc").First(&m).Error; err != nil {
 		if gorm.IsRecordNotFoundError(err) {
 			return nil, errors.NewError("could not find most recent syncable", errors.NotFoundError, err)
 		}
@@ -87,10 +85,10 @@ func (r *dbRepo) GetMostRecent(chainId string, t syncable.Type) (*syncable.Model
 	return &m, nil
 }
 
-func (r *dbRepo) GetMostRecentCommonHeight(chainId string) (*types.Height, errors.ApplicationError) {
+func (r *dbRepo) GetMostRecentCommonHeight() (*types.Height, errors.ApplicationError) {
 	var syncables []*syncable.Model
 	for _, t := range syncable.Types {
-		s, err := r.GetMostRecent(chainId, t)
+		s, err := r.GetMostRecent(t)
 		// If record is not found break immediately
 		if err != nil {
 			return nil, err
@@ -128,23 +126,6 @@ func (r *dbRepo) Create(m *syncable.Model) errors.ApplicationError {
 	return nil
 }
 
-func (r *dbRepo) Upsert(t syncable.Type, h types.Height, m *syncable.Model) errors.ApplicationError {
-	q := mainQuery(t, h)
-
-	if r.Exists(t, h) {
-		// Update
-		if err := r.client.Where(&q).Updates(m).Error; err != nil {
-			return errors.NewError("could not update syncable", errors.UpdateError, err)
-		}
-	} else {
-		// Create
-		if err := r.client.Create(m).Error; err != nil {
-			return errors.NewError("could not create syncable", errors.CreateError, err)
-		}
-	}
-	return nil
-}
-
 func (r *dbRepo) DeletePrevByHeight(maxHeight types.Height) errors.ApplicationError {
 	if err := r.client.Debug().Where("height <= ?", maxHeight).Delete(&syncable.Model{}).Error; err != nil {
 		return errors.NewError("could not delete syncables", errors.DeleteError, err)
@@ -168,5 +149,3 @@ func typeQuery(t syncable.Type) syncable.Model {
 		Type: t,
 	}
 }
-
-

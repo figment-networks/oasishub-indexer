@@ -138,7 +138,7 @@ type sourceStub struct {
 }
 
 func (s *sourceStub) Next(context.Context) bool {
-	if s.err != nil || s.index == len(s.data) {
+	if s.err != nil || s.index == len(s.data) - 1 {
 		return false
 	}
 
@@ -147,7 +147,7 @@ func (s *sourceStub) Next(context.Context) bool {
 }
 func (s *sourceStub) Error() error { return s.err }
 func (s *sourceStub) Payload() pipeline.Payload {
-	return s.data[s.index-1]
+	return s.data[s.index]
 }
 
 type sinkStub struct {

@@ -46,7 +46,7 @@ var (
 
 	defaultBatchSize = "batchSize"
 
-	defaultPipelineBatchSize  int64 = 100
+	defaultPipelineBatchSize  int64 = 2
 	defaultProcessingInterval       = "@every 10s"
 	defaultCleanupInterval          = "@every 10m"
 	defaultFirstBlockHeight   int64 = 1
