@@ -1,4 +1,4 @@
-package accountaggmapper
+package transactionseqmapper
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Test_AccountAggMapper(t *testing.T) {
+func Test_StakingSeqMapper(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	sequence := &shared.Sequence{
@@ -24,41 +24,43 @@ func Test_AccountAggMapper(t *testing.T) {
 		StartHeight: types.Height(1),
 		EndHeight:   types.Height(10),
 	}
-	stateFixture := fixtures.Load("state.json")
+	transactionsFixture := fixtures.Load("transactions.json")
 
-	t.Run("ToAggregate() fails unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() fails unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model:    model,
 			Sequence: sequence,
 
-			Type:   syncable.StateType,
+			Type:   syncable.TransactionsType,
 			Report: rep,
 			Data:   types.Jsonb{RawMessage: json.RawMessage(`{"test": 0}`)},
 		}
 
-		_, err := ToAggregate(&s)
+		_, err := ToSequence(s)
 		if err == nil {
 			t.Error("data unmarshaling should fail")
 		}
 	})
 
-	t.Run("ToAggregate() succeeds to unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() succeeds to unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model: model,
 			Sequence: sequence,
 
-			Type:   syncable.StateType,
+			Type:   syncable.TransactionsType,
 			Report: rep,
-			Data:   types.Jsonb{RawMessage: json.RawMessage(stateFixture)},
+			Data:   types.Jsonb{RawMessage: json.RawMessage(transactionsFixture)},
 		}
 
-		accountAggs, err := ToAggregate(&s)
+		transactionSeqs, err := ToSequence(s)
 		if err != nil {
 			t.Error("data unmarshaling should succeed", err)
 		}
 
-		if len(accountAggs) == 0 {
-			t.Error("there should be accounts")
+		if len(transactionSeqs) == 0 {
+			t.Error("there should be transactions")
 		}
 	})
 }
+
+

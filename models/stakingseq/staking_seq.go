@@ -26,7 +26,8 @@ func (ss *Model) ValidOwn() bool {
 }
 
 func (ss *Model) EqualOwn(m Model) bool {
-	return true
+	return ss.CommonPool.Equals(m.CommonPool) &&
+		ss.TotalSupply.Equals(m.TotalSupply)
 }
 
 func (ss *Model) Valid() bool {

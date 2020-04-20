@@ -1,4 +1,4 @@
-package accountaggmapper
+package entityaggmapper
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Test_AccountAggMapper(t *testing.T) {
+func Test_EntityAggMapper(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	sequence := &shared.Sequence{
@@ -52,12 +52,12 @@ func Test_AccountAggMapper(t *testing.T) {
 			Data:   types.Jsonb{RawMessage: json.RawMessage(stateFixture)},
 		}
 
-		accountAggs, err := ToAggregate(&s)
+		entityAggs, err := ToAggregate(&s)
 		if err != nil {
 			t.Error("data unmarshaling should succeed", err)
 		}
 
-		if len(accountAggs) == 0 {
+		if len(entityAggs) == 0 {
 			t.Error("there should be accounts")
 		}
 	})

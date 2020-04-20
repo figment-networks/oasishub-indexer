@@ -13,6 +13,10 @@ type Quantity struct {
 func NewQuantity(i *big.Int) Quantity {
 	return Quantity{Int: *i}
 }
+func NewQuantityFromInt64(i int64) Quantity {
+	b := big.NewInt(i)
+	return Quantity{Int: *b}
+}
 
 func NewQuantityFromBytes(bytes []byte) Quantity {
 	b := big.Int{}
@@ -21,6 +25,10 @@ func NewQuantityFromBytes(bytes []byte) Quantity {
 
 func (b *Quantity) Valid() bool {
 	return b.Int.Sign() >= 0
+}
+
+func (b *Quantity) Equals(o Quantity) bool {
+	return b.Int.String() == o.Int.String()
 }
 
 // Value implement sql.Scanner

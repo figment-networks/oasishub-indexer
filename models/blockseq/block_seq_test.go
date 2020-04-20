@@ -10,15 +10,16 @@ import (
 func Test_BlockSeq(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
+	seq := &shared.Sequence{
+		ChainId: chainId,
+		Height:  types.Height(10),
+		Time:    *types.NewTimeFromTime(time.Now()),
+	}
 
 	t.Run("validation failed", func(t *testing.T) {
 		m := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			AppVersion: -1,
 			BlockVersion: -1,
@@ -32,11 +33,7 @@ func Test_BlockSeq(t *testing.T) {
 	t.Run("validation success", func(t *testing.T) {
 		m := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			AppVersion: 10,
 			BlockVersion: 100,
@@ -50,22 +47,14 @@ func Test_BlockSeq(t *testing.T) {
 	t.Run("models not equal", func(t *testing.T) {
 		m1 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			AppVersion: 10,
 			BlockVersion: 10,
 		}
 		m2 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			AppVersion: 100,
 			BlockVersion: 100,
@@ -77,25 +66,16 @@ func Test_BlockSeq(t *testing.T) {
 	})
 
 	t.Run("models equal", func(t *testing.T) {
-		tm := time.Now()
 		m1 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    tm,
-			},
+			Sequence: seq,
 
 			AppVersion: 10,
 			BlockVersion: 10,
 		}
 		m2 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    tm,
-			},
+			Sequence: seq,
 
 			AppVersion: 10,
 			BlockVersion: 10,

@@ -1,14 +1,13 @@
-package debondingdelegationseq
+package validatorseq
 
 import (
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"math/big"
 	"testing"
 	"time"
 )
 
-func Test_DebondingDelegationSeq(t *testing.T) {
+func Test_TransactionSeq(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	seq := &shared.Sequence{
@@ -33,9 +32,10 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			EntityUID: types.PublicKey("entity-uid-test"),
+			NodeUID: types.PublicKey("node-uid-test"),
+			VotingPower: 10,
+			TotalShares: types.NewQuantityFromInt64(int64(100)),
 		}
 
 		if !m.Valid() {
@@ -48,17 +48,19 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			EntityUID: types.PublicKey("entity-uid-test"),
+			NodeUID: types.PublicKey("node-uid-test"),
+			VotingPower: 10,
+			TotalShares: types.NewQuantityFromInt64(int64(100)),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID-2",
-			DelegatorUID: "del-UID-2",
-			Shares: types.NewQuantity(big.NewInt(200)),
+			EntityUID: types.PublicKey("entity-uid-test-2"),
+			NodeUID: types.PublicKey("node-uid-test-2"),
+			VotingPower: 20,
+			TotalShares: types.NewQuantityFromInt64(int64(200)),
 		}
 
 		if m1.Equal(m2) {
@@ -71,17 +73,19 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			EntityUID: types.PublicKey("entity-uid-test"),
+			NodeUID: types.PublicKey("node-uid-test"),
+			VotingPower: 10,
+			TotalShares: types.NewQuantityFromInt64(int64(100)),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			EntityUID: types.PublicKey("entity-uid-test"),
+			NodeUID: types.PublicKey("node-uid-test"),
+			VotingPower: 10,
+			TotalShares: types.NewQuantityFromInt64(int64(100)),
 		}
 
 		if !m1.Equal(m2) {
@@ -89,4 +93,5 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 		}
 	})
 }
+
 

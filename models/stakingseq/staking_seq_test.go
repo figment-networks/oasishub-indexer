@@ -1,14 +1,13 @@
-package debondingdelegationseq
+package stakingseq
 
 import (
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"math/big"
 	"testing"
 	"time"
 )
 
-func Test_DebondingDelegationSeq(t *testing.T) {
+func Test_StakingSeq(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	seq := &shared.Sequence{
@@ -17,25 +16,13 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 		Time:    *types.NewTimeFromTime(time.Now()),
 	}
 
-	t.Run("validation failed", func(t *testing.T) {
-		m := Model{
-			Model: model,
-			Sequence: seq,
-		}
-
-		if m.Valid() {
-			t.Errorf("model should not be valid %+v", m)
-		}
-	})
-
 	t.Run("validation success", func(t *testing.T) {
 		m := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			TotalSupply: types.NewQuantityFromInt64(int64(10)),
+			CommonPool: types.NewQuantityFromInt64(int64(10)),
 		}
 
 		if !m.Valid() {
@@ -48,17 +35,15 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			TotalSupply: types.NewQuantityFromInt64(int64(10)),
+			CommonPool: types.NewQuantityFromInt64(int64(10)),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID-2",
-			DelegatorUID: "del-UID-2",
-			Shares: types.NewQuantity(big.NewInt(200)),
+			TotalSupply: types.NewQuantityFromInt64(int64(20)),
+			CommonPool: types.NewQuantityFromInt64(int64(20)),
 		}
 
 		if m1.Equal(m2) {
@@ -71,17 +56,15 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			TotalSupply: types.NewQuantityFromInt64(int64(10)),
+			CommonPool: types.NewQuantityFromInt64(int64(10)),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			TotalSupply: types.NewQuantityFromInt64(int64(10)),
+			CommonPool: types.NewQuantityFromInt64(int64(10)),
 		}
 
 		if !m1.Equal(m2) {
@@ -89,4 +72,5 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 		}
 	})
 }
+
 

@@ -155,7 +155,7 @@ func (uc *useCase) buildIterator(chainId string, batchSize int64) (*iterators.He
 
 	// Validation of chainId
 	if syncableFromNode.ChainId != chainId {
-		return nil, errors.NewErrorFromMessage(fmt.Sprintf("chainId not valid %s", chainId), errors.PipelineProcessingError)
+		return nil, errors.NewErrorFromMessage(fmt.Sprintf("chainId not valid wanted: %s, given: %+v", chainId, syncableFromNode.Sequence), errors.PipelineProcessingError)
 	}
 
 	// Validation of heights

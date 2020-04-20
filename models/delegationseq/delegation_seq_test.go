@@ -11,15 +11,16 @@ import (
 func Test_DelegationSeq(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
+	seq := &shared.Sequence{
+		ChainId: chainId,
+		Height:  types.Height(10),
+		Time:    *types.NewTimeFromTime(time.Now()),
+	}
 
 	t.Run("validation failed", func(t *testing.T) {
 		m := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 		}
 
 		if m.Valid() {
@@ -30,11 +31,7 @@ func Test_DelegationSeq(t *testing.T) {
 	t.Run("validation success", func(t *testing.T) {
 		m := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			ValidatorUID: "val-UID",
 			DelegatorUID: "del-UID",
@@ -49,11 +46,7 @@ func Test_DelegationSeq(t *testing.T) {
 	t.Run("models not equal", func(t *testing.T) {
 		m1 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			ValidatorUID: "val-UID",
 			DelegatorUID: "del-UID",
@@ -61,11 +54,7 @@ func Test_DelegationSeq(t *testing.T) {
 		}
 		m2 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    time.Now(),
-			},
+			Sequence: seq,
 
 			ValidatorUID: "val-UID-2",
 			DelegatorUID: "del-UID-2",
@@ -78,14 +67,9 @@ func Test_DelegationSeq(t *testing.T) {
 	})
 
 	t.Run("models equal", func(t *testing.T) {
-		tm := time.Now()
 		m1 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    tm,
-			},
+			Sequence: seq,
 
 			ValidatorUID: "val-UID",
 			DelegatorUID: "del-UID",
@@ -93,11 +77,7 @@ func Test_DelegationSeq(t *testing.T) {
 		}
 		m2 := Model{
 			Model: model,
-			Sequence: &shared.Sequence{
-				ChainId: chainId,
-				Height:  types.Height(10),
-				Time:    tm,
-			},
+			Sequence: seq,
 
 			ValidatorUID: "val-UID",
 			DelegatorUID: "del-UID",

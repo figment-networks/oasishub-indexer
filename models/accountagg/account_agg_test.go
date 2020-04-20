@@ -12,7 +12,7 @@ func Test_AccountAgg(t *testing.T) {
 	model := &shared.Model{}
 	agg := &shared.Aggregate{
 		StartedAtHeight: types.Height(1),
-		StartedAt:       time.Now(),
+		StartedAt:       *types.NewTimeFromTime(time.Now()),
 	}
 
 	t.Run("validation failed", func(t *testing.T) {

@@ -36,7 +36,7 @@ func (vs *Model) ValidOwn() bool {
 
 func (vs *Model) EqualOwn(m Model) bool {
 	return vs.EntityUID.Equal(m.EntityUID) &&
-		vs.NodeUID.Equal(m.EntityUID)
+		vs.NodeUID.Equal(m.NodeUID)
 }
 
 func (vs *Model) Valid() bool {

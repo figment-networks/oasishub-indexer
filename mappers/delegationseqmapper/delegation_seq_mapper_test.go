@@ -1,4 +1,4 @@
-package accountaggmapper
+package delegationseqmapper
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Test_AccountAggMapper(t *testing.T) {
+func Test_DelegationSeqMapper(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	sequence := &shared.Sequence{
@@ -26,7 +26,7 @@ func Test_AccountAggMapper(t *testing.T) {
 	}
 	stateFixture := fixtures.Load("state.json")
 
-	t.Run("ToAggregate() fails unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() fails unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model:    model,
 			Sequence: sequence,
@@ -36,13 +36,13 @@ func Test_AccountAggMapper(t *testing.T) {
 			Data:   types.Jsonb{RawMessage: json.RawMessage(`{"test": 0}`)},
 		}
 
-		_, err := ToAggregate(&s)
+		_, err := ToSequence(&s)
 		if err == nil {
 			t.Error("data unmarshaling should fail")
 		}
 	})
 
-	t.Run("ToAggregate() succeeds to unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() succeeds to unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model: model,
 			Sequence: sequence,
@@ -52,12 +52,12 @@ func Test_AccountAggMapper(t *testing.T) {
 			Data:   types.Jsonb{RawMessage: json.RawMessage(stateFixture)},
 		}
 
-		accountAggs, err := ToAggregate(&s)
+		delegationSeqs, err := ToSequence(&s)
 		if err != nil {
 			t.Error("data unmarshaling should succeed", err)
 		}
 
-		if len(accountAggs) == 0 {
+		if len(delegationSeqs) == 0 {
 			t.Error("there should be accounts")
 		}
 	})

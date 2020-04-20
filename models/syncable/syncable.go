@@ -28,7 +28,7 @@ func (s *Model) ValidOwn() bool {
 }
 
 func (s *Model) EqualOwn(m Model) bool {
-	return true
+	return s.Type == m.Type
 }
 
 func (s *Model) Valid() bool {

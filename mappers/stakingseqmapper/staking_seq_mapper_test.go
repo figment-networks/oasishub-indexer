@@ -1,4 +1,4 @@
-package accountaggmapper
+package stakingseqmapper
 
 import (
 	"encoding/json"
@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func Test_AccountAggMapper(t *testing.T) {
+func Test_StakingSeqMapper(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	sequence := &shared.Sequence{
@@ -26,7 +26,7 @@ func Test_AccountAggMapper(t *testing.T) {
 	}
 	stateFixture := fixtures.Load("state.json")
 
-	t.Run("ToAggregate() fails unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() fails unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model:    model,
 			Sequence: sequence,
@@ -36,13 +36,13 @@ func Test_AccountAggMapper(t *testing.T) {
 			Data:   types.Jsonb{RawMessage: json.RawMessage(`{"test": 0}`)},
 		}
 
-		_, err := ToAggregate(&s)
+		_, err := ToSequence(s)
 		if err == nil {
 			t.Error("data unmarshaling should fail")
 		}
 	})
 
-	t.Run("ToAggregate() succeeds to unmarshal data", func(t *testing.T) {
+	t.Run("ToSequence()() succeeds to unmarshal data", func(t *testing.T) {
 		s := syncable.Model{
 			Model: model,
 			Sequence: sequence,
@@ -52,13 +52,30 @@ func Test_AccountAggMapper(t *testing.T) {
 			Data:   types.Jsonb{RawMessage: json.RawMessage(stateFixture)},
 		}
 
-		accountAggs, err := ToAggregate(&s)
+		stakingSeq, err := ToSequence(s)
 		if err != nil {
 			t.Error("data unmarshaling should succeed", err)
 		}
 
-		if len(accountAggs) == 0 {
-			t.Error("there should be accounts")
+		exp := types.NewQuantityFromBytes([]byte("iscjBInoAAA="))
+		if stakingSeq.TotalSupply.Equals(exp) {
+			t.Errorf("wrong total supply, exp: %v, got: %v", exp, stakingSeq.TotalSupply)
+		}
+
+		exp2 := types.NewQuantityFromBytes([]byte("bwIHGjdarc8="))
+		if stakingSeq.CommonPool.Equals(exp2) {
+			t.Errorf("wrong common pool, exp: %v, got: %v", exp2, stakingSeq.CommonPool)
+		}
+
+		exp3 := uint64(10)
+		if stakingSeq.DebondingInterval != exp3 {
+			t.Errorf("wrong debonding interval, exp: %d, got: %d", exp3, stakingSeq.DebondingInterval)
+		}
+
+		exp4 := types.NewQuantityFromBytes([]byte("AlQL5AA="))
+		if stakingSeq.CommonPool.Equals(exp4) {
+			t.Errorf("wrong common pool, exp: %v, got: %v", exp4, stakingSeq.MinDelegationAmount)
 		}
 	})
 }
+

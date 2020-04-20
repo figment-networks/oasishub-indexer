@@ -1,14 +1,13 @@
-package debondingdelegationseq
+package transactionseq
 
 import (
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"math/big"
 	"testing"
 	"time"
 )
 
-func Test_DebondingDelegationSeq(t *testing.T) {
+func Test_TransactionSeq(t *testing.T) {
 	chainId := "chain123"
 	model := &shared.Model{}
 	seq := &shared.Sequence{
@@ -33,9 +32,9 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			PublicKey: types.PublicKey("pb-test"),
+			Hash: types.Hash("hash-test"),
+			Nonce: types.Nonce(10),
 		}
 
 		if !m.Valid() {
@@ -48,17 +47,17 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			PublicKey: types.PublicKey("pb-test"),
+			Hash: types.Hash("hash-test"),
+			Nonce: types.Nonce(10),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID-2",
-			DelegatorUID: "del-UID-2",
-			Shares: types.NewQuantity(big.NewInt(200)),
+			PublicKey: types.PublicKey("pb-test-2"),
+			Hash: types.Hash("hash-test-2"),
+			Nonce: types.Nonce(20),
 		}
 
 		if m1.Equal(m2) {
@@ -71,17 +70,17 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			PublicKey: types.PublicKey("pb-test"),
+			Hash: types.Hash("hash-test"),
+			Nonce: types.Nonce(10),
 		}
 		m2 := Model{
 			Model: model,
 			Sequence: seq,
 
-			ValidatorUID: "val-UID",
-			DelegatorUID: "del-UID",
-			Shares: types.NewQuantity(big.NewInt(100)),
+			PublicKey: types.PublicKey("pb-test"),
+			Hash: types.Hash("hash-test"),
+			Nonce: types.Nonce(10),
 		}
 
 		if !m1.Equal(m2) {
@@ -89,4 +88,5 @@ func Test_DebondingDelegationSeq(t *testing.T) {
 		}
 	})
 }
+
 
