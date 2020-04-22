@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
-	"golang.org/x/xerrors"
+	"github.com/pkg/errors"
 	gc "gopkg.in/check.v1"
 )
 
@@ -33,7 +33,7 @@ func (s *PipelineTestSuite) TestDataFlow(c *gc.C) {
 }
 
 func (s *PipelineTestSuite) TestProcessorErrorHandling(c *gc.C) {
-	expErr := xerrors.New("some error")
+	expErr := errors.New("some error")
 	stages := make([]pipeline.StageRunner, 10)
 	for i := 0; i < len(stages); i++ {
 		var err error
@@ -53,23 +53,23 @@ func (s *PipelineTestSuite) TestProcessorErrorHandling(c *gc.C) {
 }
 
 func (s *PipelineTestSuite) TestSourceErrorHandling(c *gc.C) {
-	expErr := xerrors.New("some error")
+	expErr := errors.New("some error")
 	src := &sourceStub{data: stringPayloads(3), err: expErr}
 	sink := new(sinkStub)
 
 	p := pipeline.New(testStage{c: c})
 	err := p.Process(context.TODO(), src, sink)
-	c.Assert(err, gc.ErrorMatches, "(?s).*pipeline source: some error.*")
+	c.Assert(err, gc.ErrorMatches, "(?s).*some error.*")
 }
 
 func (s *PipelineTestSuite) TestSinkErrorHandling(c *gc.C) {
-	expErr := xerrors.New("some error")
+	expErr := errors.New("some error")
 	src := &sourceStub{data: stringPayloads(3)}
 	sink := &sinkStub{err: expErr}
 
 	p := pipeline.New(testStage{c: c})
 	err := p.Process(context.TODO(), src, sink)
-	c.Assert(err, gc.ErrorMatches, "(?s).*pipeline sink: some error.*")
+	c.Assert(err, gc.ErrorMatches, "(?s).*some error.*")
 }
 
 func (s *PipelineTestSuite) TestPayloadDiscarding(c *gc.C) {

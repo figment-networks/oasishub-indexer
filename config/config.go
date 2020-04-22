@@ -6,20 +6,31 @@ import (
 )
 
 const (
+	// http API port
 	appPort       = "PORT"
+	// oasishub-proxy url
 	proxyUrl      = "PROXY_URL"
+	// log level
 	logLevel      = "LOG_LEVEL"
+	// where to output logs
 	logOutput     = "LOG_OUTPUT"
+	// current go environment
 	goEnvironment = "GO_ENVIRONMENT"
 
-	// Cli
+	// CLI
+	// command line argument to be used for passing batch size
 	batchSize = "CLI_BATCH_SIZE_ARG"
 
 	// Job
+	// Size of the batch for processing pipeline
 	pipelineBatchSize  = "BLOCK_SYNC_BATCH_SIZE"
+	// How often processing job should be run
 	processingInterval = "PROCESSING_INTERVAL"
+	// How often cleanup job should be run
 	cleanupInterval    = "CLEANUP_INTERVAL"
+	// Height of the first block
 	firstBlockHeight   = "FIRST_BLOCK_HEIGHT"
+	// How many syncables do we want to keep in our database before deleting them
 	cleanupThreshold   = "CLEANUP_THRESHOLD"
 
 	// Database

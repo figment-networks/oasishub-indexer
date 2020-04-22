@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"golang.org/x/xerrors"
+	"github.com/pkg/errors"
 )
 
 type fifo struct {
@@ -32,7 +32,7 @@ func (r fifo) Run(ctx context.Context, params StageParams) {
 
 			payloadOut, err := r.proc.Process(ctx, payloadIn)
 			if err != nil {
-				wrappedErr := xerrors.Errorf("pipeline stage %d: %w", params.StageIndex(), err)
+				wrappedErr := errors.Errorf("pipeline stage %d: %w", params.StageIndex(), err)
 				maybeEmitError(wrappedErr, params.Error())
 				return
 			}
@@ -136,7 +136,7 @@ stop:
 				defer func() { p.tokenPool <- token }()
 				payloadOut, err := p.proc.Process(ctx, payloadIn)
 				if err != nil {
-					wrappedErr := xerrors.Errorf("pipeline stage %d: %w", params.StageIndex(), err)
+					wrappedErr := errors.Errorf("pipeline stage %d: %w", params.StageIndex(), err)
 					maybeEmitError(wrappedErr, params.Error())
 					return
 				}

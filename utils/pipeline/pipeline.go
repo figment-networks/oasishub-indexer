@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	"github.com/hashicorp/go-multierror"
-	"golang.org/x/xerrors"
+	"github.com/pkg/errors"
 )
 
 var _ StageParams = (*workerParams)(nil)
@@ -127,7 +127,7 @@ func sourceWorker(ctx context.Context, source Source, outCh chan<- Payload, errC
 
 	// Check for errors
 	if err := source.Error(); err != nil {
-		wrappedErr := xerrors.Errorf("pipeline source: %w", err)
+		wrappedErr := errors.Errorf("pipeline source: %w", err)
 		maybeEmitError(wrappedErr, errCh)
 	}
 }
@@ -144,7 +144,7 @@ func sinkWorker(ctx context.Context, sink Sink, inCh <-chan Payload, errCh chan<
 			}
 
 			if err := sink.Consume(ctx, payload); err != nil {
-				wrappedErr := xerrors.Errorf("pipeline sink: %w", err)
+				wrappedErr := errors.Errorf("pipeline sink: %w", err)
 				maybeEmitError(wrappedErr, errCh)
 				return
 			}

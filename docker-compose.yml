@@ -38,7 +38,7 @@ services:
     ports:
       - "8081:8081"
     environment:
-      - NODE_URL=http://host.docker.internal:8080
+      - PROXY_URL=http://host.docker.internal:8080
       - GIN_MODE=release
       - DB_HOST=timedb
       - DB_NAME=oasishub
