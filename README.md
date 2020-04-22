@@ -70,6 +70,7 @@ data to the format indexer understands.
 * GET    `/delegations/:height`      --> get delegations for given height
 * GET    `/debonding_delegations/:height` --> get debonding delegations for given height
 * GET    `/accounts/:public_key`     --> get account information by public key
+* GET    `/current_height`     --> get the height of the most recently synced and indexed data
 
 ### Running app
 

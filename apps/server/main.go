@@ -25,6 +25,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecases/delegation/getdelegationsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/ping"
 	"github.com/figment-networks/oasishub-indexer/usecases/staking/getstakingbyheight"
+	"github.com/figment-networks/oasishub-indexer/usecases/syncable/getmostrecentheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/transaction/gettransactionsbyheight"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/getentitybyentityuid"
 	"github.com/figment-networks/oasishub-indexer/usecases/validator/gettotalsharesforinterval"
@@ -80,6 +81,7 @@ func main() {
 	getDebondingDelegationsByHeight := getdebondingdelegationsbyheight.NewUseCase(syncableDbRepo, syncableProxyRepo, debondingDelegationSeqDbRepo)
 	getAccountByPublicKey := getaccountbypublickey.NewUseCase(syncableDbRepo, syncableProxyRepo, accountAggDbRepo, delegationSeqDbRepo, debondingDelegationSeqDbRepo)
 	getEntityByEntityUID := getentitybyentityuid.NewUseCase(syncableDbRepo, syncableProxyRepo, entityAggDbRepo, validatorSeqDbRepo, delegationSeqDbRepo, debondingDelegationSeqDbRepo)
+	getMostRecentHeight := getmostrecentheight.NewUseCase(syncableDbRepo)
 
 	// HANDLERS
 	pingHandler := ping.NewHttpHandler()
@@ -95,6 +97,7 @@ func main() {
 	getDebondingDelegationsByHeightHandler := getdebondingdelegationsbyheight.NewHttpHandler(getDebondingDelegationsByHeight)
 	getAccountByPublicKeyHandler := getaccountbypublickey.NewHttpHandler(getAccountByPublicKey)
 	getEntityByEntityUIDHandler := getentitybyentityuid.NewHttpHandler(getEntityByEntityUID)
+	getMostRecentHeightHandler := getmostrecentheight.NewHttpHandler(getMostRecentHeight)
 
 	// ADD ROUTES
 	router = gin.Default()
@@ -111,6 +114,7 @@ func main() {
 	router.GET("/delegations", getDelegationsByHeightHandler.Handle)
 	router.GET("/debonding_delegations", getDebondingDelegationsByHeightHandler.Handle)
 	router.GET("/accounts", getAccountByPublicKeyHandler.Handle)
+	router.GET("/current_height", getMostRecentHeightHandler.Handle)
 
 	log.Info(fmt.Sprintf("Starting server on port %s", config.AppPort()))
 
