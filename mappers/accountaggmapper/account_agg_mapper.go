@@ -26,12 +26,12 @@ func ToAggregate(stateSyncable *syncable.Model) ([]accountagg.Model, errors.Appl
 			},
 
 			PublicKey:                         types.PublicKey(publicKey),
-			CurrentGeneralBalance:             types.NewQuantityFromBytes(info.General.Balance),
-			CurrentGeneralNonce:               types.Nonce(info.General.Nonce),
-			CurrentEscrowActiveBalance:        types.NewQuantityFromBytes(info.Escrow.Active.Balance),
-			CurrentEscrowActiveTotalShares:    types.NewQuantityFromBytes(info.Escrow.Active.TotalShares),
-			CurrentEscrowDebondingBalance:     types.NewQuantityFromBytes(info.Escrow.Debonding.Balance),
-			CurrentEscrowDebondingTotalShares: types.NewQuantityFromBytes(info.Escrow.Debonding.TotalShares),
+			RecentGeneralBalance:             types.NewQuantityFromBytes(info.General.Balance),
+			RecentGeneralNonce:               types.Nonce(info.General.Nonce),
+			RecentEscrowActiveBalance:        types.NewQuantityFromBytes(info.Escrow.Active.Balance),
+			RecentEscrowActiveTotalShares:    types.NewQuantityFromBytes(info.Escrow.Active.TotalShares),
+			RecentEscrowDebondingBalance:     types.NewQuantityFromBytes(info.Escrow.Debonding.Balance),
+			RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(info.Escrow.Debonding.TotalShares),
 		}
 
 		if !acc.Valid() {

@@ -13,11 +13,11 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/chainrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/reportrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/validatoraggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/usecases/pipeline/startpipeline"
 	"github.com/figment-networks/oasishub-indexer/usecases/syncable/cleanup"
@@ -55,14 +55,14 @@ func main() {
 	reportDbRepo := reportrepo.NewDbRepo(db.Client())
 
 	blockSeqDbRepo := blockseqrepo.NewDbRepo(db.Client())
-	validatorSequenceDbRepo := validatorseqrepo.NewDbRepo(db.Client())
+	validatorSeqDbRepo := validatorseqrepo.NewDbRepo(db.Client())
 	transactionSeqDbRepo := transactionseqrepo.NewDbRepo(db.Client())
 	stakingSeqDbRepo := stakingseqrepo.NewDbRepo(db.Client())
 	delegationSeqDbRepo := delegationseqrepo.NewDbRepo(db.Client())
 	debondingDelegationSeqDbRepo := debondingdelegationseqrepo.NewDbRepo(db.Client())
 
 	accountAggDbRepo := accountaggrepo.NewDbRepo(db.Client())
-	entityAggDbRepo := entityaggrepo.NewDbRepo(db.Client())
+	validatorAggDbRepo := validatoraggrepo.NewDbRepo(db.Client())
 
 	//USE CASES
 	startPipelineUseCase := startpipeline.NewUseCase(
@@ -70,13 +70,13 @@ func main() {
 		syncableDbRepo,
 		syncableProxyRepo,
 		blockSeqDbRepo,
-		validatorSequenceDbRepo,
+		validatorSeqDbRepo,
 		transactionSeqDbRepo,
 		stakingSeqDbRepo,
 		accountAggDbRepo,
 		delegationSeqDbRepo,
 		debondingDelegationSeqDbRepo,
-		entityAggDbRepo,
+		validatorAggDbRepo,
 		reportDbRepo,
 	)
 	cleanupUseCase := cleanup.NewUseCase(syncableDbRepo)

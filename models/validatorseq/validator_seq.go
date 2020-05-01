@@ -9,13 +9,13 @@ type Model struct {
 	*shared.Model
 	*shared.Sequence
 
-	EntityUID    types.PublicKey `json:"entity_uid"`
-	NodeUID      types.PublicKey `json:"node_uid"`
-	ConsensusUID types.PublicKey `json:"consensus_uid"`
-	Address      string          `json:"address"`
-	Proposed     bool            `json:"proposed"`
-	VotingPower  VotingPower     `json:"voting_power"`
-	TotalShares  types.Quantity  `json:"total_shares"`
+	EntityUID    types.PublicKey   `json:"entity_uid"`
+	NodeUID      types.PublicKey   `json:"node_uid"`
+	ConsensusUID types.PublicKey   `json:"consensus_uid"`
+	Address      string            `json:"address"`
+	Proposed     bool              `json:"proposed"`
+	VotingPower  types.VotingPower `json:"voting_power"`
+	TotalShares  types.Quantity    `json:"total_shares"`
 	// When precommit_validated is null it means that validator did not have chance to validate the block
 	PrecommitValidated *bool  `json:"precommit_validated"`
 	PrecommitType      *string `json:"precommit_type"`

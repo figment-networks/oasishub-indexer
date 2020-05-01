@@ -10,11 +10,11 @@ import (
 	"github.com/figment-networks/oasishub-indexer/repos/chainrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/debondingdelegationseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/delegationseqrepo"
-	"github.com/figment-networks/oasishub-indexer/repos/entityaggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/reportrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/stakingseqrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/syncablerepo"
 	"github.com/figment-networks/oasishub-indexer/repos/transactionseqrepo"
+	"github.com/figment-networks/oasishub-indexer/repos/validatoraggrepo"
 	"github.com/figment-networks/oasishub-indexer/repos/validatorseqrepo"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/errors"
@@ -39,7 +39,7 @@ type useCase struct {
 	accountAggDbRepo             accountaggrepo.DbRepo
 	delegationSeqDbRepo          delegationseqrepo.DbRepo
 	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo
-	entityAggDbRepo              entityaggrepo.DbRepo
+	validatorAggDbRepo              validatoraggrepo.DbRepo
 
 	reportDbRepo reportrepo.DbRepo
 }
@@ -55,7 +55,7 @@ func NewUseCase(
 	accountAggDbRepo accountaggrepo.DbRepo,
 	delegationSeqDbRepo delegationseqrepo.DbRepo,
 	debondingDelegationSeqDbRepo debondingdelegationseqrepo.DbRepo,
-	entityAggDbRepo entityaggrepo.DbRepo,
+	validatorAggDbRepo validatoraggrepo.DbRepo,
 	reportDbRepo reportrepo.DbRepo,
 ) UseCase {
 	return &useCase{
@@ -70,7 +70,7 @@ func NewUseCase(
 		accountAggDbRepo:             accountAggDbRepo,
 		delegationSeqDbRepo:          delegationSeqDbRepo,
 		debondingDelegationSeqDbRepo: debondingDelegationSeqDbRepo,
-		entityAggDbRepo:              entityAggDbRepo,
+		validatorAggDbRepo:              validatorAggDbRepo,
 
 		reportDbRepo: reportDbRepo,
 	}
@@ -95,7 +95,7 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 
 		pipeline.FIFO(NewSyncer(uc.syncableDbRepo, uc.syncableProxyRepo)),
 		pipeline.FIFO(NewSequencer(uc.blockSeqDbRepo, uc.validatorSeqDbRepo, uc.transactionSeqDbRepo, uc.stakingSeqDbRepo, uc.delegationSeqDbRepo, uc.debondingDelegationSeqDbRepo)),
-		pipeline.FIFO(NewAggregator(uc.accountAggDbRepo, uc.entityAggDbRepo)),
+		pipeline.FIFO(NewAggregator(uc.accountAggDbRepo, uc.validatorAggDbRepo)),
 	)
 
 	resp := p.Start(ctx, i)

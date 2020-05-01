@@ -1,4 +1,4 @@
-package validatorseq
+package types
 
 type VotingPower int64
 

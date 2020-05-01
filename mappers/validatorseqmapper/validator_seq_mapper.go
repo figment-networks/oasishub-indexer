@@ -2,9 +2,6 @@ package validatorseqmapper
 
 import (
 	"github.com/figment-networks/oasishub-indexer/mappers/syncablemapper"
-	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
-	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
-	"github.com/figment-networks/oasishub-indexer/models/entityagg"
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
@@ -40,7 +37,7 @@ func ToSequence(validatorsSyncable syncable.Model, blockSyncable syncable.Model,
 			NodeUID:      types.PublicKey(rv.Id),
 			ConsensusUID: types.PublicKey(rv.Node.Consensus.Id),
 			Address:      rv.Address,
-			VotingPower:  validatorseq.VotingPower(rv.VotingPower),
+			VotingPower:  types.VotingPower(rv.VotingPower),
 		}
 
 		// Get precommit data
@@ -97,32 +94,5 @@ type ListView struct {
 func ToListView(ms []validatorseq.Model) *ListView {
 	return &ListView{
 		Items: ms,
-	}
-}
-
-type DetailsView struct {
-	*shared.Model
-	*shared.Aggregate
-
-	EntityUID types.PublicKey `json:"entity_uid"`
-
-	TotalValidated             int64                          `json:"total_validated"`
-	TotalMissed                int64                          `json:"total_missed"`
-	TotalProposed              int64                          `json:"total_proposed"`
-	CurrentDelegations         []delegationseq.Model          `json:"current_delegations"`
-	RecentDebondingDelegations []debondingdelegationseq.Model `json:"recent_debonding_delegations"`
-}
-
-func ToDetailsView(m entityagg.Model, totV int64, totM int64, totP int64, currDs []delegationseq.Model, recDds []debondingdelegationseq.Model) *DetailsView {
-	return &DetailsView{
-		Model:     m.Model,
-		Aggregate: m.Aggregate,
-
-		TotalValidated: totV,
-		TotalMissed:    totM,
-		TotalProposed:  totP,
-
-		CurrentDelegations:         currDs,
-		RecentDebondingDelegations: recDds,
 	}
 }

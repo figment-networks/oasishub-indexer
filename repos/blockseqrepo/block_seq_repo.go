@@ -15,6 +15,7 @@ type DbRepo interface {
 	Count() (*int64, errors.ApplicationError)
 	GetByHeight(types.Height) (*blockseq.Model, errors.ApplicationError)
 	GetMostRecent(BlockDbQuery) (*blockseq.Model, errors.ApplicationError)
+	GetRecentProcessed(int64) ([]blockseq.Model, errors.ApplicationError)
 	GetAvgBlockTimesForRecentBlocks(int64) Result
 	GetAvgBlockTimesForInterval(string, string) ([]Row, errors.ApplicationError)
 
@@ -76,6 +77,17 @@ func (r *dbRepo) GetMostRecent(q BlockDbQuery) (*blockseq.Model, errors.Applicat
 		return nil, errors.NewError("could not find most recent block sequence", errors.QueryError, err)
 	}
 	return &m, nil
+}
+
+func (r *dbRepo) GetRecentProcessed(limit int64) ([]blockseq.Model, errors.ApplicationError) {
+	var ms []blockseq.Model
+	if err := r.client.Where("processed_at IS NOT NULL").Order("height desc").Limit(limit).Find(&ms).Error; err != nil {
+		if gorm.IsRecordNotFoundError(err) {
+			return nil, errors.NewError("most recent block sequence not found", errors.NotFoundError, err)
+		}
+		return nil, errors.NewError("could not find most recent block sequence", errors.QueryError, err)
+	}
+	return ms, nil
 }
 
 type Result struct {

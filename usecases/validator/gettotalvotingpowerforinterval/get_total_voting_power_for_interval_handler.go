@@ -1,4 +1,4 @@
-package getentitybyentityuid
+package gettotalvotingpowerforinterval
 
 import (
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -17,19 +17,20 @@ func NewHttpHandler(useCase UseCase) types.HttpHandler {
 }
 
 type Request struct {
-	EntityUID types.PublicKey `form:"entity_uid" binding:"required"`
+	Interval string `form:"interval" binding:"required"`
+	Period   string `form:"period" binding:"required"`
 }
 
 func (h *httpHandler) Handle(c *gin.Context) {
 	var req Request
 	if err := c.ShouldBindQuery(&req); err != nil {
 		log.Error(err)
-		err := errors.NewError("invalid height", errors.ServerInvalidParamsError, err)
+		err := errors.NewError("invalid interval", errors.ServerInvalidParamsError, err)
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
 
-	resp, err := h.useCase.Execute(req.EntityUID)
+	resp, err := h.useCase.Execute(req.Interval, req.Period)
 	if err != nil {
 		log.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
@@ -38,3 +39,4 @@ func (h *httpHandler) Handle(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+

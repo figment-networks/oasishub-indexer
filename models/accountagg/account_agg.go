@@ -9,13 +9,13 @@ type Model struct {
 	*shared.Model
 	*shared.Aggregate
 
-	PublicKey                         types.PublicKey `json:"public_key"`
-	CurrentGeneralBalance             types.Quantity  `json:"current_general_balance"`
-	CurrentGeneralNonce               types.Nonce     `json:"current_general_nonce"`
-	CurrentEscrowActiveBalance        types.Quantity  `json:"current_escrow_active_balance"`
-	CurrentEscrowActiveTotalShares    types.Quantity  `json:"current_escrow_active_total_shares"`
-	CurrentEscrowDebondingBalance     types.Quantity  `json:"current_escrow_debonding_balance"`
-	CurrentEscrowDebondingTotalShares types.Quantity  `json:"current_escrow_debonding_total_shares"`
+	PublicKey                        types.PublicKey `json:"public_key"`
+	RecentGeneralBalance             types.Quantity  `json:"recent_general_balance"`
+	RecentGeneralNonce               types.Nonce     `json:"recent_general_nonce"`
+	RecentEscrowActiveBalance        types.Quantity  `json:"recent_escrow_active_balance"`
+	RecentEscrowActiveTotalShares    types.Quantity  `json:"recent_escrow_active_total_shares"`
+	RecentEscrowDebondingBalance     types.Quantity  `json:"recent_escrow_debonding_balance"`
+	RecentEscrowDebondingTotalShares types.Quantity  `json:"recent_escrow_debonding_total_shares"`
 }
 
 // - METHODS
@@ -46,10 +46,13 @@ func (aa *Model) Equal(m Model) bool {
 }
 
 func (aa *Model) UpdateAggAttrs(u *Model) {
-	aa.CurrentGeneralBalance = u.CurrentGeneralBalance
-	aa.CurrentGeneralNonce = u.CurrentGeneralNonce
-	aa.CurrentEscrowActiveBalance = u.CurrentEscrowActiveBalance
-	aa.CurrentEscrowActiveTotalShares = u.CurrentEscrowActiveTotalShares
-	aa.CurrentEscrowDebondingBalance = u.CurrentEscrowDebondingBalance
-	aa.CurrentEscrowDebondingTotalShares = u.CurrentEscrowDebondingTotalShares
+	aa.Aggregate.RecentAtHeight = u.Aggregate.RecentAtHeight
+	aa.Aggregate.RecentAt = u.Aggregate.RecentAt
+
+	aa.RecentGeneralBalance = u.RecentGeneralBalance
+	aa.RecentGeneralNonce = u.RecentGeneralNonce
+	aa.RecentEscrowActiveBalance = u.RecentEscrowActiveBalance
+	aa.RecentEscrowActiveTotalShares = u.RecentEscrowActiveTotalShares
+	aa.RecentEscrowDebondingBalance = u.RecentEscrowDebondingBalance
+	aa.RecentEscrowDebondingTotalShares = u.RecentEscrowDebondingTotalShares
 }

@@ -6,7 +6,9 @@ import (
 
 type Aggregate struct {
 	StartedAtHeight types.Height `json:"started_at_height"`
-	StartedAt       types.Time    `json:"started_at"`
+	StartedAt       types.Time   `json:"started_at"`
+	RecentAtHeight  types.Height `json:"recent_at_height"`
+	RecentAt        types.Time   `json:"recent_at"`
 }
 
 func (a *Aggregate) Valid() bool {

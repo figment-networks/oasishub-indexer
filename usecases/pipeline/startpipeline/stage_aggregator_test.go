@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"github.com/figment-networks/oasishub-indexer/fixtures"
 	mock_accountaggrepo "github.com/figment-networks/oasishub-indexer/mock/repos/accountaggrepo"
-	mock_entityaggrepo "github.com/figment-networks/oasishub-indexer/mock/repos/entityaggrepo"
+	mock_validatoraggrepo "github.com/figment-networks/oasishub-indexer/mock/repos/validatoraggrepo"
 	"github.com/figment-networks/oasishub-indexer/models/shared"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -74,7 +74,7 @@ func Test_StageAggregator(t *testing.T) {
 		accountDbRepo.EXPECT().GetByPublicKey(gomock.Any()).Return(nil, errors.NewErrorFromMessage("not found", errors.NotFoundError)).MinTimes(1)
 		accountDbRepo.EXPECT().Create(gomock.Any()).Return(nil).MinTimes(1)
 
-		entityDbRepo := mock_entityaggrepo.NewMockDbRepo(ctrl)
+		entityDbRepo := mock_validatoraggrepo.NewMockDbRepo(ctrl)
 		entityDbRepo.EXPECT().GetByEntityUID(gomock.Any()).Return(nil, errors.NewErrorFromMessage("not found", errors.NotFoundError)).MinTimes(1)
 		entityDbRepo.EXPECT().Create(gomock.Any()).Return(nil).MinTimes(1)
 
@@ -90,7 +90,7 @@ func Test_StageAggregator(t *testing.T) {
 		if p.NewAggregatedAccounts == nil {
 			t.Errorf("new accounts should be aggregated")
 		}
-		if p.NewAggregatedEntities == nil {
+		if p.NewAggregatedValidators == nil {
 			t.Errorf("new entities should be aggregated")
 		}
 	})

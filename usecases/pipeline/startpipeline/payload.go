@@ -5,10 +5,10 @@ import (
 	"github.com/figment-networks/oasishub-indexer/models/blockseq"
 	"github.com/figment-networks/oasishub-indexer/models/debondingdelegationseq"
 	"github.com/figment-networks/oasishub-indexer/models/delegationseq"
-	"github.com/figment-networks/oasishub-indexer/models/entityagg"
 	"github.com/figment-networks/oasishub-indexer/models/stakingseq"
 	"github.com/figment-networks/oasishub-indexer/models/syncable"
 	"github.com/figment-networks/oasishub-indexer/models/transactionseq"
+	"github.com/figment-networks/oasishub-indexer/models/validatoragg"
 	"github.com/figment-networks/oasishub-indexer/models/validatorseq"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/pipeline"
@@ -34,10 +34,10 @@ type payload struct {
 	ValidatorsSyncable   *syncable.Model
 	TransactionsSyncable *syncable.Model
 
-	NewAggregatedAccounts     []accountagg.Model
-	UpdatedAggregatedAccounts []accountagg.Model
-	NewAggregatedEntities     []entityagg.Model
-	UpdatedAggregatedEntities []entityagg.Model
+	NewAggregatedAccounts       []accountagg.Model
+	UpdatedAggregatedAccounts   []accountagg.Model
+	NewAggregatedValidators     []validatoragg.Model
+	UpdatedAggregatedValidators []validatoragg.Model
 
 	BlockSequence                *blockseq.Model
 	StakingSequence              *stakingseq.Model
@@ -60,8 +60,8 @@ func (p *payload) Clone() pipeline.Payload {
 
 	newP.NewAggregatedAccounts = append([]accountagg.Model(nil), p.NewAggregatedAccounts...)
 	newP.UpdatedAggregatedAccounts = append([]accountagg.Model(nil), p.UpdatedAggregatedAccounts...)
-	newP.NewAggregatedEntities = append([]entityagg.Model(nil), p.NewAggregatedEntities...)
-	newP.UpdatedAggregatedEntities = append([]entityagg.Model(nil), p.UpdatedAggregatedEntities...)
+	newP.NewAggregatedValidators = append([]validatoragg.Model(nil), p.NewAggregatedValidators...)
+	newP.UpdatedAggregatedValidators = append([]validatoragg.Model(nil), p.UpdatedAggregatedValidators...)
 
 	newP.BlockSequence = p.BlockSequence
 	newP.StakingSequence = p.StakingSequence
@@ -77,8 +77,8 @@ func (p *payload) MarkAsProcessed() {
 	// Reset
 	p.NewAggregatedAccounts = p.NewAggregatedAccounts[:0]
 	p.UpdatedAggregatedAccounts = p.UpdatedAggregatedAccounts[:0]
-	p.NewAggregatedEntities = p.NewAggregatedEntities[:0]
-	p.UpdatedAggregatedEntities = p.UpdatedAggregatedEntities[:0]
+	p.NewAggregatedValidators = p.NewAggregatedValidators[:0]
+	p.UpdatedAggregatedValidators = p.UpdatedAggregatedValidators[:0]
 	p.ValidatorSequences = p.ValidatorSequences[:0]
 	p.TransactionSequences = p.TransactionSequences[:0]
 	p.DelegationSequences = p.DelegationSequences[:0]

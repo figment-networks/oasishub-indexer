@@ -20,7 +20,10 @@ type DbRepo interface {
 	GetTotalMissedByEntityUID(types.PublicKey) (*int64, errors.ApplicationError)
 	GetTotalProposedByEntityUID(types.PublicKey) (*int64, errors.ApplicationError)
 	GetTotalSharesForInterval(string, string) ([]Row, errors.ApplicationError)
+	GetTotalVotingPowerForInterval(string, string) ([]FloatRow, errors.ApplicationError)
 	GetValidatorSharesForInterval(types.PublicKey, string, string) ([]Row, errors.ApplicationError)
+	GetValidatorVotingPowerForInterval(types.PublicKey, string, string) ([]FloatRow, errors.ApplicationError)
+	GetValidatorUptimeForInterval(types.PublicKey, string, string) ([]FloatRow, errors.ApplicationError)
 
 	// Commands
 	Save(*validatorseq.Model) errors.ApplicationError
@@ -145,6 +148,29 @@ func (r *dbRepo) GetTotalSharesForInterval(interval string, period string) ([]Ro
 	return res, nil
 }
 
+func (r *dbRepo) GetTotalVotingPowerForInterval(interval string, period string) ([]FloatRow, errors.ApplicationError) {
+	rows, err := r.client.Raw(totalVotingPowerForIntervalQuery, interval, period).Rows()
+	if err != nil {
+		return nil, errors.NewError("could not query total voting power for interval", errors.QueryError, err)
+	}
+	defer rows.Close()
+
+	var res []FloatRow
+	for rows.Next() {
+		var row FloatRow
+		if err := r.client.ScanRows(rows, &row); err != nil {
+			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
+		}
+		res = append(res, row)
+	}
+	return res, nil
+}
+
+type FloatRow struct {
+	TimeInterval string  `json:"time_interval"`
+	Avg          float64 `json:"avg"`
+}
+
 func (r *dbRepo) GetValidatorSharesForInterval(key types.PublicKey, interval string, period string) ([]Row, errors.ApplicationError) {
 	rows, err := r.client.Raw(validatorSharesForIntervalQuery, key, interval, period).Rows()
 	if err != nil {
@@ -155,6 +181,42 @@ func (r *dbRepo) GetValidatorSharesForInterval(key types.PublicKey, interval str
 	var res []Row
 	for rows.Next() {
 		var row Row
+		if err := r.client.ScanRows(rows, &row); err != nil {
+			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
+		}
+		res = append(res, row)
+	}
+	return res, nil
+}
+
+func (r *dbRepo) GetValidatorVotingPowerForInterval(key types.PublicKey, interval string, period string) ([]FloatRow, errors.ApplicationError) {
+	rows, err := r.client.Debug().Raw(validatorVotingPowerForIntervalQuery, key, interval, period).Rows()
+	if err != nil {
+		return nil, errors.NewError("could not query validator voting power for interval", errors.QueryError, err)
+	}
+	defer rows.Close()
+
+	var res []FloatRow
+	for rows.Next() {
+		var row FloatRow
+		if err := r.client.ScanRows(rows, &row); err != nil {
+			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
+		}
+		res = append(res, row)
+	}
+	return res, nil
+}
+
+func (r *dbRepo) GetValidatorUptimeForInterval(key types.PublicKey, interval string, period string) ([]FloatRow, errors.ApplicationError) {
+	rows, err := r.client.Raw(validatorUptimeForIntervalQuery, key, interval, period).Rows()
+	if err != nil {
+		return nil, errors.NewError("could not query validator uptime for interval", errors.QueryError, err)
+	}
+	defer rows.Close()
+
+	var res []FloatRow
+	for rows.Next() {
+		var row FloatRow
 		if err := r.client.ScanRows(rows, &row); err != nil {
 			return nil, errors.NewError("could not scan rows", errors.QueryError, err)
 		}

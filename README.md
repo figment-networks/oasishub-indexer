@@ -61,16 +61,24 @@ data to the format indexer understands.
 ### Available endpoints:
 
 * GET    `/ping`                     --> ping endpoint
-* GET    `/blocks/:height`           --> return block by height
-* GET    `/block_times/:limit`       --> get last x block times
-* GET    `/block_times_interval/:interval` --> get block times for specific interval ie. '5 minutes' or '1 hour'
-* GET    `/transactions/:height`     --> get list of transactions for given height
-* GET    `/validators/:height`       --> get list of validators for given height
-* GET    `/staking/:height`          --> get staking information for given height
-* GET    `/delegations/:height`      --> get delegations for given height
-* GET    `/debonding_delegations/:height` --> get debonding delegations for given height
-* GET    `/accounts/:public_key`     --> get account information by public key
+* GET    `/blocks`           --> return block by height. You can pass optional height query param.
+* GET    `/block_times`       --> get last x block times
+* GET    `/block_times_interval` --> get block times for specific interval ie. '5 minutes' or '1 hour'
+* GET    `/transactions`     --> get list of transactions for given height. You can pass optional height query param.
+* GET    `/validators`       --> get list of validators for given height. You can pass optional height query param.
+* GET    `/staking`          --> get staking information for given height. You can pass optional height query param.
+* GET    `/delegations`      --> get delegations for given height. You can pass optional height query param.
+* GET    `/debonding_delegations` --> get debonding delegations for given height. You can pass optional height query param.
+* GET    `/accounts?public_key=:public_key`     --> get account information by public key
 * GET    `/current_height`     --> get the height of the most recently synced and indexed data
+* GET    `/validators/for_min_height/:height`     --> get the list of validators for height greater than provided
+* GET    `/validators/by_entitiy_uid?entity_uid=:entity_uid`     --> get validator by entity UID
+* GET    `/validators/shares_interval?entity_uid=:entity_uid&interval=:interval&period=:period`     --> get shares for validator for specific interval ie. '5 minutes' or '1 hour'
+* GET    `/validators/voting_power_interval?entity_uid=:entity_uid&interval=:interval&period=:period`     --> get voting power for validator for specific interval ie. '5 minutes' or '1 hour'
+* GET    `/validators/uptime_interval?entity_uid=:entity_uid&interval=:interval&period=:period`     --> get uptime for validator for specific interval ie. '5 minutes' or '1 hour'
+
+* GET    `/validators/total_shares_interval?interval=:interval&period=:period`     --> get total shares for specific interval ie. '5 minutes' or '1 hour'
+* GET    `/validators/total_voting_power_interval?interval=:interval&period=:period`     --> get voting power for specific interval ie. '5 minutes' or '1 hour'
 
 ### Running app
 

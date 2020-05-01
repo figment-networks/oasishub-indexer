@@ -1,4 +1,4 @@
-package entityagg
+package validatoragg
 
 import (
 	"github.com/figment-networks/oasishub-indexer/models/shared"
