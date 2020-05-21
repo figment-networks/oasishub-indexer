@@ -42,7 +42,7 @@ func NewPipeline(
 	}
 }
 
-// Process block until the link iterator is exhausted, an error occurs or the
+// Process block until the height iterator is exhausted, an error occurs or the
 // context is cancelled.
 func (c *processingPipeline) Start(ctx context.Context, iter pipeline.Iterator) Results {
 	i := iter.(*iterators.HeightIterator)

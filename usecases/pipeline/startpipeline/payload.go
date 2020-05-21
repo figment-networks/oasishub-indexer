@@ -29,16 +29,24 @@ type payload struct {
 	CurrentHeight types.Height
 	RetrievedAt   types.Time
 
+	// Syncer stage
 	BlockSyncable        *syncable.Model
 	StateSyncable        *syncable.Model
 	ValidatorsSyncable   *syncable.Model
 	TransactionsSyncable *syncable.Model
 
+	// Run stage
+	CalculatedEntitiesData   map[string]CalculatedEntityData
+	CalculatedValidatorsData map[string]CalculatedValidatorData
+	CalculatedAccountsData   map[string]CalculatedAccountData
+
+	// Aggregate stage
 	NewAggregatedAccounts       []accountagg.Model
 	UpdatedAggregatedAccounts   []accountagg.Model
 	NewAggregatedValidators     []validatoragg.Model
 	UpdatedAggregatedValidators []validatoragg.Model
 
+	// Sequence stage
 	BlockSequence                *blockseq.Model
 	StakingSequence              *stakingseq.Model
 	ValidatorSequences           []validatorseq.Model

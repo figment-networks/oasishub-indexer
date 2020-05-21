@@ -94,6 +94,7 @@ func (uc *useCase) Execute(ctx context.Context, batchSize int64) errors.Applicat
 		},
 
 		pipeline.FIFO(NewSyncer(uc.syncableDbRepo, uc.syncableProxyRepo)),
+		pipeline.FIFO(NewCalculator()),
 		pipeline.FIFO(NewSequencer(uc.blockSeqDbRepo, uc.validatorSeqDbRepo, uc.transactionSeqDbRepo, uc.stakingSeqDbRepo, uc.delegationSeqDbRepo, uc.debondingDelegationSeqDbRepo)),
 		pipeline.FIFO(NewAggregator(uc.accountAggDbRepo, uc.validatorAggDbRepo)),
 	)

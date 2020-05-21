@@ -97,3 +97,8 @@ type Sink interface {
 	// a Pipeline instance.
 	Consume(context.Context, Payload) error
 }
+
+// AsyncTask is implemented by types that want to be executed inside of stage asynchronously
+type AsyncTask interface {
+	Run(chan<- error, Payload)
+}

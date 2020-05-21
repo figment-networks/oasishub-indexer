@@ -118,13 +118,13 @@ func Test_Sequencer_Block(t *testing.T) {
 			t.Errorf("payload.BlockSequence should be set")
 		}
 		if p.StakingSequence == nil {
-			t.Errorf("payload.StakingSequence should be set")
+			t.Errorf("payload.StakingSequenceCreator should be set")
 		}
 		if p.ValidatorSequences == nil {
 			t.Errorf("payload.ValidatorSequences should be set")
 		}
 		if p.TransactionSequences == nil {
-			t.Errorf("payload.TransactionSequences should be set")
+			t.Errorf("payload.TransactionSequencesCreator should be set")
 		}
 		if p.DelegationSequences == nil {
 			t.Errorf("payload.DelegationSequences should be set")

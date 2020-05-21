@@ -28,6 +28,7 @@ const (
 
 	// Pipeline errors
 	PipelineProcessingError = "pipeline_processing_error"
+	CalculatorError         = "pipeline_calculator_error"
 	CleanupError            = "pipeline_cleanup_error"
 
 	// Handler errors
