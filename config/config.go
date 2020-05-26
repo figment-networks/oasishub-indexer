@@ -1,190 +1,91 @@
 package config
 
 import (
-	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/spf13/viper"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"github.com/kelseyhightower/envconfig"
+	"io/ioutil"
 )
 
 const (
-	// http API port
-	appPort       = "PORT"
-	// oasishub-proxy url
-	proxyUrl      = "PROXY_URL"
-	// log level
-	logLevel      = "LOG_LEVEL"
-	// where to output logs
-	logOutput     = "LOG_OUTPUT"
-	// current go environment
-	goEnvironment = "GO_ENVIRONMENT"
-
-	// CLI
-	// command line argument to be used for passing batch size
-	batchSize = "CLI_BATCH_SIZE_ARG"
-
-	// Job
-	// Size of the batch for processing pipeline
-	pipelineBatchSize  = "BLOCK_SYNC_BATCH_SIZE"
-	// How often processing job should be run
-	processingInterval = "PROCESSING_INTERVAL"
-	// How often cleanup job should be run
-	cleanupInterval    = "CLEANUP_INTERVAL"
-	// Height of the first block
-	firstBlockHeight   = "FIRST_BLOCK_HEIGHT"
-	// How many syncables do we want to keep in our database before deleting them
-	cleanupThreshold   = "CLEANUP_THRESHOLD"
-
-	// Database
-	dbUser        = "DB_USER"
-	dbPassword    = "DB_PASSWORD"
-	dbHost        = "DB_HOST"
-	dbName        = "DB_NAME"
-	dbDetailedLog = "DB_DETAILED_LOG"
-	dbSSLMode     = "DB_SSL_MODE"
-
-	production  = "production"
-	development = "development"
-
-	// Rollbar
-	rollbarAccessToken = "ROLLBAR_ACCESS_TOKEN"
+	modeDevelopment = "development"
+	modeProduction  = "production"
 )
 
 var (
-	defaultAppPort       = "8081"
-	defaultProxyUrl      = "localhost:50051"
-	defaultLogLevel      = "info"
-	defaultLogOutput     = "stdout"
-	defaultGoEnvironment = development
-
-	defaultBatchSize = "batchSize"
-
-	defaultPipelineBatchSize  int64 = 100
-	defaultProcessingInterval       = "@every 10s"
-	defaultCleanupInterval          = "@every 10m"
-	defaultFirstBlockHeight   int64 = 1
-	defaultCleanupThreshold   int64 = 1000
-
-	defaultDbUser        = "postgres"
-	defaultDbPassword    = "password"
-	defaultDbHost        = "timedb"
-	defaultDbName        = "app"
-	defaultSSLMode       = "disable"
-	dbDefaultDetailedLog = false
+	errEndpointRequired        = errors.New("oasishub API endpoint is required")
+	errDatabaseRequired        = errors.New("database credentials are required")
+	errSyncIntervalRequired    = errors.New("sync interval is required")
+	errSyncIntervalInvalid     = errors.New("sync interval is invalid")
+	errCleanupIntervalRequired = errors.New("cleanup interval is required")
+	errCleanupIntervalInvalid  = errors.New("cleanup interval is invalid")
 )
 
-func init() {
-	viper.SetDefault(appPort, defaultAppPort)
-	viper.SetDefault(proxyUrl, defaultProxyUrl)
-	viper.SetDefault(logLevel, defaultLogLevel)
-	viper.SetDefault(logOutput, defaultLogOutput)
-	viper.SetDefault(goEnvironment, defaultGoEnvironment)
-
-	viper.SetDefault(batchSize, defaultBatchSize)
-
-	viper.SetDefault(pipelineBatchSize, defaultPipelineBatchSize)
-	viper.SetDefault(processingInterval, defaultProcessingInterval)
-	viper.SetDefault(cleanupInterval, defaultCleanupInterval)
-	viper.SetDefault(firstBlockHeight, defaultFirstBlockHeight)
-	viper.SetDefault(cleanupThreshold, defaultCleanupThreshold)
-
-	viper.SetDefault(dbUser, defaultDbUser)
-	viper.SetDefault(dbPassword, defaultDbPassword)
-	viper.SetDefault(dbHost, defaultDbHost)
-	viper.SetDefault(dbName, defaultDbName)
-	viper.SetDefault(dbSSLMode, defaultSSLMode)
-	viper.SetDefault(dbDetailedLog, dbDefaultDetailedLog)
-
-	viper.BindEnv(appPort)
-	viper.BindEnv(proxyUrl)
-	viper.BindEnv(logLevel)
-	viper.BindEnv(logOutput)
-	viper.BindEnv(goEnvironment)
-
-	viper.BindEnv(batchSize)
-
-	viper.BindEnv(pipelineBatchSize)
-	viper.BindEnv(processingInterval)
-	viper.BindEnv(cleanupInterval)
-	viper.BindEnv(firstBlockHeight)
-	viper.BindEnv(cleanupThreshold)
-
-	viper.BindEnv(dbUser)
-	viper.BindEnv(dbPassword)
-	viper.BindEnv(dbHost)
-	viper.BindEnv(dbName)
-	viper.BindEnv(dbSSLMode)
-	viper.BindEnv(dbDetailedLog)
-
-	viper.BindEnv(rollbarAccessToken)
+// Config holds the configuration data
+type Config struct {
+	AppEnv             string `json:"app_env" envconfig:"APP_ENV" default:"development"`
+	ProxyUrl           string `json:"proxy_url" envconfig:"PROXY_URL"`
+	ServerAddr         string `json:"server_addr" envconfig:"SERVER_ADDR" default:"0.0.0.0"`
+	ServerPort         int64  `json:"server_port" envconfig:"SERVER_PORT" default:"8081"`
+	FirstBlockHeight   int64  `json:"first_block_height" envconfig:"FIRST_BLOCK_HEIGHT" default:"1"`
+	SyncInterval       string `json:"sync_interval" envconfig:"SYNC_INTERVAL" default:"10s"`
+	DefaultBatchSize   int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"100"`
+	DatabaseDSN        string `json:"database_dsn" envconfig:"DATABASE_DSN"`
+	Debug              bool   `json:"debug" envconfig:"DEBUG"`
+	LogLevel           string `json:"log_level" envconfig:"LOG_LEVEL"`
+	LogOutput          string `json:"log_output" envconfig:"LOG_OUTPUT"`
+	RollbarAccessToken string `json:"rollbar_access_token" envconfig:"ROLLBAR_ACCESS_TOKEN"`
+	RollbarServerRoot  string `json:"rollbar_server_root" envconfig:"ROLLBAR_SERVER_ROOT"`
 }
 
-func AppPort() string {
-	return viper.GetString(appPort)
+// Validate returns an error if config is invalid
+func (c *Config) Validate() error {
+	if c.ProxyUrl == "" {
+		return errEndpointRequired
+	}
+
+	if c.DatabaseDSN == "" {
+		return errDatabaseRequired
+	}
+
+	if c.SyncInterval == "" {
+		return errSyncIntervalRequired
+	}
+
+	return nil
 }
 
-func ProxyUrl() string {
-	return viper.GetString(proxyUrl)
+// IsDevelopment returns true if app is in dev mode
+func (c *Config) IsDevelopment() bool {
+	return c.AppEnv == modeDevelopment
 }
 
-func LogLevel() string {
-	return viper.GetString(logLevel)
+// IsProduction returns true if app is in production mode
+func (c *Config) IsProduction() bool {
+	return c.AppEnv == modeProduction
 }
 
-func LogOutput() string {
-	return viper.GetString(logOutput)
+// ListenAddr returns a full listen address and port
+func (c *Config) ListenAddr() string {
+	return fmt.Sprintf("%s:%d", c.ServerAddr, c.ServerPort)
 }
 
-func GoEnvironment() string {
-	return viper.GetString(goEnvironment)
+// New returns a new config
+func New() *Config {
+	return &Config{}
 }
 
-func BatchSize() string {
-	return viper.GetString(batchSize)
+// FromFile reads the config from a file
+func FromFile(path string, config *Config) error {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(data, config)
 }
 
-func PipelineBatchSize() int64 {
-	return viper.GetInt64(pipelineBatchSize)
-}
-
-func ProcessingInterval() string {
-	return viper.GetString(processingInterval)
-}
-
-func CleanupInterval() string {
-	return viper.GetString(cleanupInterval)
-}
-
-func FirstBlockHeight() types.Height {
-	return types.Height(viper.GetInt64(firstBlockHeight))
-}
-
-func CleanupThreshold() int64 {
-	return viper.GetInt64(cleanupThreshold)
-}
-
-func DbName() string {
-	return viper.GetString(dbName)
-}
-
-func DbUser() string {
-	return viper.GetString(dbUser)
-}
-
-func DbHost() string {
-	return viper.GetString(dbHost)
-}
-
-func DbPassword() string {
-	return viper.GetString(dbPassword)
-}
-
-func DbSSLMode() string {
-	return viper.GetString(dbSSLMode)
-}
-
-func DbDetailedLog() bool {
-	return viper.GetBool(dbDetailedLog)
-}
-
-func RollbarAccessToken() string {
-	return viper.GetString(rollbarAccessToken)
+// FromEnv reads the config from environment variables
+func FromEnv(config *Config) error {
+	return envconfig.Process("", config)
 }

@@ -1,0 +1,15 @@
+{
+  "app_env": "production",
+  "proxy_url": "localhost:50051",
+  "server_addr": "localhost",
+  "server_port": 8081,
+  "database_dsn": "postgres://oasishub:oasishub@localhost/oasishub?sslmode=disable",
+  "sync_interval": "@every 40s",
+  "default_batch_size": 2,
+  "debug": false,
+  "first_block_height": 1,
+  "log_level": "info",
+  "log_output": "stdout",
+  "rollbar_access_token": "",
+  "rollbar_server_root": ""
+}

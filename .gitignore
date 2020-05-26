@@ -1,2 +1,7 @@
-/src/tmp
-coverage.text
+.DS_Store
+oasishub-indexer
+tmp/*
+*.log
+.env*
+Procfile
+config.json

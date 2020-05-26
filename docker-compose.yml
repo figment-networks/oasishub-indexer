@@ -1,64 +1,74 @@
-version: '3'
-services:
-  redis:
-    image: redis:latest
-    networks:
-      - default
-    ports:
-      - "6379:6379"
+version: "3.7"
 
-  timedb:
+networks:
+  internal:
+    name: internal
+    driver: bridge
+
+volumes:
+  database:
+
+services:
+  database:
     image: timescale/timescaledb:latest-pg10
+    networks: 
+      - internal
     ports:
       - "5432:5432"
-    volumes:
-      - timedb-data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_DB=oasishub
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=password
+      POSTGRES_USER: oasishub
+      POSTGRES_PASSWORD: oasishub
+      POSTGRES_DB: oasishub
+    volumes:
+      - database:/var/lib/postgresql/data/
+  
+  api:
+    build: .
+    command: -cmd=server
+    networks:
+      - internal
+    ports:
+      - "8081:8081"
+    environment:
+      PROXY_URL: localhost:50051
+      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+    depends_on:
+      - database
+  
+  worker:
+    build: .
+    command: -cmd=worker
+    networks:    
+      - internal
+    environment:
+      PROXY_URL: localhost:50051
+      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+    depends_on:
+      - database
 
   migrate:
+    build: .
+    command: -cmd=migrate
+    networks:
+      - internal
+    environment:
+      PROXY_URL: localhost:50051
+      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+    depends_on:
+      - database
+
+  migrate-cmd:
     image: migrate/migrate
     volumes:
-      - ./db/timescale/migrations:/migrations
+      - ./migrations:/migrations
     command: version
+    networks:
+      - internal
     entrypoint:
       - migrate
       - -path
       - /migrations/
       - -database
-      - postgres://postgres:password@timedb:5432/oasishub?sslmode=disable
+      - postgres://oasishub:oasishub@database:5432/oasishub?sslmode=disable
     depends_on:
-      - timedb
-
-  server:
-    container_name: oasishub-indexer-server
-    build: .
-    ports:
-      - "8081:8081"
-    environment:
-      - PROXY_URL=http://host.docker.internal:8080
-      - GIN_MODE=release
-      - DB_HOST=timedb
-      - DB_NAME=oasishub
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-    depends_on:
-      - timedb
-
-  job:
-    container_name: oasishub-indexer-job
-    build: .
-    entrypoint: /go/bin/job
-    environment:
-      - PROXY_URL=http://host.docker.internal:8080
-      - DB_HOST=timedb
-      - DB_NAME=oasishub
-      - DB_USER=postgres
-      - DB_PASSWORD=password
-    depends_on:
-      - timedb
-
-volumes:
-  timedb-data:
+      - database

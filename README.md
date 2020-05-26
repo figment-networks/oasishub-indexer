@@ -9,14 +9,8 @@ can be used to get data for specific time intervals ie. get average block-time e
 * Aggregator - it is responsible for indexing only current height data ie. Current balances of accounts.
 
 ### Syncables
-Syncables are collections of data retrieved from Oasis node for given height. Currently we use 4 syncables:
-* Block - retrieve data about block and votes
-* State - retrieve data primarily about registry, staking and consensus
-* Transactions - retrieve data about transactions
-* Validators - retrieve data about validators and voting power
-
+Syncables are collections of data retrieved from Oasis node for given height.
 Above syncables are created during Syncer stage of the processing pipeline and stored to database.
-They are also used in Sequencer and Aggregator stages to compose sequences and aggregates
 
 ### Sequences
 This is data that is stored in the database for every height. Sequences are used for data that 
@@ -33,34 +27,40 @@ Currently we store below sequences:
 This is data that is sored in the database for the most current "entity". Aggregates are used for data
 that does not change frequently or we don't care much about previous values. 
 Currently we have below aggregates:
-* Account
-* Entity
+* Account (pending)
+* Validator
 
 ### Internal dependencies:
 This package connects via gRPC to a oasishub-proxy which in turn connects to Oasis node.
 This is required because for now the only way to connect to Oasis node is via unix socket.
-oasishub-proxy also servers as a anti-corruption layer which is responsible for translating raw node 
+oasis-rpc-proxy also servers as a anti-corruption layer which is responsible for translating raw node 
 data to the format indexer understands.
 
 ### External Packages used:
 * gin - Http server
 * gorm - ORM with PostgreSQL interface
 * cron - Cron jobs runner
-* cobra - CLI builder
-* viper - Configuration management
 * zap - logging 
 
-### Available Commands:
+### Environmental variables:
 
-``$ cli `` - execute CLI commands
-
-``$ server `` - start http server
-
-``$ job`` - start CRON job
+* `APP_ENV` - application environment (development | production) 
+* `PROXY_URL` - url to oasis-rpc-proxy
+* `SERVER_ADDR` - address to use for API
+* `SERVER_PORT` - port to use for API
+* `FIRST_BLOCK_HEIGHT` - height of first block in chain
+* `SYNC_INTERVAL` - data sync interval
+* `DEFAULT_BATCH_SIZE` - syncing batch size
+* `DATABASE_DSN` - postgreSQL database URL
+* `DEBUG` - turn on db debugging mode
+* `LOG_LEVEL` - level of log
+* `LOG_OUTPUT` - log output (ie. stdout or /tmp/logs.json)
+* `ROLLBAR_ACCESS_TOKEN` - Rollbar access token for error reporting
+* `ROLLBAR_SERVER_ROOT` - Rollbar server root for error reporting
 
 ### Available endpoints:
 
-* GET    `/ping`                     --> ping endpoint
+* GET    `/health`                     --> ping endpoint
 * GET    `/blocks`           --> return block by height. You can pass optional height query param.
 * GET    `/block_times`       --> get last x block times
 * GET    `/block_times_interval` --> get block times for specific interval ie. '5 minutes' or '1 hour'
@@ -82,23 +82,26 @@ data to the format indexer understands.
 
 ### Running app
 
-We provide a docker-compose file to make running the app easier. Below are the steps for starting the app:
+Once you have created a database and specified all configuration options, you
+need to migrate the database. You can do that by running the command below:
 
-1. Make sure that you have oasishub-proxy running and connected to Oasis node.
-2. Run database migrations
-```shell script
-docker-compose run --rm migrate up
+```bash
+oasishub-indexer -config path/to/config.json -cmd=migrate
 ```
-This will apply migrations to Timescaldb database
-3. Update *PROXY_URL* in docker-compose.yml to point to your oasishub-proxy server
-4. To run a job which will start indexing process:
-```shell script
-docker-compose up job
-``` 
-5. To start a web server (port 8081 is set by default):
-```shell script
-docker-compose up
+
+Start the data indexer:
+
+```bash
+oasishub-indexer -config path/to/config.json -cmd=worker
 ```
+
+Start the API server:
+
+```bash
+oasishub-indexer -config path/to/config.json -cmd=api
+```
+
+IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oasis node.
 
 ### Running tests
 
