@@ -7,6 +7,8 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"reflect"
+	"time"
 )
 
 var (
@@ -28,7 +30,9 @@ type blockSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (s *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating block sequence for height %d", payload.CurrentHeight))
@@ -38,7 +42,7 @@ func (s *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 		return err
 	}
 
-	if err := s.db.BlockSeq.CreateIfNotExists(newBlockSeq); err != nil {
+	if err := t.db.BlockSeq.CreateIfNotExists(newBlockSeq); err != nil {
 		return err
 	}
 
@@ -56,13 +60,15 @@ type validatorSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (s *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating validator sequences for height %d", payload.CurrentHeight))
 
 	var res []model.ValidatorSeq
-	sequenced, err := s.db.ValidatorSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.ValidatorSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -95,7 +101,7 @@ func (s *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.db.ValidatorSeq.Create(&vs); err != nil {
+			if err := t.db.ValidatorSeq.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -115,13 +121,15 @@ type transactionSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (s *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating transaction sequences for height %d", payload.CurrentHeight))
 
 	var res []model.TransactionSeq
-	sequenced, err := s.db.TransactionSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.TransactionSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -154,7 +162,7 @@ func (s *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.db.TransactionSeq.Create(&vs); err != nil {
+			if err := t.db.TransactionSeq.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -174,19 +182,21 @@ type stakingSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (s *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating staking sequence for height %d", payload.CurrentHeight))
 
-	sequenced, err := s.db.StakingSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.StakingSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		if err == store.ErrNotFound {
 			toSequence, err := StakingToSequence(payload.Syncable, payload.RawState)
 			if err != nil {
 				return err
 			}
-			if err := s.db.StakingSeq.Create(toSequence); err != nil {
+			if err := t.db.StakingSeq.Create(toSequence); err != nil {
 				return err
 			}
 			payload.StakingSequence = toSequence
@@ -208,13 +218,15 @@ func NewDelegationsSeqCreatorTask(db *store.Store) *delegationsSeqCreatorTask {
 	}
 }
 
-func (s *delegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *delegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating delegation sequences for height %d", payload.CurrentHeight))
 
 	var res []model.DelegationSeq
-	sequenced, err := s.db.DelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.DelegationSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -247,7 +259,7 @@ func (s *delegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.db.DelegationSeq.Create(&vs); err != nil {
+			if err := t.db.DelegationSeq.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -267,13 +279,15 @@ type debondingDelegationsSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (s *debondingDelegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *debondingDelegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating debonding delegation sequences for height %d", payload.CurrentHeight))
 
 	var res []model.DebondingDelegationSeq
-	sequenced, err := s.db.DebondingDelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.DebondingDelegationSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -306,7 +320,7 @@ func (s *debondingDelegationsSeqCreatorTask) Run(ctx context.Context, p pipeline
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := s.db.DebondingDelegationSeq.Create(&vs); err != nil {
+			if err := t.db.DebondingDelegationSeq.Create(&vs); err != nil {
 				return err
 			}
 		}

@@ -3,6 +3,8 @@ package indexing
 import (
 	"context"
 	"math/big"
+	"reflect"
+	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -24,7 +26,9 @@ type ParsedBlockData struct {
 	ProposerEntityUID string
 }
 
-func (t parseBlockTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *parseBlockTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	fetchedBlock := payload.RawBlock
 	fetchedTransactions := payload.RawTransactions
@@ -63,7 +67,9 @@ type parsedValidator struct {
 	TotalShares          types.Quantity
 }
 
-func (t parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock

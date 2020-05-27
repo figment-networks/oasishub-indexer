@@ -14,7 +14,7 @@ const (
 )
 
 var (
-	errEndpointRequired        = errors.New("oasishub API endpoint is required")
+	errEndpointRequired        = errors.New("proxy url is required")
 	errDatabaseRequired        = errors.New("database credentials are required")
 	errSyncIntervalRequired    = errors.New("sync interval is required")
 	errSyncIntervalInvalid     = errors.New("sync interval is invalid")
@@ -33,10 +33,12 @@ type Config struct {
 	DefaultBatchSize   int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"100"`
 	DatabaseDSN        string `json:"database_dsn" envconfig:"DATABASE_DSN"`
 	Debug              bool   `json:"debug" envconfig:"DEBUG"`
-	LogLevel           string `json:"log_level" envconfig:"LOG_LEVEL"`
-	LogOutput          string `json:"log_output" envconfig:"LOG_OUTPUT"`
+	LogLevel           string `json:"log_level" envconfig:"LOG_LEVEL" default:"info"`
+	LogOutput          string `json:"log_output" envconfig:"LOG_OUTPUT" default:"stdout"`
 	RollbarAccessToken string `json:"rollbar_access_token" envconfig:"ROLLBAR_ACCESS_TOKEN"`
 	RollbarServerRoot  string `json:"rollbar_server_root" envconfig:"ROLLBAR_SERVER_ROOT"`
+	MetricServerAddr   string `json:"metric_server_addr" envconfig:"METRIC_SERVER_ADDR" default:":8080"`
+	MetricServerUrl    string `json:"metric_server_url" envconfig:"METRIC_SERVER_URL" default:"/metrics"`
 }
 
 // Validate returns an error if config is invalid

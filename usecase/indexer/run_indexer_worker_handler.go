@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"context"
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -32,6 +33,8 @@ func NewRunIndexerWorkerHandler(cfg *config.Config, db *store.Store, c *client.C
 func (h *runIndexerWorkerHandler) Handle() {
 	batchSize := h.cfg.DefaultBatchSize
 	ctx := context.Background()
+
+	logger.Info(fmt.Sprintf("running indexer use case [handler=worker] [batchSize=%d]", batchSize))
 
 	err := h.getUseCase().Execute(ctx, batchSize)
 	if err != nil {

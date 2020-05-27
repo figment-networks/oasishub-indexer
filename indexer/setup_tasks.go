@@ -5,6 +5,8 @@ import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"reflect"
+	"time"
 )
 
 func NewHeightMetaRetrieverTask(c *client.Client) pipeline.Task {
@@ -25,6 +27,8 @@ type HeightMeta struct {
 }
 
 func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
 	if err != nil {

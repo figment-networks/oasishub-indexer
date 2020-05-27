@@ -99,7 +99,7 @@ func (s *source) setEndHeight() error {
 	}
 	endH := syncableFromNode.GetChain().GetHeight()
 
-	if endH-s.startHeight > s.batchSize {
+	if s.batchSize > 0 && endH-s.startHeight > s.batchSize {
 		endOfBatch := (s.startHeight + s.batchSize) - 1
 		endH = endOfBatch
 	}

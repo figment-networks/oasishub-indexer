@@ -6,23 +6,23 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// API handles HTTP requests
-type API struct {
+// Server handles HTTP requests
+type Server struct {
 	engine *gin.Engine
 
 	handlers *usecase.HttpHandlers
 }
 
 // New returns a new server instance
-func New(handlers *usecase.HttpHandlers) *API {
-	app := &API{
+func New(handlers *usecase.HttpHandlers) *Server {
+	app := &Server{
 		engine: gin.Default(),
 		handlers: handlers,
 	}
 	return app.init()
 }
 
-func (a *API) init() *API {
+func (a *Server) init() *Server {
 	logger.Info("initializing server...")
 
 	a.engine.GET("/health", a.handlers.Health.Handle)
@@ -46,7 +46,7 @@ func (a *API) init() *API {
 	return a
 }
 
-func (a *API) Start(listenAdd string) error {
+func (a *Server) Start(listenAdd string) error {
 	logger.Info("starting server...", logger.Field("app", "server"))
 	return a.engine.Run(listenAdd)
 }

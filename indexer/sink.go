@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
@@ -41,16 +42,10 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 
 	s.successCount += 1
 
+	metric.NumIndexingSuccess.Inc()
+	metric.IndexingDuration.Set(payload.Syncable.Duration.Seconds())
+
 	logger.Info(fmt.Sprintf("processing of height %d completed successfully", payload.CurrentHeight))
 
-	//
-	//statRecorder, ok := ctx.Value(pipeline.CtxStats).(*pipeline.StatsRecorder)
-	//if !ok {
-	//	return errors.New("statrecorder not recognized")
-	//}
-	//statRecorder.SetCompleted(true)
-
-	// Crate report from stats
-	//fmt.Println("completed at: ", statRecorder.Duration)
 	return nil
 }

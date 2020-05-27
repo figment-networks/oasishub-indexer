@@ -11,5 +11,7 @@
   "log_level": "info",
   "log_output": "stdout",
   "rollbar_access_token": "",
-  "rollbar_server_root": ""
+  "rollbar_server_root": "",
+  "metric_server_addr": "",
+  "metric_server_url": ""
 }

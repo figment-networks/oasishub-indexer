@@ -32,7 +32,7 @@ func NewGetMostRecentHeightHttpHandler(db *store.Store, c *client.Client) *getMo
 }
 
 func (h *getMostRecentHeightHttpHandler) Handle(c *gin.Context) {
-	height, err := h.useCase.Execute()
+	height, err := h.getUseCase().Execute()
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)

@@ -2,11 +2,14 @@ package indexing
 
 import (
 	"context"
+	"fmt"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
+	"reflect"
 	"time"
 )
 
@@ -21,7 +24,11 @@ type mainSyncerTask struct {
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("started height=%d", payload.CurrentHeight))
 
 	report, ok := ctx.Value(CtxReport).(*model.Report)
 	if !ok {

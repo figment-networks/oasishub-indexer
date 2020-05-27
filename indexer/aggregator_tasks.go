@@ -6,6 +6,8 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"reflect"
+	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -30,7 +32,9 @@ type accountAggCreatorTask struct {
 	db *store.Store
 }
 
-func (a *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating account aggregates for height %d", payload.CurrentHeight))
@@ -38,7 +42,7 @@ func (a *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	var created []model.AccountAgg
 	var updated []model.AccountAgg
 	for publicKey, rawAccount := range payload.RawState.GetStaking().GetLedger() {
-		existing, err := a.db.AccountAgg.FindByPublicKey(publicKey)
+		existing, err := t.db.AccountAgg.FindByPublicKey(publicKey)
 		if err != nil {
 			if err == store.ErrNotFound {
 				accountAgg := &model.AccountAgg{
@@ -62,7 +66,7 @@ func (a *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 					return ErrAccountAggNotValid
 				}
 
-				if err := a.db.AccountAgg.Create(accountAgg); err != nil {
+				if err := t.db.AccountAgg.Create(accountAgg); err != nil {
 					return err
 				}
 				created = append(created, *accountAgg)
@@ -91,7 +95,7 @@ func (a *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				return ErrAccountAggNotValid
 			}
 
-			if err := a.db.AccountAgg.Save(existing); err != nil {
+			if err := t.db.AccountAgg.Save(existing); err != nil {
 				return err
 			}
 			updated = append(updated, *accountAgg)
@@ -112,7 +116,9 @@ type validatorAggCreatorTask struct {
 	db *store.Store
 }
 
-func (a *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("creating validator aggregates for height %d", payload.CurrentHeight))
@@ -120,7 +126,7 @@ func (a *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var created []model.ValidatorAgg
 	var updated []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
-		existing, err := a.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
+		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
 		if err != nil {
 			if err == store.ErrNotFound {
 				// Create new
@@ -166,7 +172,7 @@ func (a *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					return ErrValidatorAggNotValid
 				}
 
-				if err := a.db.ValidatorAgg.Create(&validator); err != nil {
+				if err := t.db.ValidatorAgg.Create(&validator); err != nil {
 					return err
 				}
 				created = append(created, validator)
@@ -216,7 +222,7 @@ func (a *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				return ErrValidatorAggNotValid
 			}
 
-			if err := a.db.ValidatorAgg.Save(existing); err != nil {
+			if err := t.db.ValidatorAgg.Save(existing); err != nil {
 				return err
 			}
 			updated = append(updated, validator)

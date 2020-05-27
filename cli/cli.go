@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
@@ -29,20 +30,27 @@ func Run() {
 		return
 	}
 
+	// Initialize configuration
 	cfg, err := initConfig(configPath)
 	if err != nil {
 		panic(fmt.Errorf("error initializing config [ERR: %+v]", err))
 	}
 
+	// Initialize logger
 	if err = initLogger(cfg); err != nil {
 		panic(fmt.Errorf("error initializing logger [ERR: %+v]", err))
 	}
 
+	// Initialize error reporting
 	initErrorReporting(cfg)
+
+	// Start metrics scrapper
+	go startMetricsServer(cfg)
 
 	if runCommand == "" {
 		terminate(errors.New("command is required"))
 	}
+
 
 	if err := startCommand(cfg, runCommand); err != nil {
 		terminate(err)
@@ -71,11 +79,11 @@ func terminate(err error) {
 func initConfig(path string) (*config.Config, error) {
 	cfg := config.New()
 
-	if path == "" {
-		if err := config.FromEnv(cfg); err != nil {
-			return nil, err
-		}
-	} else {
+	if err := config.FromEnv(cfg); err != nil {
+		return nil, err
+	}
+
+	if path != "" {
 		if err := config.FromFile(path, cfg); err != nil {
 			return nil, err
 		}
@@ -106,6 +114,13 @@ func initStore(cfg *config.Config) (*store.Store, error) {
 	db.SetDebugMode(cfg.Debug)
 
 	return db, nil
+}
+
+func startMetricsServer(cfg *config.Config) {
+	err := metric.New().StartServer(cfg.MetricServerAddr, cfg.MetricServerUrl)
+	if err != nil {
+		logger.Error(err)
+	}
 }
 
 func initErrorReporting(cfg *config.Config) {

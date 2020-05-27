@@ -6,9 +6,11 @@ import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"time"
 )
 
 const (
@@ -107,6 +109,9 @@ func (p *indexingPipeline) Start(ctx context.Context, batchSize int64) error {
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
 	err = p.pipeline.Start(ctxWithReport, source, sink)
+	if err != nil {
+		metric.NumIndexingErr.Inc()
+	}
 
 	logger.Info(fmt.Sprintf("pipeline done [Err: %+v]", err))
 
@@ -134,4 +139,9 @@ func (p *indexingPipeline) completeReport(report *model.Report, totalCount int64
 
 func isTransient(error) bool {
 	return true
+}
+
+func logTaskDuration(start time.Time, taskName string) {
+	elapsed := time.Since(start)
+	metric.IndexingTaskDuration.WithLabelValues(taskName).Set(elapsed.Seconds())
 }

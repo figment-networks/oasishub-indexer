@@ -5,6 +5,8 @@ import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"reflect"
+	"time"
 )
 
 func NewBlockFetcherTask(client *client.Client) pipeline.Task {
@@ -18,6 +20,8 @@ type BlockFetcherTask struct {
 }
 
 func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
 	if err != nil {
@@ -46,6 +50,8 @@ type StateFetcherTask struct {
 }
 
 func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	state, err := t.client.State.GetByHeight(payload.CurrentHeight)
 	if err != nil {
@@ -74,6 +80,8 @@ type ValidatorFetcherTask struct {
 }
 
 func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	validators, err := t.client.Validator.GetByHeight(payload.CurrentHeight)
 	if err != nil {
@@ -102,6 +110,8 @@ type TransactionFetcherTask struct {
 }
 
 func (t *TransactionFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+
 	payload := p.(*payload)
 	transactions, err := t.client.Transaction.GetByHeight(payload.CurrentHeight)
 	if err != nil {

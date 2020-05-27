@@ -57,6 +57,8 @@ data to the format indexer understands.
 * `LOG_OUTPUT` - log output (ie. stdout or /tmp/logs.json)
 * `ROLLBAR_ACCESS_TOKEN` - Rollbar access token for error reporting
 * `ROLLBAR_SERVER_ROOT` - Rollbar server root for error reporting
+* `METRIC_SERVER_ADDR` - Prometheus server address
+* `METRIC_SERVER_URL` - Url at which metrics will be accessible 
 
 ### Available endpoints:
 
@@ -109,4 +111,14 @@ To run tests with coverage you can use `test` Makefile target:
 ```shell script
 make test
 ```
+
+### Exporting metrics for scrapping
+We use Prometheus for exposing metrics.
+You can use `METRIC_SERVER_ADDR` and `METRIC_SERVER_URL` to setup connection details to metrics scrapper (see Environmental variables section above).
+We currently expose 4 metrics:
+* `figment_indexer_height_success` (counter) - total number of successfully indexed heights
+* `figment_indexer_height_error` (counter) - total number of failed indexed heights
+* `figment_indexer_height_duration` (gauge) - total time required to index one height
+* `figment_indexer_height_task_duration` (gauge) - total time required to process indexing task 
+
 

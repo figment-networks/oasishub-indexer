@@ -42,7 +42,7 @@ func (h *getVotingPowerForAllHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.useCase.Execute(req.Interval, req.Period)
+	resp, err := h.getUseCase().Execute(req.Interval, req.Period)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
