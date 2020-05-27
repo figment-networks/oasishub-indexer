@@ -22,7 +22,7 @@ services:
     volumes:
       - database:/var/lib/postgresql/data/
   
-  api:
+  server:
     build: .
     command: -cmd=server
     networks:

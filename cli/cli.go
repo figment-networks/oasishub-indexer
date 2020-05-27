@@ -53,8 +53,8 @@ func startCommand(cfg *config.Config, name string) error {
 	switch name {
 	case "migrate":
 		return startMigrations(cfg)
-	case "api":
-		return startApi(cfg)
+	case "server":
+		return startServer(cfg)
 	case "worker":
 		return startWorker(cfg)
 	default:

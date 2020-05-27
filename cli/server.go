@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"github.com/figment-networks/oasishub-indexer/api"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/server"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 )
 
-func startApi(cfg *config.Config) error {
+func startServer(cfg *config.Config) error {
 	client, err := initClient(cfg)
 	if err != nil {
 		return err
@@ -20,7 +20,7 @@ func startApi(cfg *config.Config) error {
 
 	httpHandlers := usecase.NewHttpHandlers(db, client)
 
-	a := api.New(httpHandlers)
+	a := server.New(httpHandlers)
 	if err := a.Start(cfg.ListenAddr()); err != nil {
 		return err
 	}

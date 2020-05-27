@@ -98,7 +98,7 @@ oasishub-indexer -config path/to/config.json -cmd=worker
 Start the API server:
 
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=api
+oasishub-indexer -config path/to/config.json -cmd=server
 ```
 
 IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oasis node.

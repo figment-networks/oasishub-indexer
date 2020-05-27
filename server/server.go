@@ -1,4 +1,4 @@
-package api
+package server
 
 import (
 	"github.com/figment-networks/oasishub-indexer/usecase"
@@ -23,7 +23,7 @@ func New(handlers *usecase.HttpHandlers) *API {
 }
 
 func (a *API) init() *API {
-	logger.Info("initializing api...")
+	logger.Info("initializing server...")
 
 	a.engine.GET("/health", a.handlers.Health.Handle)
 	a.engine.GET("/blocks", a.handlers.GetBlockByHeight.Handle)
@@ -47,6 +47,6 @@ func (a *API) init() *API {
 }
 
 func (a *API) Start(listenAdd string) error {
-	logger.Info("starting api...", logger.Field("app", "api"))
+	logger.Info("starting server...", logger.Field("app", "server"))
 	return a.engine.Run(listenAdd)
 }
