@@ -9,37 +9,6 @@ import (
 )
 
 var (
-	NumIndexingSuccess prometheus.Counter
-	NumIndexingErr prometheus.Counter
-	IndexingDuration prometheus.Gauge
-	IndexingTaskDuration *prometheus.GaugeVec
-)
-
-// Metric handles HTTP requests
-type Metric struct {}
-
-// New returns a new server instance
-func New() *Metric {
-	app := &Metric{}
-	return app.init()
-}
-
-func (a *Metric) StartServer(listenAdd string, url string) error {
-	logger.Info(fmt.Sprintf("starting server at %s...", url), logger.Field("app", "metric-server"))
-
-	http.Handle(url, promhttp.HandlerFor(
-		prometheus.DefaultGatherer,
-		promhttp.HandlerOpts{
-			// Opt into OpenMetrics to support exemplars.
-			EnableOpenMetrics: true,
-		},
-	))
-	return http.ListenAndServe(listenAdd, nil)
-}
-
-func (m *Metric) init() *Metric {
-	logger.Info("initializing metric server...")
-
 	NumIndexingSuccess = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
@@ -70,6 +39,32 @@ func (m *Metric) init() *Metric {
 		},
 		[]string{"task"},
 	)
+)
+
+// Metric handles HTTP requests
+type Metric struct {}
+
+// New returns a new server instance
+func New() *Metric {
+	app := &Metric{}
+	return app.init()
+}
+
+func (m *Metric) StartServer(listenAdd string, url string) error {
+	logger.Info(fmt.Sprintf("starting server at %s...", url), logger.Field("app", "metric-server"))
+
+	http.Handle(url, promhttp.HandlerFor(
+		prometheus.DefaultGatherer,
+		promhttp.HandlerOpts{
+			// Opt into OpenMetrics to support exemplars.
+			EnableOpenMetrics: true,
+		},
+	))
+	return http.ListenAndServe(listenAdd, nil)
+}
+
+func (m *Metric) init() *Metric {
+	logger.Info("initializing metric server...")
 
 	prometheus.MustRegister(NumIndexingSuccess)
 	prometheus.MustRegister(NumIndexingErr)

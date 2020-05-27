@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
@@ -43,9 +42,6 @@ func Run() {
 
 	// Initialize error reporting
 	initErrorReporting(cfg)
-
-	// Start metrics scrapper
-	go startMetricsServer(cfg)
 
 	if runCommand == "" {
 		terminate(errors.New("command is required"))
@@ -114,13 +110,6 @@ func initStore(cfg *config.Config) (*store.Store, error) {
 	db.SetDebugMode(cfg.Debug)
 
 	return db, nil
-}
-
-func startMetricsServer(cfg *config.Config) {
-	err := metric.New().StartServer(cfg.MetricServerAddr, cfg.MetricServerUrl)
-	if err != nil {
-		logger.Error(err)
-	}
 }
 
 func initErrorReporting(cfg *config.Config) {

@@ -25,7 +25,5 @@ func startWorker(cfg *config.Config) error {
 		return err
 	}
 
-	w.Start()
-
-	return nil
+	return w.Start()
 }
