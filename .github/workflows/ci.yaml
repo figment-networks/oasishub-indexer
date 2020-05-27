@@ -1,9 +1,7 @@
 name: Oasishub Indexer
-# This workflow is triggered on pushes to the repository.
+# This workflow is triggered on pushes to the repository only when pushing new tag.
 on:
   push:
-    branches:
-      - master
     tags:
       - 'v*'
 
