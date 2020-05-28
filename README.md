@@ -36,11 +36,13 @@ This is required because for now the only way to connect to Oasis node is via un
 oasis-rpc-proxy also servers as a anti-corruption layer which is responsible for translating raw node 
 data to the format indexer understands.
 
-### External Packages used:
-* gin - Http server
-* gorm - ORM with PostgreSQL interface
-* cron - Cron jobs runner
-* zap - logging 
+### External Packages:
+* `oasis-rpc-proxy` - Go proxy to Oasis node
+* `indexing-engine` - A backbone for indexing process
+* `gin` - Http server
+* `gorm` - ORM with PostgreSQL interface
+* `cron` - Cron jobs runner
+* `zap` - logging 
 
 ### Environmental variables:
 
