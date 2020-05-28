@@ -30,7 +30,7 @@ type Config struct {
 	ServerPort         int64  `json:"server_port" envconfig:"SERVER_PORT" default:"8081"`
 	FirstBlockHeight   int64  `json:"first_block_height" envconfig:"FIRST_BLOCK_HEIGHT" default:"1"`
 	SyncInterval       string `json:"sync_interval" envconfig:"SYNC_INTERVAL" default:"10s"`
-	DefaultBatchSize   int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"100"`
+	DefaultBatchSize   int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"0"`
 	DatabaseDSN        string `json:"database_dsn" envconfig:"DATABASE_DSN"`
 	Debug              bool   `json:"debug" envconfig:"DEBUG"`
 	LogLevel           string `json:"log_level" envconfig:"LOG_LEVEL" default:"info"`

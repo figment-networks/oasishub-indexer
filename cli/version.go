@@ -4,9 +4,9 @@ import "fmt"
 
 var (
 	appName    = "oasishub-indexer"
-	appVersion = "0.1.0"
+	appVersion = "0.3.2"
 	gitCommit  = "-"
-	goVersion  = "-"
+	goVersion  = "1.13"
 )
 
 func versionString() string {

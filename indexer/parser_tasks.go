@@ -83,16 +83,24 @@ func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error
 		// Get precommit data
 		votes := fetchedBlock.GetLastCommit().GetVotes()
 		var index int64
+		// 1 = Not validated
+		// 2 = Validated
+		// 3 = Validated nil
 		var blockIdFlag int64
 		var validated *bool
 		if len(votes) > 0 {
 			// Account for situation when there is more validators than precommits
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
-			precommit := votes[i]
-			isValidated := precommit.BlockIdFlag == 2
-			validated = &isValidated
-			index = precommit.ValidatorIndex
-			blockIdFlag = precommit.BlockIdFlag
+			if i > len(votes) - 1 {
+				index = int64(i)
+				blockIdFlag = 3
+			} else {
+				precommit := votes[i]
+				isValidated := precommit.BlockIdFlag == 2
+				validated = &isValidated
+				index = precommit.ValidatorIndex
+				blockIdFlag = precommit.BlockIdFlag
+			}
 		} else {
 			index = int64(i)
 			blockIdFlag = 3

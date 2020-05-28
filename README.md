@@ -50,7 +50,7 @@ data to the format indexer understands.
 * `SERVER_PORT` - port to use for API
 * `FIRST_BLOCK_HEIGHT` - height of first block in chain
 * `SYNC_INTERVAL` - data sync interval
-* `DEFAULT_BATCH_SIZE` - syncing batch size
+* `DEFAULT_BATCH_SIZE` - syncing batch size. Setting this value to 0 means no batch size
 * `DATABASE_DSN` - postgreSQL database URL
 * `DEBUG` - turn on db debugging mode
 * `LOG_LEVEL` - level of log
