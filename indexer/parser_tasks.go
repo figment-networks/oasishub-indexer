@@ -114,11 +114,13 @@ func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error
 		calculatedData.Proposed = fetchedBlock.GetHeader().GetProposerAddress() == rv.Address
 
 		// Get total shares
-		delegations := fetchedState.GetStaking().GetDelegations()[rv.Node.EntityId]
+		delegations, ok := fetchedState.GetStaking().GetDelegations()[rv.Node.EntityId]
 		totalShares := big.NewInt(0)
-		for _, d := range delegations.Entries {
-			shares := types.NewQuantityFromBytes(d.Shares)
-			totalShares = totalShares.Add(totalShares, &shares.Int)
+		if ok {
+			for _, d := range delegations.Entries {
+				shares := types.NewQuantityFromBytes(d.Shares)
+				totalShares = totalShares.Add(totalShares, &shares.Int)
+			}
 		}
 		calculatedData.TotalShares = types.NewQuantity(totalShares)
 
