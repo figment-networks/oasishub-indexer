@@ -34,7 +34,7 @@ type Request struct {
 
 func (h *getByHeightHttpHandler) Handle(c *gin.Context) {
 	var req Request
-	if err := c.ShouldBindUri(&req); err != nil {
+	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Error(err)
 		err := errors.New("invalid height")
 		c.JSON(http.StatusBadRequest, err)
@@ -53,7 +53,7 @@ func (h *getByHeightHttpHandler) Handle(c *gin.Context) {
 
 func (h *getByHeightHttpHandler) getUseCase() *getByHeightUseCase {
 	if h.useCase == nil {
-		return NewGetByHeightUseCase(h.db)
+		return NewGetByHeightUseCase(h.db, h.client)
 	}
 	return h.useCase
 }

@@ -20,7 +20,7 @@ func startServer(cfg *config.Config) error {
 
 	httpHandlers := usecase.NewHttpHandlers(db, client)
 
-	a := server.New(httpHandlers)
+	a := server.New(cfg, httpHandlers)
 	if err := a.Start(cfg.ListenAddr()); err != nil {
 		return err
 	}

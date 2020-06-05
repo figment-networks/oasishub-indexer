@@ -5,6 +5,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/utils/reporting"
 	"github.com/robfig/cron/v3"
 )
 
@@ -13,8 +14,10 @@ var (
 )
 
 type Worker struct {
-	cfg *config.Config
+	cfg      *config.Config
+	handlers *usecase.WorkerHandlers
 
+	logger  logger.CronLogger
 	cronJob *cron.Cron
 }
 
@@ -27,20 +30,33 @@ func New(cfg *config.Config, handlers *usecase.WorkerHandlers) (*Worker, error) 
 		),
 	)
 
-	job = cron.FuncJob(handlers.RunIndexer.Handle)
-	job = cron.NewChain(cron.SkipIfStillRunning(log)).Then(job)
-	_, err := cronJob.AddJob(cfg.SyncInterval, job)
+	w := &Worker{
+		cfg:      cfg,
+		handlers: handlers,
+		logger:   log,
+		cronJob:  cronJob,
+	}
+
+	return w.init()
+}
+
+func (w *Worker) init() (*Worker, error) {
+	_, err := w.addRunIndexerJob()
 	if err != nil {
 		return nil, err
 	}
 
-	return &Worker{
-		cfg:     cfg,
-		cronJob: cronJob,
-	}, nil
+	_, err = w.addPurgeIndexerJob()
+	if err != nil {
+		return nil, err
+	}
+
+	return w, nil
 }
 
 func (w *Worker) Start() error {
+	defer reporting.RecoverError()
+
 	logger.Info("starting worker...", logger.Field("app", "worker"))
 
 	w.cronJob.Start()
@@ -49,5 +65,5 @@ func (w *Worker) Start() error {
 }
 
 func (w *Worker) startMetricsServer() error {
-	return metric.New().StartServer(w.cfg.MetricServerAddr, w.cfg.MetricServerUrl)
+	return metric.NewIndexerMetric().StartServer(w.cfg.IndexerMetricAddr, w.cfg.MetricServerUrl)
 }

@@ -32,7 +32,7 @@ type AggDetailsView struct {
 	RecentDebondingDelegations []model.DebondingDelegationSeq `json:"recent_debonding_delegations"`
 }
 
-func ToAggDetailsView(m model.ValidatorAgg, currDs []model.DelegationSeq, recDds []model.DebondingDelegationSeq) *AggDetailsView {
+func ToAggDetailsView(m *model.ValidatorAgg) *AggDetailsView {
 	return &AggDetailsView{
 		Model:     m.Model,
 		Aggregate: m.Aggregate,
@@ -45,9 +45,6 @@ func ToAggDetailsView(m model.ValidatorAgg, currDs []model.DelegationSeq, recDds
 		RecentProposedHeight:     m.RecentProposedHeight,
 		AccumulatedProposedCount: m.AccumulatedProposedCount,
 		Uptime:                   float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount),
-
-		RecentDelegations:          currDs,
-		RecentDebondingDelegations: recDds,
 	}
 }
 

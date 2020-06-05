@@ -17,26 +17,11 @@ func NewGetByPublicKeyUseCase(db *store.Store, c *client.Client) *getByPublicKey
 	}
 }
 
-func (uc *getByPublicKeyUseCase) Execute(key string) (*DetailsView, error) {
-	rawAccount, err := uc.client.Account.GetByPublicKey(key)
+func (uc *getByPublicKeyUseCase) Execute(key string, height int64) (*DetailsView, error) {
+	rawAccount, err := uc.client.Account.GetByPublicKey(key, height)
 	if err != nil {
 		return nil, err
 	}
 
-	accountAgg, err := uc.db.AccountAgg.FindByPublicKey(key)
-	if err != nil {
-		return nil, err
-	}
-
-	delegationSeqs, err := uc.db.DelegationSeq.FindCurrentByDelegatorUID(key)
-	if err != nil {
-		return nil, err
-	}
-
-	debondingDelegationsSeqs, err := uc.db.DebondingDelegationSeq.FindRecentByDelegatorUID(key, 5)
-	if err != nil {
-		return nil, err
-	}
-
-	return ToDetailsView(rawAccount.GetAccount(), accountAgg, delegationSeqs, debondingDelegationsSeqs), nil
+	return ToDetailsView(rawAccount.GetAccount()), nil
 }

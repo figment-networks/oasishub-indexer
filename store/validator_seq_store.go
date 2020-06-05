@@ -1,8 +1,10 @@
 package store
 
 import (
+	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
+	"time"
 
 	"github.com/figment-networks/oasishub-indexer/model"
 )
@@ -42,82 +44,39 @@ func (s ValidatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
 	return result, checkErr(err)
 }
 
-// GetTotalValidatedByEntityUID gets total validated blocks for validator
-func (s *ValidatorSeqStore) GetTotalValidatedByEntityUID(key string) (*int64, error) {
-	v := true
-	q := model.ValidatorSeq{
-		EntityUID:          key,
-		PrecommitValidated: &v,
-	}
-	var result int64
-
-	err := s.db.
-		Table(model.ValidatorSeq{}.TableName()).
-		Where(&q).
-		Count(&result).
-		Error
-
-	return &result, checkErr(err)
+type ValidatorSummaryRow struct {
+	TimeInterval    string         `json:"time_interval"`
+	VotingPowerAvg  float64        `json:"voting_power_avg"`
+	VotingPowerMax  float64        `json:"voting_power_max"`
+	VotingPowerMin  float64        `json:"voting_power_min"`
+	TotalSharesAvg  types.Quantity `json:"total_shares_avg"`
+	TotalSharesMax  types.Quantity `json:"total_shares_max"`
+	TotalSharesMin  types.Quantity `json:"total_shares_min"`
+	ValidatedSum    int64          `json:"validated_sum"`
+	NotValidatedSum int64          `json:"not_validated_sum"`
+	ProposedSum     int64          `json:"proposed_sum"`
+	UptimeAvg       float64        `json:"uptime_avg"`
 }
 
-// GetTotalMissedByEntityUID gets total missed blocks for validator
-func (s *ValidatorSeqStore) GetTotalMissedByEntityUID(key string) (*int64, error) {
-	v := false
-	q := model.ValidatorSeq{
-		EntityUID:          key,
-		PrecommitValidated: &v,
-	}
-	var result int64
+type SingleValidatorSummaryRow struct {
+	EntityUID string `json:"entity_uid"`
 
-	err := s.db.
-		Table(model.ValidatorSeq{}.TableName()).
-		Where(&q).
-		Count(&result).
-		Error
-
-	return &result, checkErr(err)
+	*ValidatorSummaryRow
 }
 
-// GetTotalProposedByEntityUID gets total proposed blocks for validator
-func (s *ValidatorSeqStore) GetTotalProposedByEntityUID(key string) (*int64, error) {
-	q := model.ValidatorSeq{
-		EntityUID: key,
-		Proposed:  true,
-	}
-	var result int64
+// GetSummary gets total shares of all validators for interval
+func (s *ValidatorSeqStore) GetSummary(interval string, period string) ([]ValidatorSummaryRow, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSeqStore_GetSummary")
 
-	err := s.db.
-		Table(model.ValidatorSeq{}.TableName()).
-		Where(&q).
-		Count(&result).
-		Error
-
-	return &result, checkErr(err)
-}
-
-// AvgForTimeIntervalRow result of time interval query
-type AvgForTimeIntervalRow struct {
-	TimeInterval string  `json:"time_interval"`
-	Avg          float64 `json:"avg"`
-}
-
-// AvgQuantityForTimeIntervalRow result of time interval query with quantity
-type AvgQuantityForTimeIntervalRow struct {
-	TimeInterval string         `json:"time_interval"`
-	Avg          types.Quantity `json:"avg"`
-}
-
-// GetTotalSharesForInterval gets total shares of all validators for interval
-func (s *ValidatorSeqStore) GetTotalSharesForInterval(interval string, period string) ([]AvgQuantityForTimeIntervalRow, error) {
-	rows, err := s.db.Raw(totalSharesForIntervalQuery, interval, period).Rows()
+	rows, err := s.db.Raw(AllValidatorsSummaryForIntervalQuery(interval), period).Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var res []AvgQuantityForTimeIntervalRow
+	var res []ValidatorSummaryRow
 	for rows.Next() {
-		var row AvgQuantityForTimeIntervalRow
+		var row ValidatorSummaryRow
 		if err := s.db.ScanRows(rows, &row); err != nil {
 			return nil, err
 		}
@@ -126,17 +85,20 @@ func (s *ValidatorSeqStore) GetTotalSharesForInterval(interval string, period st
 	return res, nil
 }
 
-// GetTotalVotingPowerForInterval gets total voting power of all validators for interval
-func (s *ValidatorSeqStore) GetTotalVotingPowerForInterval(interval string, period string) ([]AvgForTimeIntervalRow, error) {
-	rows, err := s.db.Raw(totalVotingPowerForIntervalQuery, interval, period).Rows()
+
+// GetSummaryByEntityUID gets shares for validator for interval
+func (s *ValidatorSeqStore) GetSummaryByEntityUID(key string, interval string, period string) ([]SingleValidatorSummaryRow, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSeqStore_GetSummaryByEntityUID")
+
+	rows, err := s.db.Raw(ValidatorSummaryForIntervalQuery(interval), period, key).Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var res []AvgForTimeIntervalRow
+	var res []SingleValidatorSummaryRow
 	for rows.Next() {
-		var row AvgForTimeIntervalRow
+		var row SingleValidatorSummaryRow
 		if err := s.db.ScanRows(rows, &row); err != nil {
 			return nil, err
 		}
@@ -145,59 +107,21 @@ func (s *ValidatorSeqStore) GetTotalVotingPowerForInterval(interval string, peri
 	return res, nil
 }
 
-// GetValidatorSharesForInterval gets shares for validator for interval
-func (s *ValidatorSeqStore) GetValidatorSharesForInterval(key string, interval string, period string) ([]AvgQuantityForTimeIntervalRow, error) {
-	rows, err := s.db.Raw(validatorSharesForIntervalQuery, key, interval, period).Rows()
-	if err != nil {
-		return nil, err
+func (s *ValidatorSeqStore) PurgeOldRecords(cfg *config.Config) error {
+	// Purge sequences
+	if err := s.db.Exec(deleteOldValidatorSeqQuery, cfg.PurgeValidatorInterval).Error; err != nil {
+		return err
 	}
-	defer rows.Close()
 
-	var res []AvgQuantityForTimeIntervalRow
-	for rows.Next() {
-		var row AvgQuantityForTimeIntervalRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
+	// Purge hourly summary
+	if err := s.db.Exec(DeleteOldValidatorHourlySummaryQuery("hourly"), cfg.PurgeValidatorHourlySummaryInterval).Error; err != nil {
+		return err
 	}
-	return res, nil
-}
 
-// GetValidatorVotingPowerForInterval gets voting powers for validator for interval
-func (s *ValidatorSeqStore) GetValidatorVotingPowerForInterval(key string, interval string, period string) ([]AvgForTimeIntervalRow, error) {
-	rows, err := s.db.Debug().Raw(validatorVotingPowerForIntervalQuery, key, interval, period).Rows()
-	if err != nil {
-		return nil, err
+	// Purge daily summary
+	if err := s.db.Exec(DeleteOldValidatorHourlySummaryQuery("daily"), cfg.PurgeValidatorDailySummaryInterval).Error; err != nil {
+		return err
 	}
-	defer rows.Close()
 
-	var res []AvgForTimeIntervalRow
-	for rows.Next() {
-		var row AvgForTimeIntervalRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
-}
-
-// GetValidatorUptimeForInterval gets uptime for validator for interval
-func (s *ValidatorSeqStore) GetValidatorUptimeForInterval(key string, interval string, period string) ([]AvgForTimeIntervalRow, error) {
-	rows, err := s.db.Raw(validatorUptimeForIntervalQuery, key, interval, period).Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var res []AvgForTimeIntervalRow
-	for rows.Next() {
-		var row AvgForTimeIntervalRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return nil
 }

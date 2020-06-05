@@ -11,8 +11,7 @@ var (
 )
 
 type AccountClient interface {
-	//Queries
-	GetByPublicKey(string) (*accountpb.GetByPublicKeyResponse, error)
+	GetByPublicKey(string, int64) (*accountpb.GetByPublicKeyResponse, error)
 }
 
 func NewAccountClient(conn *grpc.ClientConn) *accountClient {
@@ -25,8 +24,8 @@ type accountClient struct {
 	client accountpb.AccountServiceClient
 }
 
-func (r *accountClient) GetByPublicKey(key string) (*accountpb.GetByPublicKeyResponse, error) {
+func (r *accountClient) GetByPublicKey(key string, height int64) (*accountpb.GetByPublicKeyResponse, error) {
 	ctx := context.Background()
 
-	return r.client.GetByPublicKey(ctx, &accountpb.GetByPublicKeyRequest{PublicKey: key})
+	return r.client.GetByPublicKey(ctx, &accountpb.GetByPublicKeyRequest{PublicKey: key, Height: height})
 }

@@ -10,10 +10,12 @@ import (
 
 func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdHandlers {
 	return &CmdHandlers{
-		RunIndexer: indexer.NewRunIndexerCmdHandler(cfg, db, c),
+		RunIndexer:   indexer.NewRunCmdHandler(cfg, db, c),
+		PurgeIndexer: indexer.NewPurgeCmdHandler(cfg, db, c),
 	}
 }
 
 type CmdHandlers struct {
-	RunIndexer types.CmdHandler
+	RunIndexer   types.CmdHandler
+	PurgeIndexer types.CmdHandler
 }

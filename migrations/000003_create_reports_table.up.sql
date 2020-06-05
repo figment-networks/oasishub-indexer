@@ -13,10 +13,9 @@ CREATE TABLE IF NOT EXISTS reports
     details       JSONB,
     completed_at  TIMESTAMP WITH TIME ZONE,
 
-    PRIMARY KEY (created_at, id)
+    PRIMARY KEY (id)
 );
 
 -- Hypertable
-SELECT create_hypertable('reports', 'created_at', if_not_exists => TRUE);
 
 -- Indexes

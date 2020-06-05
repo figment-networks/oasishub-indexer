@@ -35,17 +35,38 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 		logger.Field("height", payload.CurrentHeight),
 	)
 
-	payload.Syncable.MarkProcessed()
-	if err := s.db.Syncables.Save(payload.Syncable); err != nil {
-		return errors.Wrap(err, "failed saving syncable in sink")
+	if err := s.setProcessed(payload); err != nil {
+		return err
+
+	}
+
+	if err := s.addMetrics(payload); err != nil {
+		return err
 	}
 
 	s.successCount += 1
 
-	metric.NumIndexingSuccess.Inc()
-	metric.IndexingDuration.Set(payload.Syncable.Duration.Seconds())
-
 	logger.Info(fmt.Sprintf("processing of height %d completed successfully", payload.CurrentHeight))
 
+	return nil
+}
+
+func (s *sink) setProcessed(payload *payload) error {
+	payload.Syncable.MarkProcessed()
+	if err := s.db.Syncables.Save(payload.Syncable); err != nil {
+		return errors.Wrap(err, "failed saving syncable in sink")
+	}
+	return nil
+}
+
+func (s *sink) addMetrics(payload *payload) error {
+	res, err := s.db.Database.GetTotalSize()
+	if err != nil {
+		return err
+	}
+
+	metric.IndexerHeightSuccess.Inc()
+	metric.IndexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
+	metric.IndexerDbSizeAfterHeight.Set(res.Size)
 	return nil
 }

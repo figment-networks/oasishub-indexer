@@ -9,28 +9,28 @@ import (
 )
 
 var (
-	NumIndexingSuccess = prometheus.NewCounter(prometheus.CounterOpts{
+	IndexerHeightSuccess = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
 		Name: "height_success",
 		Help: "The total number of successfully indexed heights",
 	})
 
-	NumIndexingErr = prometheus.NewCounter(prometheus.CounterOpts{
+	IndexerTotalErrors = prometheus.NewCounter(prometheus.CounterOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
 		Name: "total_error",
 		Help: "The total number of failures during indexing",
 	})
 
-	IndexingDuration = prometheus.NewGauge(prometheus.GaugeOpts{
+	IndexerHeightDuration = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
 		Name: "height_duration",
 		Help: "The total time required to index one height",
 	})
 
-	IndexingTaskDuration = prometheus.NewGaugeVec(
+	IndexerTaskDuration = prometheus.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "figment",
 			Subsystem: "indexer",
@@ -39,19 +39,26 @@ var (
 		},
 		[]string{"task"},
 	)
+
+	IndexerDbSizeAfterHeight = prometheus.NewGauge(prometheus.GaugeOpts{
+		Namespace: "figment",
+		Subsystem: "indexer",
+		Name: "db_size",
+		Help: "The size of the database after indexing of height",
+	})
 )
 
-// Metric handles HTTP requests
-type Metric struct {}
+// IndexerMetric handles HTTP requests
+type IndexerMetric struct {}
 
-// New returns a new server instance
-func New() *Metric {
-	app := &Metric{}
+// NewIndexerMetric returns a new server instance
+func NewIndexerMetric() *IndexerMetric {
+	app := &IndexerMetric{}
 	return app.init()
 }
 
-func (m *Metric) StartServer(listenAdd string, url string) error {
-	logger.Info(fmt.Sprintf("starting server at %s...", url), logger.Field("app", "metric-server"))
+func (m *IndexerMetric) StartServer(listenAdd string, url string) error {
+	logger.Info(fmt.Sprintf("starting metric server at %s...", url), logger.Field("app", "indexer"))
 
 	http.Handle(url, promhttp.HandlerFor(
 		prometheus.DefaultGatherer,
@@ -63,13 +70,14 @@ func (m *Metric) StartServer(listenAdd string, url string) error {
 	return http.ListenAndServe(listenAdd, nil)
 }
 
-func (m *Metric) init() *Metric {
-	logger.Info("initializing metric server...")
+func (m *IndexerMetric) init() *IndexerMetric {
+	logger.Info("initializing metric server...", logger.Field("app", "indexer"))
 
-	prometheus.MustRegister(NumIndexingSuccess)
-	prometheus.MustRegister(NumIndexingErr)
-	prometheus.MustRegister(IndexingDuration)
-	prometheus.MustRegister(IndexingTaskDuration)
+	prometheus.MustRegister(IndexerHeightSuccess)
+	prometheus.MustRegister(IndexerTotalErrors)
+	prometheus.MustRegister(IndexerHeightDuration)
+	prometheus.MustRegister(IndexerTaskDuration)
+	prometheus.MustRegister(IndexerDbSizeAfterHeight)
 
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())

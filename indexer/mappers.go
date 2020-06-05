@@ -17,12 +17,7 @@ func BlockToSequence(syncable *model.Syncable, rawBlock *blockpb.Block, blockPar
 			Time:   syncable.Time,
 		},
 
-		Hash:         rawBlock.GetHeader().GetLastBlockId().GetHash(),
-		AppVersion:   int64(rawBlock.GetHeader().GetVersion().GetApp()),
-		BlockVersion: int64(rawBlock.GetHeader().GetVersion().GetBlock()),
-
-		TransactionsCount: int64(blockParsedData.TransactionsCount),
-		ProposerEntityUID: blockParsedData.ProposerEntityUID,
+		TransactionsCount: blockParsedData.TransactionsCount,
 	}
 
 	if !e.Valid() {
@@ -42,8 +37,6 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			},
 
 			EntityUID:    rawValidator.GetNode().GetEntityId(),
-			NodeUID:      rawValidator.GetId(),
-			ConsensusUID: rawValidator.GetNode().GetConsensus().GetId(),
 			Address:      rawValidator.GetAddress(),
 			VotingPower:  rawValidator.GetVotingPower(),
 		}
@@ -52,8 +45,6 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 		parsedValidator, ok := parsedValidators[key]
 		if ok {
 			e.PrecommitValidated = parsedValidator.PrecommitValidated
-			e.PrecommitIndex = parsedValidator.PrecommitIndex
-			e.PrecommitBlockIDFlag = parsedValidator.PrecommitBlockIdFlag
 			e.Proposed = parsedValidator.Proposed
 			e.TotalShares = parsedValidator.TotalShares
 		}

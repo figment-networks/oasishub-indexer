@@ -12,13 +12,10 @@ CREATE TABLE IF NOT EXISTS debonding_delegation_sequences
     shares        DECIMAL(65, 0)           NOT NULL,
     debond_end    BIGINT                   NOT NULL,
 
-    PRIMARY KEY (time, id)
+    PRIMARY KEY (id)
 );
 
 -- Hypertable
-SELECT create_hypertable('debonding_delegation_sequences', 'time', if_not_exists => TRUE);
 
 -- Indexes
-CREATE index debonding_idx_delegation_sequences_height on debonding_delegation_sequences (height, time DESC);
-CREATE index debonding_idx_delegation_sequences_app_version on debonding_delegation_sequences (validator_uid, time DESC);
-CREATE index debonding_idx_delegation_sequences_block_version on debonding_delegation_sequences (delegator_uid, time DESC);
+CREATE index debonding_idx_delegation_sequences_height on debonding_delegation_sequences (height);

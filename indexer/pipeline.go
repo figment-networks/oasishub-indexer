@@ -31,8 +31,13 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Set options to control what stages and what indexing tasks to execute
 	p.SetOptions(&pipeline.Options{
 		//StagesWhitelist: []pipeline.StageName{pipeline.StageFetcher},
-		// Do not aggregate account since it is too expensive
-		IndexingTasksBlacklist: []string{"validatorAggCreatorTask"},
+		IndexingTasksBlacklist: []string{
+			"accountAggCreatorTask",
+			"transactionSeqCreatorTask",
+			"stakingSeqCreatorTask",
+			"delegationsSeqCreatorTask",
+			"debondingDelegationsSeqCreatorTask",
+		},
 	})
 
 	// Setup stage
@@ -110,7 +115,7 @@ func (p *indexingPipeline) Start(ctx context.Context, batchSize int64) error {
 
 	err = p.pipeline.Start(ctxWithReport, source, sink)
 	if err != nil {
-		metric.NumIndexingErr.Inc()
+		metric.IndexerTotalErrors.Inc()
 	}
 
 	logger.Info(fmt.Sprintf("pipeline done [Err: %+v]", err))
@@ -143,5 +148,5 @@ func isTransient(error) bool {
 
 func logTaskDuration(start time.Time, taskName string) {
 	elapsed := time.Since(start)
-	metric.IndexingTaskDuration.WithLabelValues(taskName).Set(elapsed.Seconds())
+	metric.IndexerTaskDuration.WithLabelValues(taskName).Set(elapsed.Seconds())
 }

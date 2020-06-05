@@ -210,6 +210,8 @@ github.com/figment-networks/oasis-rpc-proxy v0.0.0-20200416164959-d7394fdbfe7f h
 github.com/figment-networks/oasis-rpc-proxy v0.0.0-20200416164959-d7394fdbfe7f/go.mod h1:azs/0biVct6pImFmY61GGBOIS92rnE+YYcKXz8Lv/0o=
 github.com/figment-networks/oasis-rpc-proxy v0.3.3 h1:1pff5x6GcjD4aaVLNWgeEcL0OkWwnwsl+o8g4MuG070=
 github.com/figment-networks/oasis-rpc-proxy v0.3.3/go.mod h1:dsiRp1AK3QnQeoxtBxwO6UZlJiSVu5xm+kg0lXH6gB8=
+github.com/figment-networks/oasis-rpc-proxy v0.3.5 h1:qrGL1W5qvsfpMqk1yOkM7UatZJJc9/ZcYZFLyq4q8Wg=
+github.com/figment-networks/oasis-rpc-proxy v0.3.5/go.mod h1:6QPFX2auxGdeo4mFnnwIm5ukDUYQrBu7OkpiVz/H6XA=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=

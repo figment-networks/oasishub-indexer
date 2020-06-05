@@ -12,11 +12,10 @@ CREATE TABLE IF NOT EXISTS staking_sequences
     debonding_interval    BIGINT                   NOT NULL,
     min_delegation_amount DECIMAL(65, 0)           NOT NULL,
 
-    PRIMARY KEY (time, id)
+    PRIMARY KEY (id)
 );
 
 -- Hypertable
-SELECT create_hypertable('staking_sequences', 'time', if_not_exists => TRUE);
 
 -- Indexes
-CREATE index idx_staking_sequences_height on staking_sequences (height, time DESC);
+CREATE index idx_staking_sequences_height on staking_sequences (height);

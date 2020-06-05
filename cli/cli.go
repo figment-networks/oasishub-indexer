@@ -13,8 +13,6 @@ import (
 
 // Run executes the command line interface
 func Run() {
-	defer reporting.RecoverError()
-
 	var configPath string
 	var runCommand string
 	var showVersion bool

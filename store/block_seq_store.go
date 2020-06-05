@@ -1,7 +1,9 @@
 package store
 
 import (
+	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/jinzhu/gorm"
+	"time"
 
 	"github.com/figment-networks/oasishub-indexer/model"
 )
@@ -54,22 +56,26 @@ type GetAvgRecentTimesResult struct {
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
 func (s *BlockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
+	defer logQueryDuration(time.Now(), "BlockSeqStore_GetAvgRecentTimes")
+
 	var res GetAvgRecentTimesResult
 	s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&res)
 
 	return res
 }
 
-// GetAvgTimesForIntervalRow Contains row of data for GetAvgTimesForInterval query
+// GetAvgTimesForIntervalRow Contains row of data for GetSummary query
 type GetAvgTimesForIntervalRow struct {
 	TimeInterval string  `json:"time_interval"`
 	Count        int64   `json:"count"`
 	Avg          float64 `json:"avg"`
 }
 
-// GetAvgTimesForInterval Gets average block times for interval
-func (s *BlockSeqStore) GetAvgTimesForInterval(interval string, period string) ([]GetAvgTimesForIntervalRow, error) {
-	rows, err := s.db.Raw(blockTimesForIntervalQuery, interval, period).Rows()
+// GetSummary Gets average block times for interval
+func (s *BlockSeqStore) GetSummary(interval string, period string) ([]GetAvgTimesForIntervalRow, error) {
+	defer logQueryDuration(time.Now(), "BlockSeqStore_GetSummary")
+
+	rows, err := s.db.Raw(AllBlocksSummaryForIntervalQuery(interval), period).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -85,3 +91,23 @@ func (s *BlockSeqStore) GetAvgTimesForInterval(interval string, period string) (
 	}
 	return res, nil
 }
+
+func (s *BlockSeqStore) PurgeOldRecords(cfg *config.Config) error {
+	// Purge sequences
+	if err := s.db.Exec(deleteOldBlockSeqQuery, cfg.PurgeBlockInterval).Error; err != nil {
+		return err
+	}
+
+	// Purge hourly summary
+	if err := s.db.Exec(DeleteOldBlockHourlySummaryQuery("hourly"), cfg.PurgeBlockHourlySummaryInterval).Error; err != nil {
+		return err
+	}
+
+	// Purge daily summary
+	if err := s.db.Exec(DeleteOldBlockHourlySummaryQuery("daily"), cfg.PurgeBlockDailySummaryInterval).Error; err != nil {
+		return err
+	}
+
+	return nil
+}
+

@@ -23,13 +23,14 @@ type getByPublicKeyHttpHandler struct {
 
 func NewGetByPublicKeyHttpHandler(db *store.Store, c *client.Client) *getByPublicKeyHttpHandler {
 	return &getByPublicKeyHttpHandler{
-		db: db,
+		db:     db,
 		client: c,
 	}
 }
 
 type Request struct {
 	PublicKey string `form:"public_key" binding:"required"`
+	Height    int64  `form:"height" binding:"-"`
 }
 
 func (h *getByPublicKeyHttpHandler) Handle(c *gin.Context) {
@@ -41,7 +42,7 @@ func (h *getByPublicKeyHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	res, err := h.getUseCase().Execute(req.PublicKey)
+	res, err := h.getUseCase().Execute(req.PublicKey, req.Height)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
