@@ -14,5 +14,11 @@
   "rollbar_server_root": "",
   "indexer_metric_addr": ":8080",
   "server_metric_addr": ":8090",
-  "metric_server_url": "/metrics"
+  "metric_server_url": "/metrics",
+  "purge_block_interval": "",
+  "purge_block_hourly_summary_interval": "",
+  "purge_block_daily_summary_interval": "",
+  "purge_validator_interval": "",
+  "purge_validator_hourly_summary_interval": "",
+  "purge_validator_daily_summary_interval": ""
 }
