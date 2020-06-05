@@ -44,6 +44,23 @@ func (s ValidatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
 	return result, checkErr(err)
 }
 
+// FindLastByEntityUID finds last validator sequences for given entity uid
+func (s ValidatorSeqStore) FindLastByEntityUID(key string, limit int64) ([]model.ValidatorSeq, error) {
+	q := model.ValidatorSeq{
+		EntityUID: key,
+	}
+	var result []model.ValidatorSeq
+
+	err := s.db.
+		Where(&q).
+		Order("height DESC").
+		Limit(limit).
+		Find(&result).
+		Error
+
+	return result, checkErr(err)
+}
+
 type ValidatorSummaryRow struct {
 	TimeInterval    string         `json:"time_interval"`
 	VotingPowerAvg  float64        `json:"voting_power_avg"`
