@@ -1,4 +1,4 @@
-package indexer
+package indexing
 
 import (
 	"context"
@@ -11,28 +11,28 @@ import (
 )
 
 var (
-	_ types.CmdHandler = (*runIndexerCmdHandler)(nil)
+	_ types.CmdHandler = (*runCmdHandler)(nil)
 )
 
-type runIndexerCmdHandler struct {
+type runCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *runIndexerUseCase
+	useCase *runUseCase
 }
 
-func NewRunIndexerCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *runIndexerCmdHandler {
-	return &runIndexerCmdHandler{
+func NewRunCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *runCmdHandler {
+	return &runCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *runIndexerCmdHandler) Handle(ctx context.Context) {
+func (h *runCmdHandler) Handle(ctx context.Context) {
 	//TODO: Pass as an argument from command line
-	batchSize := int64(0)
+	batchSize := int64(297)
 
 	logger.Info(fmt.Sprintf("running indexer use case [handler=cmd] [batchSize=%d]", batchSize))
 
@@ -43,9 +43,9 @@ func (h *runIndexerCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *runIndexerCmdHandler) getUseCase() *runIndexerUseCase {
+func (h *runCmdHandler) getUseCase() *runUseCase {
 	if h.useCase == nil {
-		return NewRunIndexerUseCase(h.cfg, h.db, h.client)
+		return NewRunUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

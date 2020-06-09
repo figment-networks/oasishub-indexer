@@ -59,10 +59,10 @@ func findBy(db *gorm.DB, dst interface{}, key string, value interface{}) error {
 		Error
 }
 
-func findAllBy(db *gorm.DB, dst interface{}, key string, value interface{}) error {
+func findMostRecent(db *gorm.DB, orderField string, record interface{}) error {
 	return db.
-		Where(fmt.Sprintf("%s = ?", key), value).
-		Find(&dst).
+		Order(fmt.Sprintf("%s DESC", orderField)).
+		Take(record).
 		Error
 }
 

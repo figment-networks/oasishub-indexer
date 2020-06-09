@@ -1,13 +1,15 @@
 package store
 
 import (
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"reflect"
+	"time"
 )
 
-// New returns a new store from the connection string
+// NewIndexerMetric returns a new store from the connection string
 func New(connStr string) (*Store, error) {
 	conn, err := gorm.Open("postgres", connStr)
 	if err != nil {
@@ -19,6 +21,7 @@ func New(connStr string) (*Store, error) {
 	return &Store{
 		db: conn,
 
+		Database:  NewDatabaseStore(conn),
 		Syncables: NewSyncablesStore(conn),
 		Reports:   NewReportsStore(conn),
 
@@ -29,6 +32,9 @@ func New(connStr string) (*Store, error) {
 		TransactionSeq:         NewTransactionSeqStore(conn),
 		ValidatorSeq:           NewValidatorSeqStore(conn),
 
+		BlockSummary:     NewBlockSummaryStore(conn),
+		ValidatorSummary: NewValidatorSummaryStore(conn),
+
 		AccountAgg:   NewAccountAggStore(conn),
 		ValidatorAgg: NewValidatorAggStore(conn),
 	}, nil
@@ -38,6 +44,7 @@ func New(connStr string) (*Store, error) {
 type Store struct {
 	db *gorm.DB
 
+	Database  *DatabaseStore
 	Syncables *SyncablesStore
 	Reports   *ReportsStore
 
@@ -47,6 +54,9 @@ type Store struct {
 	StakingSeq             *StakingSeqStore
 	TransactionSeq         *TransactionSeqStore
 	ValidatorSeq           *ValidatorSeqStore
+
+	ValidatorSummary *ValidatorSummaryStore
+	BlockSummary     *BlockSummaryStore
 
 	AccountAgg   *AccountAggStore
 	ValidatorAgg *ValidatorAggStore
@@ -83,4 +93,9 @@ func castQuantity(scope *gorm.Scope) {
 			f.Field = reflect.ValueOf(gorm.Expr("cast(? AS DECIMAL(65,0))", t.String()))
 		}
 	}
+}
+
+func logQueryDuration(start time.Time, queryName string) {
+	elapsed := time.Since(start)
+	metric.DatabaseQueryDuration.WithLabelValues(queryName).Set(elapsed.Seconds())
 }

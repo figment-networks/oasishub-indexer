@@ -11,13 +11,8 @@ CREATE TABLE IF NOT EXISTS delegation_sequences
     delegator_uid TEXT                     NOT NULL,
     shares        DECIMAL(65, 0)           NOT NULL,
 
-    PRIMARY KEY (time, id)
+    PRIMARY KEY (id)
 );
 
--- Hypertable
-SELECT create_hypertable('delegation_sequences', 'time', if_not_exists => TRUE);
-
 -- Indexes
-CREATE index idx_delegation_sequences_height on delegation_sequences (height, time DESC);
-CREATE index idx_delegation_sequences_app_version on delegation_sequences (validator_uid, time DESC);
-CREATE index idx_delegation_sequences_block_version on delegation_sequences (delegator_uid, time DESC);
+CREATE index idx_delegation_sequences_height on delegation_sequences (height);

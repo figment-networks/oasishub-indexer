@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 )
 
@@ -14,22 +15,29 @@ func NewGetByEntityUidUseCase(db *store.Store) *getByEntityUidUseCase {
 	}
 }
 
-func (uc *getByEntityUidUseCase) Execute(key string) (*AggDetailsView, error) {
-	ea, err := uc.db.ValidatorAgg.FindByEntityUID(key)
+func (uc *getByEntityUidUseCase) Execute(key string, sequencesLimit int64) (*AggDetailsView, error) {
+	validatorAggs, err := uc.db.ValidatorAgg.FindByEntityUID(key)
 	if err != nil {
 		return nil, err
 	}
 
-	ds, err := uc.db.DelegationSeq.FindLastByValidatorUID(key)
+	sequences, err := uc.getSequences(key, sequencesLimit)
 	if err != nil {
 		return nil, err
 	}
 
-	dds, err := uc.db.DebondingDelegationSeq.FindRecentByValidatorUID(key, 5)
-	if err != nil {
-		return nil, err
-	}
+	return ToAggDetailsView(validatorAggs, sequences), nil
+}
 
-	return ToAggDetailsView(*ea, ds, dds), nil
+func (uc *getByEntityUidUseCase) getSequences(key string, sequencesLimit int64) ([]model.ValidatorSeq, error) {
+	var sequences []model.ValidatorSeq
+	var err error
+	if sequencesLimit > 0 {
+		sequences, err = uc.db.ValidatorSeq.FindLastByEntityUID(key, sequencesLimit)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return sequences, nil
 }
 

@@ -1,17 +1,22 @@
-package indexing
+package indexer
 
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/model"
-	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"reflect"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
+)
+
+const (
+	AccountAggCreatorTaskName = "AccountAggCreator"
+	ValidatorAggCreatorTaskName = "ValidatorAggCreator"
 )
 
 var (
@@ -32,12 +37,16 @@ type accountAggCreatorTask struct {
 	db *store.Store
 }
 
+func (t *accountAggCreatorTask) GetName() string {
+	return AccountAggCreatorTaskName
+}
+
 func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating account aggregates for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
 	var created []model.AccountAgg
 	var updated []model.AccountAgg
@@ -116,12 +125,16 @@ type validatorAggCreatorTask struct {
 	db *store.Store
 }
 
+func (t *validatorAggCreatorTask) GetName() string {
+	return ValidatorAggCreatorTaskName
+}
+
 func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating validator aggregates for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
 	var created []model.ValidatorAgg
 	var updated []model.ValidatorAgg

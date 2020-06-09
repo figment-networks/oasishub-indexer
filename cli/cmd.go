@@ -26,9 +26,15 @@ func runCmd(cfg *config.Config, cmdName string) error {
 	logger.Info(fmt.Sprintf("executing cmd %s ...", cmdName), logger.Field("app", "cli"))
 
 	switch cmdName {
-	case "indexer":
+	case "run_indexer":
 		ctx := context.Background()
 		cmdHandlers.RunIndexer.Handle(ctx)
+	case "purge_indexer":
+		ctx := context.Background()
+		cmdHandlers.PurgeIndexer.Handle(ctx)
+	case "summarize_indexer":
+		ctx := context.Background()
+		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", cmdName))
 	}

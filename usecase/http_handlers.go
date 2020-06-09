@@ -20,7 +20,7 @@ func NewHttpHandlers(db *store.Store, c *client.Client) *HttpHandlers {
 		Health:                          health.NewHealthHttpHandler(),
 		GetBlockByHeight:                block.NewGetByHeightHttpHandler(db, c),
 		GetBlockTimes:                   block.NewGetBlockTimesHttpHandler(db, c),
-		GetBlockTimesForInterval:        block.NewGetBlockTimesForIntervalHttpHandler(db, c),
+		GetBlockSummary:                 block.NewGetBlockSummaryHttpHandler(db, c),
 		GetAccountByPublicKey:           account.NewGetByPublicKeyHttpHandler(db, c),
 		GetDebondingDelegationsByHeight: debondingdelegation.NewGetByHeightHttpHandler(db, c),
 		GetDelegationsByHeight:          delegation.NewGetByHeightHttpHandler(db, c),
@@ -29,11 +29,7 @@ func NewHttpHandlers(db *store.Store, c *client.Client) *HttpHandlers {
 		GetTransactionsByHeight:         transaction.NewGetByHeightHttpHandler(db, c),
 		GetValidatorsByHeight:           validator.NewGetByHeightHttpHandler(db, c),
 		GetValidatorByEntityUid:         validator.NewGetByEntityUidHttpHandler(db, c),
-		GetValidatorUptime:              validator.NewGetUptimeHttpHandler(db, c),
-		GetValidatorShares:              validator.NewGetSharesHttpHandler(db, c),
-		GetValidatorVotingPower:         validator.NewGetVotingPowerHttpHandler(db, c),
-		GetSharesForAllValidators:       validator.NewGetSharesForAllHttpHandler(db, c),
-		GetVotingPowerForAllValidators:  validator.NewGetVotingPowerForAllHttpHandler(db, c),
+		GetValidatorSummary:             validator.NewGetSummaryHttpHandler(db, c),
 		GetValidatorsForMinHeight:       validator.NewGetForMinHeightHttpHandler(db, c),
 	}
 }
@@ -41,7 +37,7 @@ func NewHttpHandlers(db *store.Store, c *client.Client) *HttpHandlers {
 type HttpHandlers struct {
 	Health                          types.HttpHandler
 	GetBlockTimes                   types.HttpHandler
-	GetBlockTimesForInterval        types.HttpHandler
+	GetBlockSummary                 types.HttpHandler
 	GetBlockByHeight                types.HttpHandler
 	GetAccountByPublicKey           types.HttpHandler
 	GetDebondingDelegationsByHeight types.HttpHandler
@@ -51,10 +47,6 @@ type HttpHandlers struct {
 	GetTransactionsByHeight         types.HttpHandler
 	GetValidatorsByHeight           types.HttpHandler
 	GetValidatorByEntityUid         types.HttpHandler
-	GetValidatorUptime              types.HttpHandler
-	GetValidatorShares              types.HttpHandler
-	GetValidatorVotingPower         types.HttpHandler
-	GetSharesForAllValidators       types.HttpHandler
-	GetVotingPowerForAllValidators  types.HttpHandler
+	GetValidatorSummary             types.HttpHandler
 	GetValidatorsForMinHeight       types.HttpHandler
 }

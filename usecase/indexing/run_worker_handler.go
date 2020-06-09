@@ -1,4 +1,4 @@
-package indexer
+package indexing
 
 import (
 	"context"
@@ -11,26 +11,26 @@ import (
 )
 
 var (
-	_ types.WorkerHandler = (*runIndexerWorkerHandler)(nil)
+	_ types.WorkerHandler = (*runWorkerHandler)(nil)
 )
 
-type runIndexerWorkerHandler struct {
+type runWorkerHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *runIndexerUseCase
+	useCase *runUseCase
 }
 
-func NewRunIndexerWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *runIndexerWorkerHandler {
-	return &runIndexerWorkerHandler{
+func NewRunWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *runWorkerHandler {
+	return &runWorkerHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *runIndexerWorkerHandler) Handle() {
+func (h *runWorkerHandler) Handle() {
 	batchSize := h.cfg.DefaultBatchSize
 	ctx := context.Background()
 
@@ -43,9 +43,9 @@ func (h *runIndexerWorkerHandler) Handle() {
 	}
 }
 
-func (h *runIndexerWorkerHandler) getUseCase() *runIndexerUseCase {
+func (h *runWorkerHandler) getUseCase() *runUseCase {
 	if h.useCase == nil {
-		return NewRunIndexerUseCase(h.cfg, h.db, h.client)
+		return NewRunUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

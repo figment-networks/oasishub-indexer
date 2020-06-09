@@ -14,7 +14,6 @@ type Report struct {
 	ErrorCount   *int64
 	ErrorMsg     *string
 	Duration     time.Duration
-	Details      types.Jsonb
 	CompletedAt  *types.Time
 }
 

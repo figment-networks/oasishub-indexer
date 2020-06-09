@@ -31,7 +31,7 @@ services:
       - "8081:8081"
     environment:
       PROXY_URL: localhost:50051
-      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+      DATABASE_DSN: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
     depends_on:
       - database
   
@@ -42,7 +42,7 @@ services:
       - internal
     environment:
       PROXY_URL: localhost:50051
-      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+      DATABASE_DSN: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
     depends_on:
       - database
 
@@ -53,7 +53,7 @@ services:
       - internal
     environment:
       PROXY_URL: localhost:50051
-      DATABASE_URL: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
+      DATABASE_DSN: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
     depends_on:
       - database
 
@@ -70,5 +70,7 @@ services:
       - /migrations/
       - -database
       - postgres://oasishub:oasishub@database:5432/oasishub?sslmode=disable
+    environment:
+      DATABASE_DSN: postgres://oasishub:oasishub@database/oasishub?sslmode=disable
     depends_on:
       - database

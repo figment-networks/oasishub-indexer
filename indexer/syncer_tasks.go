@@ -1,16 +1,25 @@
-package indexing
+package indexer
 
 import (
 	"context"
 	"fmt"
+	"github.com/figment-networks/oasishub-indexer/metric"
+	"time"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
-	"reflect"
-	"time"
+)
+
+const (
+	MainSyncerTaskName = "MainSyncer"
+)
+
+var (
+	ErrMissingReportInCtx = errors.New("report missing in context")
 )
 
 func NewMainSyncerTask(db *store.Store) pipeline.Task {
@@ -23,16 +32,20 @@ type mainSyncerTask struct {
 	db *store.Store
 }
 
+func (t *mainSyncerTask) GetName() string {
+	return MainSyncerTaskName
+}
+
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("started height=%d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSyncer, t.GetName(), payload.CurrentHeight))
 
 	report, ok := ctx.Value(CtxReport).(*model.Report)
 	if !ok {
-		return errors.New("report missing in context")
+		return ErrMissingReportInCtx
 	}
 
 	syncable := &model.Syncable{

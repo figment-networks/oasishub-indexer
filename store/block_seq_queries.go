@@ -16,20 +16,10 @@ SELECT
     LIMIT ?
   ) t;
 `
-	blockTimesForIntervalQuery = `
-SELECT
-  time_bucket($1, time) AS time_interval,
-  COUNT(*) AS count,
-  EXTRACT(EPOCH FROM (last(time, time) - first(time, time)) / COUNT(*)) AS avg
-FROM block_sequences
-  WHERE (
-    SELECT time
-    FROM block_sequences
-    ORDER BY time DESC
-    LIMIT 1
-  ) - $2::INTERVAL < time
-GROUP BY time_interval
-ORDER BY time_interval ASC;
+
+	summarizeBlocksQuerySelect = `
+    DATE_TRUNC(?, time) AS time_bucket,
+    COUNT(*) AS count,
+    EXTRACT(EPOCH FROM (MAX(time) - MIN(time)) / COUNT(*)) AS block_time_avg
 `
 )
-

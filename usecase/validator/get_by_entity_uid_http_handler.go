@@ -23,13 +23,14 @@ type getByEntityUidHttpHandler struct {
 
 func NewGetByEntityUidHttpHandler(db *store.Store, c *client.Client) *getByEntityUidHttpHandler {
 	return &getByEntityUidHttpHandler{
-		db: db,
+		db:     db,
 		client: c,
 	}
 }
 
 type GetByEntityUidRequest struct {
-	EntityUID string `form:"entity_uid" binding:"required"`
+	EntityUID      string `form:"entity_uid" binding:"required"`
+	SequencesLimit int64  `form:"sequences_limit" binding:"-"`
 }
 
 func (h *getByEntityUidHttpHandler) Handle(c *gin.Context) {
@@ -41,7 +42,7 @@ func (h *getByEntityUidHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.EntityUID)
+	resp, err := h.getUseCase().Execute(req.EntityUID, req.SequencesLimit)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)

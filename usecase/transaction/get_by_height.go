@@ -1,17 +1,20 @@
 package transaction
 
 import (
+	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
 
 type getByHeightUseCase struct {
-	db *store.Store
+	db     *store.Store
+	client *client.Client
 }
 
-func NewGetByHeightUseCase(db *store.Store) *getByHeightUseCase {
+func NewGetByHeightUseCase(db *store.Store, c *client.Client) *getByHeightUseCase {
 	return &getByHeightUseCase{
-		db: db,
+		db:     db,
+		client: c,
 	}
 }
 
@@ -32,10 +35,10 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*ListView, error) {
 		return nil, errors.New("height is not indexed")
 	}
 
-	ms, err := uc.db.TransactionSeq.FindByHeight(*height)
+	res, err := uc.client.Transaction.GetByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
 
-	return ToListView(ms), nil
+	return ToListView(res.GetTransactions()), nil
 }

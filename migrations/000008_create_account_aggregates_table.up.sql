@@ -20,7 +20,5 @@ CREATE TABLE IF NOT EXISTS account_aggregates
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index idx_account_aggregates_public_key on account_aggregates (public_key);

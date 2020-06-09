@@ -15,13 +15,9 @@ CREATE TABLE IF NOT EXISTS transaction_sequences
     gas_price  DECIMAL(65, 0)           NOT NULL,
     method     TEXT                     NOT NULL,
 
-    PRIMARY KEY (time, id)
+    PRIMARY KEY (id)
 );
 
--- Hypertable
-SELECT create_hypertable('transaction_sequences', 'time', if_not_exists => TRUE);
-
 -- Indexes
-CREATE index idx_transaction_sequences_height on transaction_sequences (height, time DESC);
-CREATE index idx_transaction_sequences_public_key on transaction_sequences (public_key, time DESC);
-CREATE index idx_transaction_sequences_hash on transaction_sequences (hash, time DESC);
+CREATE index idx_transaction_sequences_height on transaction_sequences (height);
+CREATE index idx_transaction_sequences_public_key on transaction_sequences (public_key);

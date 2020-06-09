@@ -1,4 +1,4 @@
-package indexing
+package indexer
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"time"
 )
 
 const (
@@ -27,13 +26,6 @@ type indexingPipeline struct {
 
 func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
 	p := pipeline.New(NewPayloadFactory())
-
-	// Set options to control what stages and what indexing tasks to execute
-	p.SetOptions(&pipeline.Options{
-		//StagesWhitelist: []pipeline.StageName{pipeline.StageFetcher},
-		// Do not aggregate account since it is too expensive
-		IndexingTasksBlacklist: []string{"validatorAggCreatorTask"},
-	})
 
 	// Setup stage
 	p.SetSetupStage(
@@ -53,6 +45,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetFetcherStage(
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
+			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
 			pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
 			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
@@ -62,8 +55,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Set parser stage
 	p.SetParserStage(
 		pipeline.AsyncRunner(
-			NewParseBlockTask(),
-			NewParseValidatorsTask(),
+			NewBlockParserTask(),
+			NewValidatorsParserTask(),
 		),
 	)
 
@@ -82,7 +75,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Set aggregator stage
 	p.SetAggregatorStage(
 		pipeline.AsyncRunner(
-			//pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
 		),
 	)
@@ -95,11 +88,23 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	}, nil
 }
 
-func (p *indexingPipeline) Start(ctx context.Context, batchSize int64) error {
-	source := NewSource(p.cfg, p.db, p.client, batchSize)
-	sink := NewSink(p.db)
+type Options struct {
+	BatchSize      int64
+	Mode           pipeline.Mode
+	CurrentVersion *int64
+	DesiredVersion *int64
+}
 
-	logger.Info(fmt.Sprintf("Starting pipeline: %d - %d", source.startHeight, source.endHeight))
+func (p *indexingPipeline) Start(ctx context.Context, indexingOptions Options) error {
+	versionNumber, options, err := p.getIndexerOptions(indexingOptions)
+	if err != nil {
+		return err
+	}
+
+	source := NewSource(p.cfg, p.db, p.client, *versionNumber, indexingOptions.BatchSize)
+	sink := NewSink(p.db, *versionNumber)
+
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
 
 	report, err := p.createReport(source.startHeight, source.endHeight)
 	if err != nil {
@@ -108,16 +113,30 @@ func (p *indexingPipeline) Start(ctx context.Context, batchSize int64) error {
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	err = p.pipeline.Start(ctxWithReport, source, sink)
+	err = p.pipeline.Start(ctxWithReport, source, sink, options)
 	if err != nil {
-		metric.NumIndexingErr.Inc()
+		metric.IndexerTotalErrors.Inc()
 	}
 
-	logger.Info(fmt.Sprintf("pipeline done [Err: %+v]", err))
+	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
 
 	err = p.completeReport(report, source.Len(), sink.successCount, err)
 
 	return err
+}
+
+func (p *indexingPipeline) getIndexerOptions(indexingOptions Options) (*int64, *pipeline.Options, error) {
+	versionReader := pipeline.NewVersionReader(p.cfg.IndexerVersionsDir)
+
+	//TODO: Use Up() and Version() based on mode for reindexing
+	versionNumber, taskWhitelist, err := versionReader.All()
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return versionNumber, &pipeline.Options{
+		TaskWhitelist: taskWhitelist,
+	}, nil
 }
 
 func (p *indexingPipeline) createReport(startHeight int64, endHeight int64) (*model.Report, error) {
@@ -132,7 +151,7 @@ func (p *indexingPipeline) createReport(startHeight int64, endHeight int64) (*mo
 }
 
 func (p *indexingPipeline) completeReport(report *model.Report, totalCount int64, successCount int64, err error) error {
-	report.Complete(successCount, totalCount - successCount, err)
+	report.Complete(successCount, totalCount-successCount, err)
 
 	return p.db.Reports.Save(report)
 }
@@ -141,7 +160,3 @@ func isTransient(error) bool {
 	return true
 }
 
-func logTaskDuration(start time.Time, taskName string) {
-	elapsed := time.Since(start)
-	metric.IndexingTaskDuration.WithLabelValues(taskName).Set(elapsed.Seconds())
-}
