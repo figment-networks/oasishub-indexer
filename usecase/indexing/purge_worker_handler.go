@@ -1,4 +1,4 @@
-package indexer
+package indexing
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func NewPurgeWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client
 func (h *purgeWorkerHandler) Handle() {
 	ctx := context.Background()
 
-	logger.Info("running indexer use case [handler=worker]")
+	logger.Info("running purge use case [handler=worker]")
 
 	err := h.getUseCase().Execute(ctx)
 	if err != nil {

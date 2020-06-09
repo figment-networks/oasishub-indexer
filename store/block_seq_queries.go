@@ -1,7 +1,5 @@
 package store
 
-import "fmt"
-
 const (
 	blockTimesForRecentBlocksQuery = `
 SELECT 
@@ -19,34 +17,9 @@ SELECT
   ) t;
 `
 
-	allBlocksSummaryForInterval = `
-SELECT * 
-FROM blocks_summary_%s 
-WHERE time_interval >= (
-	SELECT time_interval 
-	FROM blocks_summary_%s 
-	ORDER BY time_interval DESC 
-	LIMIT 1
-) - ?::INTERVAL
-`
-
-	deleteOldBlockSeqQuery = `
-DELETE 
-FROM block_sequences 
-WHERE time < NOW() - ?::INTERVAL
-`
-
-	deleteOldBlockHourlySummary = `
-DELETE 
-FROM blocks_summary_%s 
-WHERE time < NOW() - ?::INTERVAL
+	summarizeBlocksQuerySelect = `
+    DATE_TRUNC(?, time) AS time_bucket,
+    COUNT(*) AS count,
+    EXTRACT(EPOCH FROM (MAX(time) - MIN(time)) / COUNT(*)) AS block_time_avg
 `
 )
-
-func AllBlocksSummaryForIntervalQuery(interval string) string {
-	return fmt.Sprintf(allBlocksSummaryForInterval, interval, interval)
-}
-
-func DeleteOldBlockHourlySummaryQuery(interval string) string {
-	return fmt.Sprintf(deleteOldBlockHourlySummary, interval)
-}

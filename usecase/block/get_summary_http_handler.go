@@ -31,8 +31,8 @@ func NewGetBlockSummaryHttpHandler(db *store.Store, client *client.Client) *getB
 }
 
 type GetBlockTimesForIntervalRequest struct {
-	Interval string `form:"interval" binding:"required"`
-	Period   string `form:"period" binding:"required"`
+	Interval types.SummaryInterval `form:"interval" binding:"required"`
+	Period   string                `form:"period" binding:"required"`
 }
 
 func (h *getBlockSummaryHttpHandler) Handle(c *gin.Context) {
@@ -59,7 +59,7 @@ func (h *getBlockSummaryHttpHandler) validateParams(c *gin.Context) (*GetBlockTi
 		return nil, err
 	}
 
-	if req.Interval != "hourly" && req.Interval != "daily" {
+	if !req.Interval.Valid() {
 		return nil, ErrInvalidIntervalPeriod
 	}
 

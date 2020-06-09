@@ -1,7 +1,6 @@
 package store
 
 import (
-	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -61,8 +60,32 @@ func (s ValidatorSeqStore) FindLastByEntityUID(key string, limit int64) ([]model
 	return result, checkErr(err)
 }
 
-type ValidatorSummaryRow struct {
-	TimeInterval    string         `json:"time_interval"`
+// FindMostRecent finds most recent validator sequence
+func (s *ValidatorSeqStore) FindMostRecent() (*model.ValidatorSeq, error) {
+	validatorSeq := &model.ValidatorSeq{}
+	if err := findMostRecent(s.db, "time", validatorSeq); err != nil {
+		return nil, err
+	}
+	return validatorSeq, nil
+}
+
+// DeleteOlderThan deletes validator sequence older than given threshold
+func (s *ValidatorSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+	statement := s.db.
+		Unscoped().
+		Where("time < ?", purgeThreshold).
+		Delete(&model.ValidatorSeq{})
+
+	if statement.Error != nil {
+		return nil, checkErr(statement.Error)
+	}
+
+	return &statement.RowsAffected, nil
+}
+
+type ValidatorSeqSummary struct {
+	EntityUID       string         `json:"entity_uid"`
+	TimeBucket      types.Time     `json:"time_bucket"`
 	VotingPowerAvg  float64        `json:"voting_power_avg"`
 	VotingPowerMax  float64        `json:"voting_power_max"`
 	VotingPowerMin  float64        `json:"voting_power_min"`
@@ -75,70 +98,34 @@ type ValidatorSummaryRow struct {
 	UptimeAvg       float64        `json:"uptime_avg"`
 }
 
-type SingleValidatorSummaryRow struct {
-	EntityUID string `json:"entity_uid"`
+// Summarize gets the summarized version of validator sequences
+func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, last *model.ValidatorSummary) ([]ValidatorSeqSummary, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
 
-	*ValidatorSummaryRow
-}
+	tx := s.db.
+		Table(model.ValidatorSeq{}.TableName()).
+		Select(summarizeValidatorsQuerySelect, interval).
+		Order("time_bucket").
+		Group("entity_uid, time_bucket")
 
-// GetSummary gets total shares of all validators for interval
-func (s *ValidatorSeqStore) GetSummary(interval string, period string) ([]ValidatorSummaryRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSeqStore_GetSummary")
+	if last != nil {
+		tx = tx.Where("time >= ?", last.TimeBucket)
+	}
 
-	rows, err := s.db.Raw(AllValidatorsSummaryForIntervalQuery(interval), period).Rows()
+	rows, err := tx.Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var res []ValidatorSummaryRow
+	var models []ValidatorSeqSummary
 	for rows.Next() {
-		var row ValidatorSummaryRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
+		var summary ValidatorSeqSummary
+		if err := s.db.ScanRows(rows, &summary); err != nil {
 			return nil, err
 		}
-		res = append(res, row)
+
+		models = append(models, summary)
 	}
-	return res, nil
-}
-
-
-// GetSummaryByEntityUID gets shares for validator for interval
-func (s *ValidatorSeqStore) GetSummaryByEntityUID(key string, interval string, period string) ([]SingleValidatorSummaryRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSeqStore_GetSummaryByEntityUID")
-
-	rows, err := s.db.Raw(ValidatorSummaryForIntervalQuery(interval), period, key).Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var res []SingleValidatorSummaryRow
-	for rows.Next() {
-		var row SingleValidatorSummaryRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
-}
-
-func (s *ValidatorSeqStore) PurgeOldRecords(cfg *config.Config) error {
-	// Purge sequences
-	if err := s.db.Exec(deleteOldValidatorSeqQuery, cfg.PurgeValidatorInterval).Error; err != nil {
-		return err
-	}
-
-	// Purge hourly summary
-	if err := s.db.Exec(DeleteOldValidatorHourlySummaryQuery("hourly"), cfg.PurgeValidatorHourlySummaryInterval).Error; err != nil {
-		return err
-	}
-
-	// Purge daily summary
-	if err := s.db.Exec(DeleteOldValidatorHourlySummaryQuery("daily"), cfg.PurgeValidatorDailySummaryInterval).Error; err != nil {
-		return err
-	}
-
-	return nil
+	return models, nil
 }

@@ -1,4 +1,4 @@
-package indexing
+package indexer
 
 import (
 	"context"
@@ -15,22 +15,26 @@ var (
 	ErrNothingToProcess = errors.New("nothing to process")
 )
 
-func NewSource(cfg *config.Config, db *store.Store, client *client.Client, batchSize int64) *source {
+func NewSource(cfg *config.Config, db *store.Store, client *client.Client, versionNumber int64, batchSize int64) *source {
 	src := &source{
-		cfg:       cfg,
-		db:        db,
-		client:    client,
-		batchSize: batchSize,
+		cfg:    cfg,
+		db:     db,
+		client: client,
+
+		versionNumber: versionNumber,
+		batchSize:     batchSize,
 	}
 	return src.init()
 }
 
 type source struct {
-	cfg       *config.Config
-	db        *store.Store
-	client    *client.Client
-	batchSize int64
+	cfg           *config.Config
+	db            *store.Store
+	client        *client.Client
+	versionNumber int64
+	batchSize     int64
 
+	indexVersion  int64
 	currentHeight int64
 	startHeight   int64
 	endHeight     int64
@@ -85,7 +89,12 @@ func (s *source) setStartHeight() error {
 		// No syncables found, get first block number from config
 		startH = s.cfg.FirstBlockHeight
 	} else {
-		startH = syncable.Height + 1
+		// Reindex if last syncable failed
+		if syncable.ProcessedAt == nil {
+			startH = syncable.Height
+		} else {
+			startH = syncable.Height + 1
+		}
 	}
 	s.currentHeight = startH
 	s.startHeight = startH

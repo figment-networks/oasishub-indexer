@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 type getSummaryUseCase struct {
@@ -14,10 +15,10 @@ func NewGetSummaryUseCase(db *store.Store) *getSummaryUseCase {
 	}
 }
 
-func (uc *getSummaryUseCase) Execute(interval string, period string, entityUID string) (interface{}, error) {
+func (uc *getSummaryUseCase) Execute(interval types.SummaryInterval, period string, entityUID string) (interface{}, error) {
 	if entityUID == "" {
-		return uc.db.ValidatorSeq.GetSummary(interval, period)
+		return uc.db.ValidatorSummary.FindSummary(interval, period)
 	}
-	return uc.db.ValidatorSeq.GetSummaryByEntityUID(entityUID, interval, period)
+	return uc.db.ValidatorSummary.FindSummaryByEntityUID(entityUID, interval, period)
 }
 

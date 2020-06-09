@@ -15,7 +15,5 @@ CREATE TABLE IF NOT EXISTS debonding_delegation_sequences
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index debonding_idx_delegation_sequences_height on debonding_delegation_sequences (height);

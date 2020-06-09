@@ -1,7 +1,7 @@
 package store
 
 import (
-	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	"time"
 
@@ -64,50 +64,70 @@ func (s *BlockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
 	return res
 }
 
-// GetAvgTimesForIntervalRow Contains row of data for GetSummary query
+// GetAvgTimesForIntervalRow Contains row of data for FindSummary query
 type GetAvgTimesForIntervalRow struct {
 	TimeInterval string  `json:"time_interval"`
 	Count        int64   `json:"count"`
 	Avg          float64 `json:"avg"`
 }
 
-// GetSummary Gets average block times for interval
-func (s *BlockSeqStore) GetSummary(interval string, period string) ([]GetAvgTimesForIntervalRow, error) {
-	defer logQueryDuration(time.Now(), "BlockSeqStore_GetSummary")
+// FindMostRecent finds most recent block sequence
+func (s *BlockSeqStore) FindMostRecent() (*model.BlockSeq, error) {
+	blockSeq := &model.BlockSeq{}
+	if err := findMostRecent(s.db, "time", blockSeq); err != nil {
+		return nil, err
+	}
+	return blockSeq, nil
+}
 
-	rows, err := s.db.Raw(AllBlocksSummaryForIntervalQuery(interval), period).Rows()
+// DeleteOlderThan deletes block sequence older than given threshold
+func (s *BlockSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+	statement := s.db.
+		Unscoped().
+		Where("time < ?", purgeThreshold).
+		Delete(&model.BlockSeq{})
+
+	if statement.Error != nil {
+		return nil, checkErr(statement.Error)
+	}
+
+	return &statement.RowsAffected, nil
+}
+
+type BlockSeqSummary struct {
+	TimeBucket   types.Time `json:"time_bucket"`
+	Count        int64      `json:"count"`
+	BlockTimeAvg float64    `json:"block_time_avg"`
+}
+
+// Summarize gets the summarized version of block sequences
+func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, last *model.BlockSummary) ([]BlockSeqSummary, error) {
+	defer logQueryDuration(time.Now(), "BlockSummaryStore_CalculateSummary")
+
+	tx := s.db.
+		Table(model.BlockSeq{}.TableName()).
+		Select(summarizeBlocksQuerySelect, interval).
+		Order("time_bucket").
+		Group("time_bucket")
+
+	if last != nil {
+		tx = tx.Where("time >= ?", last.TimeBucket)
+	}
+
+	rows, err := tx.Rows()
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var res []GetAvgTimesForIntervalRow
+	var models []BlockSeqSummary
 	for rows.Next() {
-		var row GetAvgTimesForIntervalRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
+		var summary BlockSeqSummary
+		if err := s.db.ScanRows(rows, &summary); err != nil {
 			return nil, err
 		}
-		res = append(res, row)
+
+		models = append(models, summary)
 	}
-	return res, nil
+	return models, nil
 }
-
-func (s *BlockSeqStore) PurgeOldRecords(cfg *config.Config) error {
-	// Purge sequences
-	if err := s.db.Exec(deleteOldBlockSeqQuery, cfg.PurgeBlockInterval).Error; err != nil {
-		return err
-	}
-
-	// Purge hourly summary
-	if err := s.db.Exec(DeleteOldBlockHourlySummaryQuery("hourly"), cfg.PurgeBlockHourlySummaryInterval).Error; err != nil {
-		return err
-	}
-
-	// Purge daily summary
-	if err := s.db.Exec(DeleteOldBlockHourlySummaryQuery("daily"), cfg.PurgeBlockDailySummaryInterval).Error; err != nil {
-		return err
-	}
-
-	return nil
-}
-

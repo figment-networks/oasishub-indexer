@@ -15,7 +15,5 @@ CREATE TABLE IF NOT EXISTS staking_sequences
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index idx_staking_sequences_height on staking_sequences (height);

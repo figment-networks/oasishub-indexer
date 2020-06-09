@@ -32,6 +32,9 @@ func runCmd(cfg *config.Config, cmdName string) error {
 	case "purge_indexer":
 		ctx := context.Background()
 		cmdHandlers.PurgeIndexer.Handle(ctx)
+	case "summarize_indexer":
+		ctx := context.Background()
+		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", cmdName))
 	}

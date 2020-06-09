@@ -18,8 +18,6 @@ CREATE TABLE IF NOT EXISTS transaction_sequences
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index idx_transaction_sequences_height on transaction_sequences (height);
 CREATE index idx_transaction_sequences_public_key on transaction_sequences (public_key);

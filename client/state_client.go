@@ -13,6 +13,7 @@ var (
 
 type StateClient interface {
 	GetByHeight(int64) (*statepb.GetByHeightResponse, error)
+	GetStakingByHeight(int64) (*statepb.GetStakingByHeightResponse, error)
 }
 
 func NewStateClient(conn *grpc.ClientConn) StateClient {
@@ -29,4 +30,10 @@ func (r *stateClient) GetByHeight(h int64) (*statepb.GetByHeightResponse, error)
 	ctx := context.Background()
 
 	return r.client.GetByHeight(ctx, &statepb.GetByHeightRequest{Height: h})
+}
+
+func (r *stateClient) GetStakingByHeight(h int64) (*statepb.GetStakingByHeightResponse, error) {
+	ctx := context.Background()
+
+	return r.client.GetStakingByHeight(ctx, &statepb.GetStakingByHeightRequest{Height: h})
 }

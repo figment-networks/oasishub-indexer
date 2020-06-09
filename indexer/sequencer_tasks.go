@@ -1,14 +1,23 @@
-package indexing
+package indexer
 
 import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"reflect"
 	"time"
+)
+
+const (
+	BlockSeqCreatorTaskName               = "BlockSeqCreator"
+	ValidatorSeqCreatorTaskName           = "ValidatorSeqCreator"
+	TransactionSeqCreatorTaskName         = "TransactionSeqCreator"
+	StakingSeqCreatorTaskName             = "StakingSeqCreator"
+	DelegationSeqCreatorTaskName          = "DelegationSeqCreator"
+	DebondingDelegationSeqCreatorTaskName = "DebondingDelegationSeqCreator"
 )
 
 var (
@@ -16,8 +25,8 @@ var (
 	_ pipeline.Task = (*validatorSeqCreatorTask)(nil)
 	_ pipeline.Task = (*transactionSeqCreatorTask)(nil)
 	_ pipeline.Task = (*stakingSeqCreatorTask)(nil)
-	_ pipeline.Task = (*delegationsSeqCreatorTask)(nil)
-	_ pipeline.Task = (*debondingDelegationsSeqCreatorTask)(nil)
+	_ pipeline.Task = (*delegationSeqCreatorTask)(nil)
+	_ pipeline.Task = (*debondingDelegationSeqCreatorTask)(nil)
 )
 
 func NewBlockSeqCreatorTask(db *store.Store) *blockSeqCreatorTask {
@@ -30,12 +39,16 @@ type blockSeqCreatorTask struct {
 	db *store.Store
 }
 
+func (t *blockSeqCreatorTask) GetName() string {
+	return BlockSeqCreatorTaskName
+}
+
 func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating block sequence for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	newBlockSeq, err := BlockToSequence(payload.Syncable, payload.RawBlock, payload.ParsedBlock)
 	if err != nil {
@@ -60,12 +73,16 @@ type validatorSeqCreatorTask struct {
 	db *store.Store
 }
 
+func (t *validatorSeqCreatorTask) GetName() string {
+	return ValidatorSeqCreatorTaskName
+}
+
 func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating validator sequences for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.ValidatorSeq
 	sequenced, err := t.db.ValidatorSeq.FindByHeight(payload.CurrentHeight)
@@ -121,12 +138,16 @@ type transactionSeqCreatorTask struct {
 	db *store.Store
 }
 
+func (t *transactionSeqCreatorTask) GetName() string {
+	return TransactionSeqCreatorTaskName
+}
+
 func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating transaction sequences for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.TransactionSeq
 	sequenced, err := t.db.TransactionSeq.FindByHeight(payload.CurrentHeight)
@@ -182,12 +203,16 @@ type stakingSeqCreatorTask struct {
 	db *store.Store
 }
 
+func (t *stakingSeqCreatorTask) GetName() string {
+	return StakingSeqCreatorTaskName
+}
+
 func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating staking sequence for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	sequenced, err := t.db.StakingSeq.FindByHeight(payload.CurrentHeight)
 	if err != nil {
@@ -208,22 +233,26 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	return nil
 }
 
-type delegationsSeqCreatorTask struct {
+type delegationSeqCreatorTask struct {
 	db *store.Store
 }
 
-func NewDelegationsSeqCreatorTask(db *store.Store) *delegationsSeqCreatorTask {
-	return &delegationsSeqCreatorTask{
+func (t *delegationSeqCreatorTask) GetName() string {
+	return DelegationSeqCreatorTaskName
+}
+
+func NewDelegationsSeqCreatorTask(db *store.Store) *delegationSeqCreatorTask {
+	return &delegationSeqCreatorTask{
 		db: db,
 	}
 }
 
-func (t *delegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating delegation sequences for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DelegationSeq
 	sequenced, err := t.db.DelegationSeq.FindByHeight(payload.CurrentHeight)
@@ -269,22 +298,26 @@ func (t *delegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-func NewDebondingDelegationsSeqCreatorTask(db *store.Store) *debondingDelegationsSeqCreatorTask {
-	return &debondingDelegationsSeqCreatorTask{
+func NewDebondingDelegationsSeqCreatorTask(db *store.Store) *debondingDelegationSeqCreatorTask {
+	return &debondingDelegationSeqCreatorTask{
 		db: db,
 	}
 }
 
-type debondingDelegationsSeqCreatorTask struct {
+type debondingDelegationSeqCreatorTask struct {
 	db *store.Store
 }
 
-func (t *debondingDelegationsSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+func (t *debondingDelegationSeqCreatorTask) GetName() string {
+	return DebondingDelegationSeqCreatorTaskName
+}
+
+func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
 
-	logger.Info(fmt.Sprintf("creating debonding delegation sequences for height %d", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DebondingDelegationSeq
 	sequenced, err := t.db.DebondingDelegationSeq.FindByHeight(payload.CurrentHeight)

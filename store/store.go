@@ -32,6 +32,9 @@ func New(connStr string) (*Store, error) {
 		TransactionSeq:         NewTransactionSeqStore(conn),
 		ValidatorSeq:           NewValidatorSeqStore(conn),
 
+		BlockSummary:     NewBlockSummaryStore(conn),
+		ValidatorSummary: NewValidatorSummaryStore(conn),
+
 		AccountAgg:   NewAccountAggStore(conn),
 		ValidatorAgg: NewValidatorAggStore(conn),
 	}, nil
@@ -51,6 +54,9 @@ type Store struct {
 	StakingSeq             *StakingSeqStore
 	TransactionSeq         *TransactionSeqStore
 	ValidatorSeq           *ValidatorSeqStore
+
+	ValidatorSummary *ValidatorSummaryStore
+	BlockSummary     *BlockSummaryStore
 
 	AccountAgg   *AccountAggStore
 	ValidatorAgg *ValidatorAggStore

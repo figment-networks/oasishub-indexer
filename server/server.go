@@ -39,7 +39,7 @@ func (s *Server) Start(listenAdd string) error {
 func (s *Server) init() *Server {
 	logger.Info("initializing server...", logger.Field("app", "server"))
 
-	s.setupMiddlewares()
+	s.setupMiddleware()
 	s.setupRoutes()
 
 	return s

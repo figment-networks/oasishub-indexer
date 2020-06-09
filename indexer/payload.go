@@ -1,4 +1,4 @@
-package indexing
+package indexer
 
 import (
 	"github.com/figment-networks/indexing-engine/pipeline"
@@ -27,8 +27,10 @@ func NewPayloadFactory() *payloadFactory {
 
 type payloadFactory struct{}
 
-func (pf *payloadFactory) GetPayload() pipeline.Payload {
-	return payloadPool.Get().(*payload)
+func (pf *payloadFactory) GetPayload(currentHeight int64) pipeline.Payload {
+	payload := payloadPool.Get().(*payload)
+	payload.CurrentHeight = currentHeight
+	return payload
 }
 
 type payload struct {
@@ -42,6 +44,7 @@ type payload struct {
 
 	// Fetcher stage
 	RawBlock        *blockpb.Block
+	RawStakingState *statepb.Staking
 	RawState        *statepb.State
 	RawTransactions []*transactionpb.Transaction
 	RawValidators   []*validatorpb.Validator
@@ -63,10 +66,6 @@ type payload struct {
 	TransactionSequences         []model.TransactionSeq
 	DelegationSequences          []model.DelegationSeq
 	DebondingDelegationSequences []model.DebondingDelegationSeq
-}
-
-func (p *payload) SetCurrentHeight(height int64) {
-	p.CurrentHeight = height
 }
 
 func (p *payload) MarkAsProcessed() {

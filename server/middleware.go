@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// setupMiddlewares sets up middleware for gin application
-func (s *Server) setupMiddlewares() {
+// setupMiddleware sets up middleware for gin application
+func (s *Server) setupMiddleware() {
 	s.engine.Use(gin.Recovery())
 	s.engine.Use(MetricMiddleware())
 	s.engine.Use(ErrorReportingMiddleware())
@@ -21,7 +21,7 @@ func MetricMiddleware() gin.HandlerFunc {
 		c.Next()
 		elapsed := time.Since(t)
 
-		metric.DatabaseQueryDuration.WithLabelValues(c.Request.URL.Path).Set(elapsed.Seconds())
+		metric.ServerRequestDuration.WithLabelValues(c.Request.URL.Path).Set(elapsed.Seconds())
 	}
 }
 

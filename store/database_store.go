@@ -15,12 +15,12 @@ type DatabaseStore struct {
 	db *gorm.DB
 }
 
-// GetAvgTimesForIntervalRow Contains row of data for GetSummary query
+// GetAvgTimesForIntervalRow Contains row of data for FindSummary query
 type GetTotalSizeResult struct {
 	Size float64 `json:"size"`
 }
 
-// GetSummary Gets average block times for interval
+// FindSummary Gets average block times for interval
 func (s *DatabaseStore) GetTotalSize() (*GetTotalSizeResult, error) {
 	query := "SELECT pg_database_size(current_database()) as size"
 

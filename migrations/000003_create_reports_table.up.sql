@@ -10,12 +10,9 @@ CREATE TABLE IF NOT EXISTS reports
     error_count   INT,
     error_msg     TEXT,
     duration      BIGINT,
-    details       JSONB,
     completed_at  TIMESTAMP WITH TIME ZONE,
 
     PRIMARY KEY (id)
 );
-
--- Hypertable
 
 -- Indexes

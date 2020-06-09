@@ -20,5 +20,6 @@
   "purge_block_daily_summary_interval": "",
   "purge_validator_interval": "",
   "purge_validator_hourly_summary_interval": "",
-  "purge_validator_daily_summary_interval": ""
+  "purge_validator_daily_summary_interval": "",
+  "indexer_versions_dir": "indexer/versions"
 }

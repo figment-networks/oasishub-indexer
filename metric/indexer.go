@@ -6,6 +6,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
+	"time"
 )
 
 var (
@@ -40,12 +41,23 @@ var (
 		[]string{"task"},
 	)
 
+	IndexerUseCaseDuration = prometheus.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "figment",
+			Subsystem: "indexer",
+			Name: "use_case_duration",
+			Help: "The total time required to execute use case",
+		},
+		[]string{"task"},
+	)
+
 	IndexerDbSizeAfterHeight = prometheus.NewGauge(prometheus.GaugeOpts{
 		Namespace: "figment",
 		Subsystem: "indexer",
 		Name: "db_size",
 		Help: "The size of the database after indexing of height",
 	})
+
 )
 
 // IndexerMetric handles HTTP requests
@@ -77,9 +89,20 @@ func (m *IndexerMetric) init() *IndexerMetric {
 	prometheus.MustRegister(IndexerTotalErrors)
 	prometheus.MustRegister(IndexerHeightDuration)
 	prometheus.MustRegister(IndexerTaskDuration)
+	prometheus.MustRegister(IndexerUseCaseDuration)
 	prometheus.MustRegister(IndexerDbSizeAfterHeight)
 
 	// Add Go module build info.
 	prometheus.MustRegister(prometheus.NewBuildInfoCollector())
 	return m
+}
+
+func LogUseCaseDuration(start time.Time, useCaseName string) {
+	elapsed := time.Since(start)
+	IndexerUseCaseDuration.WithLabelValues(useCaseName).Set(elapsed.Seconds())
+}
+
+func LogIndexerTaskDuration(start time.Time, taskName string) {
+	elapsed := time.Since(start)
+	IndexerTaskDuration.WithLabelValues(taskName).Set(elapsed.Seconds())
 }

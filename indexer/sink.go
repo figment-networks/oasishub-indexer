@@ -1,4 +1,4 @@
-package indexing
+package indexer
 
 import (
 	"context"
@@ -14,14 +14,16 @@ var (
 	_ pipeline.Sink = (*sink)(nil)
 )
 
-func NewSink(db *store.Store) *sink {
+func NewSink(db *store.Store, versionNumber int64) *sink {
 	return &sink{
-		db: db,
+		db:            db,
+		versionNumber: versionNumber,
 	}
 }
 
 type sink struct {
-	db *store.Store
+	db            *store.Store
+	versionNumber int64
 
 	successCount int64
 }
@@ -46,13 +48,13 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 
 	s.successCount += 1
 
-	logger.Info(fmt.Sprintf("processing of height %d completed successfully", payload.CurrentHeight))
+	logger.Info(fmt.Sprintf("processing completed [status=success] [height=%d]", payload.CurrentHeight))
 
 	return nil
 }
 
 func (s *sink) setProcessed(payload *payload) error {
-	payload.Syncable.MarkProcessed()
+	payload.Syncable.MarkProcessed(s.versionNumber)
 	if err := s.db.Syncables.Save(payload.Syncable); err != nil {
 		return errors.Wrap(err, "failed saving syncable in sink")
 	}

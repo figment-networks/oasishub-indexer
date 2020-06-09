@@ -22,7 +22,5 @@ CREATE TABLE IF NOT EXISTS validator_aggregates
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index idx_validator_aggregates_entity_uid on validator_aggregates (entity_uid);

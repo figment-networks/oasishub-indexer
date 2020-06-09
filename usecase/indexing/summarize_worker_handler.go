@@ -1,4 +1,4 @@
-package indexer
+package indexing
 
 import (
 	"context"
@@ -10,27 +10,29 @@ import (
 )
 
 var (
-	_ types.CmdHandler = (*purgeCmdHandler)(nil)
+	_ types.WorkerHandler = (*summarizeWorkerHandler)(nil)
 )
 
-type purgeCmdHandler struct {
+type summarizeWorkerHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *purgeUseCase
+	useCase *summarizeUseCase
 }
 
-func NewPurgeCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *purgeCmdHandler {
-	return &purgeCmdHandler{
+func NewSummarizeWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *summarizeWorkerHandler {
+	return &summarizeWorkerHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *purgeCmdHandler) Handle(ctx context.Context) {
-	logger.Info("running indexer use case [handler=cmd]")
+func (h *summarizeWorkerHandler) Handle() {
+	ctx := context.Background()
+
+	logger.Info("running summarize use case [handler=worker]")
 
 	err := h.getUseCase().Execute(ctx)
 	if err != nil {
@@ -39,9 +41,9 @@ func (h *purgeCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *purgeCmdHandler) getUseCase() *purgeUseCase {
+func (h *summarizeWorkerHandler) getUseCase() *summarizeUseCase {
 	if h.useCase == nil {
-		return NewPurgeUseCase(h.cfg, h.db)
+		return NewSummarizeUseCase(h.cfg, h.db)
 	}
 	return h.useCase
 }

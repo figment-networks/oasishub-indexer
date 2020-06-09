@@ -1,35 +1,49 @@
-package indexing
+package indexer
 
 import (
 	"context"
+	"fmt"
+	"github.com/figment-networks/oasishub-indexer/metric"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"math/big"
-	"reflect"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/types"
 )
 
-var (
-	_ pipeline.Task = (*parseBlockTask)(nil)
-	_ pipeline.Task = (*parseValidatorsTask)(nil)
+const (
+	BlockParserTaskName      = "BlockParser"
+	ValidatorsParserTaskName = "ValidatorsParser"
 )
 
-func NewParseBlockTask() *parseBlockTask {
-	return &parseBlockTask{}
+var (
+	_ pipeline.Task = (*blockParserTask)(nil)
+	_ pipeline.Task = (*validatorsParserTask)(nil)
+)
+
+func NewBlockParserTask() *blockParserTask {
+	return &blockParserTask{}
 }
 
-type parseBlockTask struct{}
+type blockParserTask struct{}
 
 type ParsedBlockData struct {
 	TransactionsCount int64
 	ProposerEntityUID string
 }
 
-func (t *parseBlockTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+func (t *blockParserTask) GetName() string {
+	return BlockParserTaskName
+}
+
+func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageParser, t.GetName(), payload.CurrentHeight))
+
 	fetchedBlock := payload.RawBlock
 	fetchedTransactions := payload.RawTransactions
 	fetchedValidators := payload.RawValidators
@@ -51,11 +65,11 @@ func (t *parseBlockTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewParseValidatorsTask() *parseValidatorsTask {
-	return &parseValidatorsTask{}
+func NewValidatorsParserTask() *validatorsParserTask {
+	return &validatorsParserTask{}
 }
 
-type parseValidatorsTask struct{}
+type validatorsParserTask struct{}
 
 type ParsedValidatorsData map[string]parsedValidator
 
@@ -67,13 +81,20 @@ type parsedValidator struct {
 	TotalShares          types.Quantity
 }
 
-func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer logTaskDuration(time.Now(), reflect.TypeOf(*t).Name())
+func (t *validatorsParserTask) GetName() string {
+	return ValidatorsParserTaskName
+}
+
+func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageParser, t.GetName(), payload.CurrentHeight))
+
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
-	fetchedState := payload.RawState
+	fetchedStakingState := payload.RawStakingState
 
 	parsedData := make(ParsedValidatorsData)
 	for i, rv := range fetchedValidators {
@@ -91,7 +112,7 @@ func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error
 		if len(votes) > 0 {
 			// Account for situation when there is more validators than precommits
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
-			if i > len(votes) - 1 {
+			if i > len(votes)-1 {
 				index = int64(i)
 				blockIdFlag = 3
 			} else {
@@ -114,7 +135,7 @@ func (t *parseValidatorsTask) Run(ctx context.Context, p pipeline.Payload) error
 		calculatedData.Proposed = fetchedBlock.GetHeader().GetProposerAddress() == rv.Address
 
 		// Get total shares
-		delegations, ok := fetchedState.GetStaking().GetDelegations()[rv.Node.EntityId]
+		delegations, ok := fetchedStakingState.GetDelegations()[rv.Node.EntityId]
 		totalShares := big.NewInt(0)
 		if ok {
 			for _, d := range delegations.Entries {

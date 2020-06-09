@@ -31,7 +31,6 @@ func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
-		Where("processed_at IS NOT NULL").
 		Order("height desc").
 		First(result).Error
 

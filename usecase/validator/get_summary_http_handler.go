@@ -49,9 +49,9 @@ func (h *getSummaryHttpHandler) Handle(c *gin.Context) {
 }
 
 type GetSummaryRequest struct {
-	Interval  string `form:"interval" binding:"required"`
-	Period    string `form:"period" binding:"required"`
-	EntityUID string `form:"entity_uid" binding:"-"`
+	Interval  types.SummaryInterval `form:"interval" binding:"required"`
+	Period    string                `form:"period" binding:"required"`
+	EntityUID string                `form:"entity_uid" binding:"-"`
 }
 
 func (h *getSummaryHttpHandler) validateParams(c *gin.Context) (*GetSummaryRequest, error) {
@@ -60,7 +60,7 @@ func (h *getSummaryHttpHandler) validateParams(c *gin.Context) (*GetSummaryReque
 		return nil, err
 	}
 
-	if req.Interval != "hourly" && req.Interval != "daily" {
+	if !req.Interval.Valid() {
 		return nil, ErrInvalidIntervalPeriod
 	}
 

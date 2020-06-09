@@ -1,4 +1,4 @@
-package indexing
+package indexer
 
 import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"

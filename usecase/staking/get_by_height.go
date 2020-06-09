@@ -35,10 +35,10 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*DetailsView, error) {
 		return nil, errors.New("height is not indexed")
 	}
 
-	res, err := uc.client.State.GetByHeight(*height)
+	res, err := uc.client.State.GetStakingByHeight(*height)
 	if err != nil {
 		return nil, err
 	}
 
-	return ToDetailsView(res.GetState().GetStaking()), nil
+	return ToDetailsView(res.GetStaking()), nil
 }

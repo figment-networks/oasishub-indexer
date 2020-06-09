@@ -14,7 +14,7 @@ func TestFromEnv(t *testing.T) {
 	assert.Equal(t, modeDevelopment, config.AppEnv)
 	assert.Equal(t, "0.0.0.0", config.ServerAddr)
 	assert.Equal(t, 8081, config.ServerPort)
-	assert.Equal(t, "10s", config.SyncInterval)
+	assert.Equal(t, "10s", config.IndexWorkerInterval)
 	assert.Equal(t, "10m", config.CleanupInterval)
 	assert.Equal(t, 1, config.FirstBlockHeight)
 	assert.Equal(t, 1000, config.CleanupThreshold)
@@ -45,13 +45,13 @@ func TestValidate(t *testing.T) {
 	config.DatabaseDSN = "database"
 	assert.NotEqual(t, config.Validate(), errDatabaseRequired)
 
-	config.SyncInterval = ""
-	assert.Equal(t, config.Validate(), errSyncIntervalRequired)
+	config.IndexWorkerInterval = ""
+	assert.Equal(t, config.Validate(), errIndexWorkerIntervalRequired)
 
-	config.SyncInterval = "10sec"
+	config.IndexWorkerInterval = "10sec"
 	assert.Equal(t, config.Validate(), errSyncIntervalInvalid)
 
-	config.SyncInterval = "10s"
+	config.IndexWorkerInterval = "10s"
 	assert.NotEqual(t, config.Validate(), errSyncIntervalInvalid)
 
 	config.CleanupInterval = ""

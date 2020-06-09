@@ -14,7 +14,5 @@ CREATE TABLE IF NOT EXISTS delegation_sequences
     PRIMARY KEY (id)
 );
 
--- Hypertable
-
 -- Indexes
 CREATE index idx_delegation_sequences_height on delegation_sequences (height);

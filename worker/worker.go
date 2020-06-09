@@ -46,6 +46,11 @@ func (w *Worker) init() (*Worker, error) {
 		return nil, err
 	}
 
+	_, err = w.addSummarizeIndexerJob()
+	if err != nil {
+		return nil, err
+	}
+
 	_, err = w.addPurgeIndexerJob()
 	if err != nil {
 		return nil, err

@@ -14,12 +14,10 @@ const (
 )
 
 var (
-	errEndpointRequired        = errors.New("proxy url is required")
-	errDatabaseRequired        = errors.New("database credentials are required")
-	errSyncIntervalRequired    = errors.New("sync interval is required")
-	errSyncIntervalInvalid     = errors.New("sync interval is invalid")
-	errCleanupIntervalRequired = errors.New("cleanup interval is required")
-	errCleanupIntervalInvalid  = errors.New("cleanup interval is invalid")
+	errEndpointRequired            = errors.New("proxy url is required")
+	errDatabaseRequired            = errors.New("database credentials are required")
+	errIndexWorkerIntervalRequired = errors.New("index worker interval is required")
+	errSyncIntervalInvalid         = errors.New("index worker is invalid")
 )
 
 // Config holds the configuration data
@@ -29,8 +27,9 @@ type Config struct {
 	ServerAddr                          string `json:"server_addr" envconfig:"SERVER_ADDR" default:"0.0.0.0"`
 	ServerPort                          int64  `json:"server_port" envconfig:"SERVER_PORT" default:"8081"`
 	FirstBlockHeight                    int64  `json:"first_block_height" envconfig:"FIRST_BLOCK_HEIGHT" default:"1"`
-	SyncInterval                        string `json:"sync_interval" envconfig:"SYNC_INTERVAL" default:"@every 5m"`
-	PurgeInterval                       string `json:"purge_interval" envconfig:"PURGE_INTERVAL" default:"@every 1h"`
+	IndexWorkerInterval                 string `json:"index_worker_interval" envconfig:"SYNC_INTERVAL" default:"@every 15m"`
+	SummarizeWorkerInterval             string `json:"summarize_worker_interval" envconfig:"SUMMARIZE_WORKER_INTERVAL" default:"@every 20m"`
+	PurgeWorkerInterval                 string `json:"purge_worker_interval" envconfig:"PURGE_WORKER_INTERVAL" default:"@every 1h"`
 	DefaultBatchSize                    int64  `json:"default_batch_size" envconfig:"DEFAULT_BATCH_SIZE" default:"0"`
 	DatabaseDSN                         string `json:"database_dsn" envconfig:"DATABASE_DSN"`
 	Debug                               bool   `json:"debug" envconfig:"DEBUG"`
@@ -42,11 +41,12 @@ type Config struct {
 	ServerMetricAddr                    string `json:"server_metric_addr" envconfig:"SERVER_METRIC_ADDR" default:":8090"`
 	MetricServerUrl                     string `json:"metric_server_url" envconfig:"METRIC_SERVER_URL" default:"/metrics"`
 	PurgeBlockInterval                  string `json:"purge_block_interval" envconfig:"PURGE_BLOCK_INTERVAL" default:"26 hours"`
-	PurgeBlockHourlySummaryInterval     string `json:"purge_block_hourly_summary_interval" envconfig:"PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL" default:"26 hours"`
+	PurgeBlockHourlySummaryInterval     string `json:"purge_block_hourly_summary_interval" envconfig:"PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL" default:"26h"`
 	PurgeBlockDailySummaryInterval      string `json:"purge_block_daily_summary_interval" envconfig:"PURGE_BLOCK_DAILY_SUMMARY_INTERVAL" default:""`
-	PurgeValidatorInterval              string `json:"purge_validator_interval" envconfig:"PURGE_VALIDATOR_INTERVAL" default:"26 hours"`
-	PurgeValidatorHourlySummaryInterval string `json:"purge_validator_hourly_summary_interval" envconfig:"PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL" default:"26 hours"`
+	PurgeValidatorInterval              string `json:"purge_validator_interval" envconfig:"PURGE_VALIDATOR_INTERVAL" default:"26h"`
+	PurgeValidatorHourlySummaryInterval string `json:"purge_validator_hourly_summary_interval" envconfig:"PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL" default:"26h"`
 	PurgeValidatorDailySummaryInterval  string `json:"purge_validator_daily_summary_interval" envconfig:"PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL" default:""`
+	IndexerVersionsDir                  string `json:"indexer_versions_dir" envconfig:"INDEXER_VERSIONS_DIR" default:"indexer/versions"`
 }
 
 // Validate returns an error if config is invalid
@@ -59,8 +59,8 @@ func (c *Config) Validate() error {
 		return errDatabaseRequired
 	}
 
-	if c.SyncInterval == "" {
-		return errSyncIntervalRequired
+	if c.IndexWorkerInterval == "" {
+		return errIndexWorkerIntervalRequired
 	}
 
 	return nil

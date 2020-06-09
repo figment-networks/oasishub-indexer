@@ -1,7 +1,9 @@
 package block
 
 import (
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 type getBlockSummaryUseCase struct {
@@ -14,6 +16,6 @@ func NewGetBlockSummaryUseCase(db *store.Store) *getBlockSummaryUseCase {
 	}
 }
 
-func (uc *getBlockSummaryUseCase) Execute(interval string, period string) ([]store.GetAvgTimesForIntervalRow, error) {
-	return uc.db.BlockSeq.GetSummary(interval, period)
+func (uc *getBlockSummaryUseCase) Execute(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
+	return uc.db.BlockSummary.FindSummary(interval, period)
 }

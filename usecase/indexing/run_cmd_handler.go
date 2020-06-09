@@ -1,4 +1,4 @@
-package indexer
+package indexing
 
 import (
 	"context"
@@ -32,7 +32,7 @@ func NewRunCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *ru
 
 func (h *runCmdHandler) Handle(ctx context.Context) {
 	//TODO: Pass as an argument from command line
-	batchSize := int64(8000)
+	batchSize := int64(297)
 
 	logger.Info(fmt.Sprintf("running indexer use case [handler=cmd] [batchSize=%d]", batchSize))
 
