@@ -40,13 +40,9 @@ type Config struct {
 	IndexerMetricAddr                   string `json:"indexer_metric_addr" envconfig:"INDEXER_METRIC_ADDR" default:":8080"`
 	ServerMetricAddr                    string `json:"server_metric_addr" envconfig:"SERVER_METRIC_ADDR" default:":8090"`
 	MetricServerUrl                     string `json:"metric_server_url" envconfig:"METRIC_SERVER_URL" default:"/metrics"`
-	PurgeBlockInterval                  string `json:"purge_block_interval" envconfig:"PURGE_BLOCK_INTERVAL" default:"26 hours"`
-	PurgeBlockHourlySummaryInterval     string `json:"purge_block_hourly_summary_interval" envconfig:"PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL" default:"26h"`
-	PurgeBlockDailySummaryInterval      string `json:"purge_block_daily_summary_interval" envconfig:"PURGE_BLOCK_DAILY_SUMMARY_INTERVAL" default:""`
-	PurgeValidatorInterval              string `json:"purge_validator_interval" envconfig:"PURGE_VALIDATOR_INTERVAL" default:"26h"`
-	PurgeValidatorHourlySummaryInterval string `json:"purge_validator_hourly_summary_interval" envconfig:"PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL" default:"26h"`
-	PurgeValidatorDailySummaryInterval  string `json:"purge_validator_daily_summary_interval" envconfig:"PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL" default:""`
-	IndexerVersionsDir                  string `json:"indexer_versions_dir" envconfig:"INDEXER_VERSIONS_DIR" default:"indexer/versions"`
+	PurgeSequencesInterval              string `json:"purge_sequences_interval" envconfig:"PURGE_SEQUENCES_INTERVAL" default:"26 hours"`
+	PurgeHourlySummariesInterval        string `json:"purge_hourly_summaries_interval" envconfig:"PURGE_HOURLY_SUMMARIES_INTERVAL" default:"26h"`
+	IndexerTargetsFile                  string `json:"indexer_targets_file" envconfig:"INDEXER_TARGETS_FILE" default:"targets.json"`
 }
 
 // Validate returns an error if config is invalid

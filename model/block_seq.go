@@ -25,3 +25,7 @@ func (b *BlockSeq) Equal(m BlockSeq) bool {
 	return b.Sequence.Equal(*m.Sequence) &&
 		b.TransactionsCount == m.TransactionsCount
 }
+
+func (b *BlockSeq) Update(m BlockSeq) {
+	b.TransactionsCount = m.TransactionsCount
+}

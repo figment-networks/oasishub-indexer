@@ -22,4 +22,5 @@ CREATE TABLE IF NOT EXISTS syncables
 -- Indexes
 CREATE index idx_syncables_report_id on syncables (report_id);
 CREATE index idx_syncables_height on syncables (height);
+CREATE index idx_syncables_index_version on syncables (index_version);
 CREATE index idx_syncables_processed_at on syncables (processed_at);

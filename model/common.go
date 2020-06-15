@@ -53,6 +53,7 @@ func (a *Aggregate) Equal(m Aggregate) bool {
 
 // Summary is used for summary tables
 type Summary struct {
+	IndexVersion int64                 `json:"index_version"`
 	TimeInterval types.SummaryInterval `json:"time_interval"`
 	TimeBucket   types.Time            `json:"time_bucket"`
 }

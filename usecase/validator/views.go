@@ -49,12 +49,40 @@ func ToAggDetailsView(m *model.ValidatorAgg, sequences []model.ValidatorSeq) *Ag
 	}
 }
 
-type SeqListView struct {
-	Items []model.ValidatorSeq `json:"items"`
+type SeqListItem struct {
+	*model.Model
+	*model.Sequence
+
+	EntityUID          string         `json:"entity_uid"`
+	Address            string         `json:"address"`
+	VotingPower        int64          `json:"voting_power"`
+	TotalShares        types.Quantity `json:"total_shares"`
+	AsValidatorHeight  int64          `json:"as_validator_height"`
+	ProposedHeight     int64          `json:"proposed_height"`
+	PrecommitValidated *bool           `json:"precommit_validated"`
 }
 
-func ToSeqListView(ms []model.ValidatorSeq) *SeqListView {
+type SeqListView struct {
+	Items []SeqListItem `json:"items"`
+}
+
+func ToSeqListView(validatorSeqs []model.ValidatorSeq) *SeqListView {
+	var items []SeqListItem
+	for _, m := range validatorSeqs {
+		item := SeqListItem{
+			Sequence: m.Sequence,
+
+			EntityUID:          m.EntityUID,
+			Address:            m.Address,
+			VotingPower:        m.VotingPower,
+			TotalShares:        m.TotalShares,
+			PrecommitValidated: m.PrecommitValidated,
+		}
+
+		items = append(items, item)
+	}
+
 	return &SeqListView{
-		Items: ms,
+		Items: items,
 	}
 }

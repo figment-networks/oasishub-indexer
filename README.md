@@ -70,7 +70,7 @@ data to the format indexer understands.
 * `PURGE_VALIDATOR_INTERVAL` - Validator sequence older than given interval will be purged
 * `PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL` - Validator hourly summary records older than given interval will be purged
 * `PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL` - Validator daily summary records older than given interval will be purged
-* `INDEXER_VERSIONS_DIR` - Directory with indexer JSON version files 
+* `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
 
 ### Available endpoints:
 
@@ -116,19 +116,19 @@ IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oas
 
 ### Running one-off commands
 
-Run indexer:
+Start indexer:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=run_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_start
 ```
 
 Create summary tables for sequences:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=summarize_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_summarize
 ```
 
 Purge old data:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=purge_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_purge
 ```
 
 ### Running tests

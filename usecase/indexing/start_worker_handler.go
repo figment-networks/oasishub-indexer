@@ -19,7 +19,7 @@ type runWorkerHandler struct {
 	db     *store.Store
 	client *client.Client
 
-	useCase *runUseCase
+	useCase *startUseCase
 }
 
 func NewRunWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *runWorkerHandler {
@@ -43,9 +43,9 @@ func (h *runWorkerHandler) Handle() {
 	}
 }
 
-func (h *runWorkerHandler) getUseCase() *runUseCase {
+func (h *runWorkerHandler) getUseCase() *startUseCase {
 	if h.useCase == nil {
-		return NewRunUseCase(h.cfg, h.db, h.client)
+		return NewStartUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

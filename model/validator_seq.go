@@ -9,13 +9,13 @@ type ValidatorSeq struct {
 
 	*Sequence
 
-	EntityUID    string         `json:"entity_uid"`
-	Address      string         `json:"address"`
-	Proposed     bool           `json:"proposed"`
-	VotingPower  int64          `json:"voting_power"`
-	TotalShares  types.Quantity `json:"total_shares"`
+	EntityUID   string         `json:"entity_uid"`
+	Address     string         `json:"address"`
+	Proposed    bool           `json:"proposed"`
+	VotingPower int64          `json:"voting_power"`
+	TotalShares types.Quantity `json:"total_shares"`
 	// When precommit_validated is null it means that validator did not have chance to validate the block
-	PrecommitValidated   *bool `json:"precommit_validated"`
+	PrecommitValidated *bool `json:"precommit_validated"`
 }
 
 // - Methods
@@ -33,4 +33,13 @@ func (vs *ValidatorSeq) Valid() bool {
 func (vs *ValidatorSeq) Equal(m ValidatorSeq) bool {
 	return vs.Sequence.Equal(*m.Sequence) &&
 		vs.EntityUID == m.EntityUID
+}
+
+func (vs *ValidatorSeq) Update(m ValidatorSeq) {
+	vs.EntityUID = m.EntityUID
+	vs.Address = m.Address
+	vs.Proposed = m.Proposed
+	vs.VotingPower = m.VotingPower
+	vs.TotalShares = m.TotalShares
+	vs.PrecommitValidated = m.PrecommitValidated
 }

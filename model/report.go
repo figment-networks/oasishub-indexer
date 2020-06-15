@@ -5,9 +5,17 @@ import (
 	"time"
 )
 
+const (
+	ReportKindIndex ReportKind = iota + 1
+	ReportKindParallelReindex
+	ReportKindSequentialReindex
+)
+
 type Report struct {
 	*Model
 
+	Kind         ReportKind
+	IndexVersion int64
 	StartHeight  int64
 	EndHeight    int64
 	SuccessCount *int64
@@ -15,6 +23,21 @@ type Report struct {
 	ErrorMsg     *string
 	Duration     time.Duration
 	CompletedAt  *types.Time
+}
+
+type ReportKind int
+
+func (k ReportKind) String() string {
+	switch k {
+	case ReportKindIndex:
+		return "index"
+	case ReportKindParallelReindex:
+		return "parallel_reindex"
+	case ReportKindSequentialReindex:
+		return "sequential_reindex"
+	default:
+		return "unknown"
+	}
 }
 
 // - METHODS
@@ -39,8 +62,6 @@ func (r *Report) Complete(successCount int64, errorCount int64, err error) {
 	r.ErrorCount = &errorCount
 	r.Duration = time.Since(r.CreatedAt.Time)
 	r.CompletedAt = completedAt
-	//TODO: Implement details
-	//r.Details = types.Jsonb{RawMessage: details}
 
 	if err != nil {
 		errMsg := err.Error()

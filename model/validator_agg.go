@@ -34,7 +34,7 @@ func (aa *ValidatorAgg) Equal(m ValidatorAgg) bool {
 		aa.EntityUID == m.EntityUID
 }
 
-func (aa *ValidatorAgg) UpdateAggAttrs(entity ValidatorAgg) {
+func (aa *ValidatorAgg) Update(entity ValidatorAgg) {
 	aa.Aggregate.RecentAtHeight = entity.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = entity.Aggregate.RecentAt
 

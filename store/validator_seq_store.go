@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -24,6 +25,37 @@ func (s ValidatorSeqStore) CreateIfNotExists(validator *model.ValidatorSeq) erro
 		return s.Create(validator)
 	}
 	return nil
+}
+
+//TODO: FIX
+// CreateOrUpdate creates a new validator sequence or updates an existing one
+func (s ValidatorSeqStore) CreateOrUpdate(val *model.ValidatorSeq) error {
+	existing, err := s.FindByHeight(val.Height)
+	if err != nil {
+		if err == ErrNotFound {
+			return s.Create(val)
+		}
+		return err
+	}
+	return s.Update(existing)
+}
+
+// FindByHeight finds validator by height
+func (s ValidatorSeqStore) FindByHeightAndEntityUID(h int64, key string) (*model.ValidatorSeq, error) {
+	q := model.ValidatorSeq{
+		Sequence: &model.Sequence{
+			Height: h,
+		},
+		EntityUID: key,
+	}
+	var result model.ValidatorSeq
+
+	err := s.db.
+		Where(&q).
+		First(&result).
+		Error
+
+	return &result, checkErr(err)
 }
 
 // FindByHeight finds validator by height
@@ -71,16 +103,16 @@ func (s *ValidatorSeqStore) FindMostRecent() (*model.ValidatorSeq, error) {
 
 // DeleteOlderThan deletes validator sequence older than given threshold
 func (s *ValidatorSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
-	statement := s.db.
+	tx := s.db.
 		Unscoped().
 		Where("time < ?", purgeThreshold).
 		Delete(&model.ValidatorSeq{})
 
-	if statement.Error != nil {
-		return nil, checkErr(statement.Error)
+	if tx.Error != nil {
+		return nil, checkErr(tx.Error)
 	}
 
-	return &statement.RowsAffected, nil
+	return &tx.RowsAffected, nil
 }
 
 type ValidatorSeqSummary struct {
@@ -99,17 +131,33 @@ type ValidatorSeqSummary struct {
 }
 
 // Summarize gets the summarized version of validator sequences
-func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, last *model.ValidatorSummary) ([]ValidatorSeqSummary, error) {
+func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
 	defer logQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
 
 	tx := s.db.
+		Debug().
 		Table(model.ValidatorSeq{}.TableName()).
 		Select(summarizeValidatorsQuerySelect, interval).
 		Order("time_bucket").
 		Group("entity_uid, time_bucket")
 
-	if last != nil {
-		tx = tx.Where("time >= ?", last.TimeBucket)
+	if len(activityPeriods) == 1 {
+		activityPeriod := activityPeriods[0]
+		tx = tx.Or("time < ? OR time >= ?", activityPeriod.Min, activityPeriod.Max)
+	} else {
+		for i, activityPeriod := range activityPeriods {
+			isLast := i == len(activityPeriods) - 1
+
+			if isLast {
+				tx = tx.Or("time >= ?", activityPeriod.Max)
+			} else {
+				duration, err := time.ParseDuration(fmt.Sprintf("1%s", interval))
+				if err != nil {
+					return nil, err
+				}
+				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i + 1].Min)
+			}
+		}
 	}
 
 	rows, err := tx.Rows()

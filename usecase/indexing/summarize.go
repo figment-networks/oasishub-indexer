@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"fmt"
+	"github.com/figment-networks/oasishub-indexer/indexer"
 	"time"
 
 	"github.com/figment-networks/oasishub-indexer/config"
@@ -28,36 +29,40 @@ func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "summarize")
 
-	if err := uc.summarizeBlockSeq(types.IntervalHourly); err != nil {
+	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	if err != nil {
+		return err
+	}
+	currentIndexVersion := targetsReader.GetCurrentVersion()
+
+	if err := uc.summarizeBlockSeq(types.IntervalHourly, currentIndexVersion); err != nil {
 		return err
 	}
 
-	if err := uc.summarizeBlockSeq(types.IntervalDaily); err != nil {
+	if err := uc.summarizeBlockSeq(types.IntervalDaily, currentIndexVersion); err != nil {
 		return err
 	}
 
-	if err := uc.summarizeValidatorSeq(types.IntervalHourly); err != nil {
+	if err := uc.summarizeValidatorSeq(types.IntervalHourly, currentIndexVersion); err != nil {
 		return err
 	}
 
-	if err := uc.summarizeValidatorSeq(types.IntervalDaily); err != nil {
+	if err := uc.summarizeValidatorSeq(types.IntervalDaily, currentIndexVersion); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval) error {
+func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval, currentIndexVersion int64) error {
 	logger.Info(fmt.Sprintf("summarizing block sequences... [interval=%s]", interval))
 
-	last, err := uc.db.BlockSummary.FindMostRecentByInterval(interval)
+	activityPeriods, err := uc.db.BlockSummary.FindActivityPeriods(interval, currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
-			last = nil
-		}
+		return err
 	}
 
-	rawSummaryItems, err := uc.db.BlockSeq.Summarize(interval, last)
+	rawSummaryItems, err := uc.db.BlockSeq.Summarize(interval, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -68,6 +73,7 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval) er
 		summary := &model.Summary{
 			TimeInterval: interval,
 			TimeBucket:   rawSummary.TimeBucket,
+			IndexVersion: currentIndexVersion,
 		}
 		query := model.BlockSummary{
 			Summary: summary,
@@ -79,8 +85,8 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval) er
 				blockSummary := model.BlockSummary{
 					Summary: summary,
 
-					Count: rawSummary.Count,
-					BlockTimeAvg:   rawSummary.BlockTimeAvg,
+					Count:        rawSummary.Count,
+					BlockTimeAvg: rawSummary.BlockTimeAvg,
 				}
 				if err := uc.db.BlockSummary.Create(&blockSummary); err != nil {
 					return err
@@ -105,17 +111,15 @@ func (uc *summarizeUseCase) summarizeBlockSeq(interval types.SummaryInterval) er
 	return nil
 }
 
-func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval) error {
+func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval, currentIndexVersion int64) error {
 	logger.Info(fmt.Sprintf("summarizing validator sequences... [interval=%s]", interval))
 
-	last, err := uc.db.ValidatorSummary.FindMostRecentByInterval(interval)
+	activityPeriods, err := uc.db.ValidatorSummary.FindActivityPeriods(interval, currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
-			last = nil
-		}
+		return err
 	}
 
-	rawSummaryItems, err := uc.db.ValidatorSeq.Summarize(interval, last)
+	rawSummaryItems, err := uc.db.ValidatorSeq.Summarize(interval, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -126,6 +130,7 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 		summary := &model.Summary{
 			TimeInterval: interval,
 			TimeBucket:   rawSummary.TimeBucket,
+			IndexVersion: currentIndexVersion,
 		}
 		query := model.ValidatorSummary{
 			Summary: summary,

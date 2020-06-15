@@ -4,20 +4,21 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/usecase/indexing"
 )
 
 func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdHandlers {
 	return &CmdHandlers{
-		RunIndexer:   indexing.NewRunCmdHandler(cfg, db, c),
-		PurgeIndexer: indexing.NewPurgeCmdHandler(cfg, db, c),
+		StartIndexer:     indexing.NewStartCmdHandler(cfg, db, c),
+		BackfillIndexer:  indexing.NewBackfillCmdHandler(cfg, db, c),
+		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, c),
 		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, c),
 	}
 }
 
 type CmdHandlers struct {
-	RunIndexer       types.CmdHandler
-	PurgeIndexer     types.CmdHandler
-	SummarizeIndexer types.CmdHandler
+	StartIndexer     *indexing.StartCmdHandler
+	BackfillIndexer  *indexing.BackfillCmdHandler
+	PurgeIndexer     *indexing.PurgeCmdHandler
+	SummarizeIndexer *indexing.SummarizeCmdHandler
 }

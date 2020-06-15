@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func runCmd(cfg *config.Config, cmdName string) error {
+func runCmd(cfg *config.Config, flags CliFlags) error {
 	db, err := initStore(cfg)
 	if err != nil {
 		return err
@@ -23,20 +23,23 @@ func runCmd(cfg *config.Config, cmdName string) error {
 
 	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client)
 
-	logger.Info(fmt.Sprintf("executing cmd %s ...", cmdName), logger.Field("app", "cli"))
+	logger.Info(fmt.Sprintf("executing cmd %s ...", flags.runCommand), logger.Field("app", "cli"))
 
-	switch cmdName {
-	case "run_indexer":
+	switch flags.runCommand {
+	case "indexer_start":
 		ctx := context.Background()
-		cmdHandlers.RunIndexer.Handle(ctx)
-	case "purge_indexer":
+		cmdHandlers.StartIndexer.Handle(ctx, flags.batchSize)
+	case "indexer_backfill":
 		ctx := context.Background()
-		cmdHandlers.PurgeIndexer.Handle(ctx)
-	case "summarize_indexer":
+		cmdHandlers.BackfillIndexer.Handle(ctx, flags.parallel, flags.force, flags.targetIds)
+	case "indexer_summarize":
 		ctx := context.Background()
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
+	case "indexer_purge":
+		ctx := context.Background()
+		cmdHandlers.PurgeIndexer.Handle(ctx)
 	default:
-		return errors.New(fmt.Sprintf("command %s not found", cmdName))
+		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))
 	}
 	return nil
 }

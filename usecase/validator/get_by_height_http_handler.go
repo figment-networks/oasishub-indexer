@@ -2,6 +2,7 @@ package validator
 
 import (
 	"github.com/figment-networks/oasishub-indexer/client"
+	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -15,15 +16,17 @@ var (
 )
 
 type getByHeightHttpHandler struct {
+	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
 	useCase *getByHeightUseCase
 }
 
-func NewGetByHeightHttpHandler(db *store.Store, c *client.Client) *getByHeightHttpHandler {
+func NewGetByHeightHttpHandler(cfg *config.Config, db *store.Store, c *client.Client) *getByHeightHttpHandler {
 	return &getByHeightHttpHandler{
-		db: db,
+		cfg:    cfg,
+		db:     db,
 		client: c,
 	}
 }
@@ -53,10 +56,7 @@ func (h *getByHeightHttpHandler) Handle(c *gin.Context) {
 
 func (h *getByHeightHttpHandler) getUseCase() *getByHeightUseCase {
 	if h.useCase == nil {
-		return NewGetByHeightUseCase(h.db)
+		return NewGetByHeightUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }
-
-
-

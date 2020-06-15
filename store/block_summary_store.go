@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
@@ -49,6 +50,36 @@ func (s *BlockSummaryStore) FindMostRecentByInterval(interval types.SummaryInter
 		Error
 
 	return &result, checkErr(err)
+}
+
+type ActivityPeriodRow struct {
+	Period int64
+	Min    types.Time
+	Max    types.Time
+}
+
+// FindActivityPeriods Finds activity periods
+func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+	defer logQueryDuration(time.Now(), "BlockSummaryStore_FindActivityPeriods")
+
+	rows, err := s.db.
+		Raw(blockSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []ActivityPeriodRow
+	for rows.Next() {
+		var row ActivityPeriodRow
+		if err := s.db.ScanRows(rows, &row); err != nil {
+			return nil, err
+		}
+		res = append(res, row)
+	}
+	return res, nil
 }
 
 // FindSummary Gets summary of block sequences

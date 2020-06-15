@@ -1,17 +1,25 @@
 package validator
 
 import (
+	"context"
+	"github.com/figment-networks/oasishub-indexer/client"
+	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/indexer"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
 
 type getByHeightUseCase struct {
-	db *store.Store
+	cfg    *config.Config
+	db     *store.Store
+	client *client.Client
 }
 
-func NewGetByHeightUseCase(db *store.Store) *getByHeightUseCase {
+func NewGetByHeightUseCase(cfg *config.Config, db *store.Store, client *client.Client) *getByHeightUseCase {
 	return &getByHeightUseCase{
-		db: db,
+		cfg:    cfg,
+		db:     db,
+		client: client,
 	}
 }
 
@@ -29,12 +37,27 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 	}
 
 	if *height > lastH {
-		return nil, errors.New("height is not indexed")
+		return nil, errors.New("height is not indexed yet")
 	}
 
 	models, err := uc.db.ValidatorSeq.FindByHeight(*height)
-	if err != nil {
-		return nil, err
+	if len(models) == 0 || err != nil {
+		indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+		if err != nil {
+			return nil, err
+		}
+
+		ctx := context.Background()
+		payload, err := indexingPipeline.Run(ctx, indexer.RunConfig{
+			Height: *height,
+			DesiredTargetID: indexer.TargetIndexValidatorSequences,
+			Dry:    true,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		models = payload.NewValidatorSequences
 	}
 
 	return ToSeqListView(models), nil

@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"github.com/figment-networks/oasishub-indexer/client"
+	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/usecase/account"
@@ -15,7 +16,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecase/validator"
 )
 
-func NewHttpHandlers(db *store.Store, c *client.Client) *HttpHandlers {
+func NewHttpHandlers(cfg *config.Config, db *store.Store, c *client.Client) *HttpHandlers {
 	return &HttpHandlers{
 		Health:                          health.NewHealthHttpHandler(),
 		GetBlockByHeight:                block.NewGetByHeightHttpHandler(db, c),
@@ -27,7 +28,7 @@ func NewHttpHandlers(db *store.Store, c *client.Client) *HttpHandlers {
 		GetStakingDetailsByHeight:       staking.NewGetByHeightHttpHandler(db, c),
 		GetMostRecentHeight:             syncable.NewGetMostRecentHeightHttpHandler(db, c),
 		GetTransactionsByHeight:         transaction.NewGetByHeightHttpHandler(db, c),
-		GetValidatorsByHeight:           validator.NewGetByHeightHttpHandler(db, c),
+		GetValidatorsByHeight:           validator.NewGetByHeightHttpHandler(cfg, db, c),
 		GetValidatorByEntityUid:         validator.NewGetByEntityUidHttpHandler(db, c),
 		GetValidatorSummary:             validator.NewGetSummaryHttpHandler(db, c),
 		GetValidatorsForMinHeight:       validator.NewGetForMinHeightHttpHandler(db, c),

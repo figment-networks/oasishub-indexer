@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -42,6 +43,30 @@ func (s ValidatorSummaryStore) FindByEntityUID(key string) ([]model.ValidatorSum
 		Error
 
 	return result, checkErr(err)
+}
+
+// FindActivityPeriods Finds activity periods
+func (s *ValidatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
+
+	rows, err := s.db.
+		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var res []ActivityPeriodRow
+	for rows.Next() {
+		var row ActivityPeriodRow
+		if err := s.db.ScanRows(rows, &row); err != nil {
+			return nil, err
+		}
+		res = append(res, row)
+	}
+	return res, nil
 }
 
 type ValidatorSummaryRow struct {

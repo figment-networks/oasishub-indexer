@@ -32,7 +32,7 @@ func (aa *AccountAgg) Equal(m AccountAgg) bool {
 		aa.PublicKey == m.PublicKey
 }
 
-func (aa *AccountAgg) UpdateAggAttrs(u *AccountAgg) {
+func (aa *AccountAgg) Update(u *AccountAgg) {
 	aa.Aggregate.RecentAtHeight = u.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = u.Aggregate.RecentAt
 

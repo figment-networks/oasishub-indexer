@@ -98,7 +98,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 			}
 
-			existing.UpdateAggAttrs(accountAgg)
+			existing.Update(accountAgg)
 
 			if !existing.Valid() {
 				return ErrAccountAggNotValid
@@ -136,8 +136,8 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
-	var created []model.ValidatorAgg
-	var updated []model.ValidatorAgg
+	var newValidatorAggs []model.ValidatorAgg
+	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
 		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
 		if err != nil {
@@ -181,14 +181,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					}
 				}
 
-				if !validator.Valid() {
-					return ErrValidatorAggNotValid
-				}
-
-				if err := t.db.ValidatorAgg.Create(&validator); err != nil {
-					return err
-				}
-				created = append(created, validator)
+				newValidatorAggs = append(newValidatorAggs, validator)
 			} else {
 				return err
 			}
@@ -229,19 +222,12 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				}
 			}
 
-			existing.UpdateAggAttrs(validator)
+			existing.Update(validator)
 
-			if !existing.Valid() {
-				return ErrValidatorAggNotValid
-			}
-
-			if err := t.db.ValidatorAgg.Save(existing); err != nil {
-				return err
-			}
-			updated = append(updated, validator)
+			updatedValidatorAggs = append(updatedValidatorAggs, *existing)
 		}
 	}
-	payload.NewAggregatedValidators = created
-	payload.UpdatedAggregatedValidators = updated
+	payload.NewAggregatedValidators = newValidatorAggs
+	payload.UpdatedAggregatedValidators = updatedValidatorAggs
 	return nil
 }

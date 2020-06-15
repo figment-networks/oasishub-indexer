@@ -2,6 +2,8 @@ module github.com/figment-networks/oasishub-indexer
 
 go 1.13
 
+replace github.com/figment-networks/indexing-engine => ../../indexing-engine
+
 require (
 	github.com/figment-networks/indexing-engine v0.1.4
 	github.com/figment-networks/oasis-rpc-proxy v0.3.7
