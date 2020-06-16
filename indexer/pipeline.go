@@ -126,9 +126,8 @@ func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) erro
 	if err != nil {
 		return err
 	}
-	sink := NewSink(p.db, indexVersion)
 
-	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
+	sink := NewSink(p.db, indexVersion)
 
 	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, indexVersion)
 	if err != nil {
@@ -136,10 +135,13 @@ func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) erro
 	}
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
+
 	pipelineOptions, err := p.getPipelineOptions(false)
 	if err != nil {
 		return err
 	}
+
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
 
 	err = p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
@@ -168,6 +170,7 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	if err != nil {
 		return err
 	}
+
 	sink := NewSink(p.db, indexVersion)
 
 	kind := model.ReportKindSequentialReindex
@@ -175,27 +178,15 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 		kind = model.ReportKindParallelReindex
 	}
 
-	logger.Info(fmt.Sprintf("starting pipeline backfill [start=%d] [end=%d] [kind=%s]", source.startHeight, source.endHeight, kind))
-
 	if backfillCfg.Force {
 		if err := p.db.Reports.DeleteReindexing(); err != nil {
 			return err
 		}
 	}
 
-	report, err := p.db.Reports.FindNotCompletedByIndexVersion(indexVersion, model.ReportKindSequentialReindex, model.ReportKindParallelReindex)
-	if err != nil && err != store.ErrNotFound {
+	report, err := p.getReport(indexVersion, source, kind)
+	if err != nil {
 		return err
-	}
-	if err == store.ErrNotFound {
-		report, err = p.createReport(source.startHeight, source.endHeight, kind, indexVersion)
-		if err != nil {
-			return err
-		}
-	} else {
-		if report.Kind != kind {
-			return errors.New(fmt.Sprintf("there is already reindexing in process [kind=%s] (use -force flag to override it)", report.Kind))
-		}
 	}
 
 	if err := p.db.Syncables.SetProcessedAtForRange(report.ID, source.startHeight, source.endHeight); err != nil {
@@ -203,10 +194,13 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	}
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
+
 	pipelineOptions, err := p.getPipelineOptions(false, backfillCfg.TargetIds...)
 	if err != nil {
 		return err
 	}
+
+	logger.Info(fmt.Sprintf("starting pipeline backfill [start=%d] [end=%d] [kind=%s]", source.startHeight, source.endHeight, kind))
 
 	if err := p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions); err != nil {
 		return err
@@ -228,12 +222,12 @@ type RunConfig struct {
 }
 
 func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
-	logger.Info(fmt.Sprintf("running pipeline... [height=%d] [version=%d]", runCfg.Height, runCfg.DesiredTargetID))
-
 	pipelineOptions, err := p.getPipelineOptions(runCfg.Dry, runCfg.DesiredTargetID)
 	if err != nil {
 		return nil, err
 	}
+
+	logger.Info(fmt.Sprintf("running pipeline... [height=%d] [version=%d]", runCfg.Height, runCfg.DesiredTargetID))
 
 	runPayload, err := p.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
@@ -249,16 +243,7 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 }
 
 func (p *indexingPipeline) getPipelineOptions(dry bool, targetIds ...int64) (*pipeline.Options, error) {
-	var taskWhitelist []pipeline.TaskName
-	var err error
-	if len(targetIds) == 0 {
-		taskWhitelist = p.targetsReader.GetAllTasks()
-	} else if len(targetIds) == 1 {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetId(targetIds[0])
-	} else {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetIds(targetIds)
-	}
-
+	taskWhitelist, err := p.getTasksWhitelist(targetIds)
 	if err != nil {
 		return nil, err
 	}
@@ -269,18 +254,17 @@ func (p *indexingPipeline) getPipelineOptions(dry bool, targetIds ...int64) (*pi
 	}, nil
 }
 
-func (p *indexingPipeline) getTaskWhitelist(targetId int64) ([]pipeline.TaskName, error) {
+func (p *indexingPipeline) getTasksWhitelist(targetIds []int64) ([]pipeline.TaskName, error) {
 	var taskWhitelist []pipeline.TaskName
 	var err error
-	if targetId > 0 {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetId(targetId)
-	} else {
+	if len(targetIds) == 0 {
 		taskWhitelist = p.targetsReader.GetAllTasks()
+	} else if len(targetIds) == 1 {
+		taskWhitelist, err = p.targetsReader.GetTasksByTargetId(targetIds[0])
+	} else {
+		taskWhitelist, err = p.targetsReader.GetTasksByTargetIds(targetIds)
 	}
-	if err != nil {
-		return nil, err
-	}
-	return taskWhitelist, nil
+	return taskWhitelist, err
 }
 
 func (p *indexingPipeline) getStagesBlacklist(dry bool) []pipeline.StageName {
@@ -289,6 +273,25 @@ func (p *indexingPipeline) getStagesBlacklist(dry bool) []pipeline.StageName {
 		stagesBlacklist = append(stagesBlacklist, pipeline.StagePersistor)
 	}
 	return stagesBlacklist
+}
+
+func (p *indexingPipeline) getReport(indexVersion int64, source *backfillSource, kind model.ReportKind) (*model.Report, error) {
+	report, err := p.db.Reports.FindNotCompletedByIndexVersion(indexVersion, model.ReportKindSequentialReindex, model.ReportKindParallelReindex)
+	if err != nil {
+		if err == store.ErrNotFound {
+			report, err = p.createReport(source.startHeight, source.endHeight, kind, indexVersion)
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+	} else {
+		if report.Kind != kind {
+			return nil, errors.New(fmt.Sprintf("there is already reindexing in process [kind=%s] (use -force flag to override it)", report.Kind))
+		}
+	}
+	return report, nil
 }
 
 func (p *indexingPipeline) createReport(startHeight int64, endHeight int64, kind model.ReportKind, indexVersion int64) (*model.Report, error) {

@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	AccountAggCreatorTaskName = "AccountAggCreator"
+	AccountAggCreatorTaskName   = "AccountAggCreator"
 	ValidatorAggCreatorTaskName = "ValidatorAggCreator"
 )
 
@@ -23,8 +23,7 @@ var (
 	_ pipeline.Task = (*accountAggCreatorTask)(nil)
 	_ pipeline.Task = (*validatorAggCreatorTask)(nil)
 
-	ErrAccountAggNotValid   = errors.New("account aggregator not valid")
-	ErrValidatorAggNotValid = errors.New("validator aggregator not valid")
+	ErrAccountAggNotValid = errors.New("account aggregator not valid")
 )
 
 func NewAccountAggCreatorTask(db *store.Store) *accountAggCreatorTask {
@@ -219,6 +218,9 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				if parsedValidator.Proposed {
 					validator.RecentProposedHeight = payload.Syncable.Height
 					validator.AccumulatedProposedCount = existing.AccumulatedProposedCount + 1
+				} else {
+					validator.RecentProposedHeight = existing.RecentProposedHeight
+					validator.AccumulatedProposedCount = existing.AccumulatedProposedCount
 				}
 			}
 
