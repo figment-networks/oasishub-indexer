@@ -4,7 +4,7 @@ import "fmt"
 
 var (
 	appName    = "oasishub-indexer"
-	appVersion = "0.3.4"
+	appVersion = "0.4.0"
 	gitCommit  = "-"
 	goVersion  = "1.13"
 )

@@ -208,6 +208,8 @@ github.com/figment-networks/indexing-engine v0.1.2 h1:UyDv2R6rc1NBOiu1DzbENCEZya
 github.com/figment-networks/indexing-engine v0.1.2/go.mod h1:bkLBAgVzCvI+bOfwZrY26qsT4a2VvhbnJjsDYBCEdaE=
 github.com/figment-networks/indexing-engine v0.1.4 h1:0RXL1JokEpa1s2T6OVdbVOKcHpggNxZ7j3/Iao8ljTk=
 github.com/figment-networks/indexing-engine v0.1.4/go.mod h1:kS26ErqFBvj/K1AzOiqE4jG2X2P2thdq7rTDp4bsvfE=
+github.com/figment-networks/indexing-engine v0.1.5 h1:pgny04uzlBgHykM1bi6y5Dl69/0aIWNZ7XPw/guIxHE=
+github.com/figment-networks/indexing-engine v0.1.5/go.mod h1:kS26ErqFBvj/K1AzOiqE4jG2X2P2thdq7rTDp4bsvfE=
 github.com/figment-networks/oasis-rpc-proxy v0.0.0-20200416164959-d7394fdbfe7f h1:AKD5y4peodpXdke1+QL2lCJfPkHkZmfIbcDM9x/+42U=
 github.com/figment-networks/oasis-rpc-proxy v0.0.0-20200416164959-d7394fdbfe7f/go.mod h1:azs/0biVct6pImFmY61GGBOIS92rnE+YYcKXz8Lv/0o=
 github.com/figment-networks/oasis-rpc-proxy v0.3.3 h1:1pff5x6GcjD4aaVLNWgeEcL0OkWwnwsl+o8g4MuG070=

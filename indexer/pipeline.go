@@ -33,21 +33,24 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetLogger(NewLogger())
 
 	// Setup stage
-	p.SetSetupStage(
+	p.SetStage(
+		pipeline.StageSetup,
 		pipeline.SyncRunner(
 			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
 		),
 	)
 
 	// Syncer stage
-	p.SetSyncerStage(
+	p.SetStage(
+		pipeline.StageSyncer,
 		pipeline.SyncRunner(
 			pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
 		),
 	)
 
 	// Fetcher stage
-	p.SetFetcherStage(
+	p.SetStage(
+		pipeline.StageFetcher,
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
 			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
@@ -58,7 +61,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	)
 
 	// Set parser stage
-	p.SetParserStage(
+	p.SetStage(
+		pipeline.StageParser,
 		pipeline.AsyncRunner(
 			NewBlockParserTask(),
 			NewValidatorsParserTask(),
@@ -66,7 +70,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	)
 
 	// Set sequencer stage
-	p.SetSequencerStage(
+	p.SetStage(
+		pipeline.StageSequencer,
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
@@ -78,7 +83,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	)
 
 	// Set aggregator stage
-	p.SetAggregatorStage(
+	p.SetStage(
+		pipeline.StageAggregator,
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
@@ -86,7 +92,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	)
 
 	// Set persistor stage
-	p.SetPersistorStage(
+	p.SetStage(
+		pipeline.StagePersistor,
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
