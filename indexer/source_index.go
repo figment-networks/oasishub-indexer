@@ -114,12 +114,13 @@ func (s *indexSource) setEndHeight() error {
 	if err != nil {
 		return err
 	}
-	endH := syncableFromNode.GetChain().GetHeight()
+	endH := syncableFromNode.GetHeight()
 
 	if s.sourceCfg.BatchSize > 0 && endH-s.startHeight > s.sourceCfg.BatchSize {
 		endOfBatch := (s.startHeight + s.sourceCfg.BatchSize) - 1
 		endH = endOfBatch
 	}
+
 	s.endHeight = endH
 	return nil
 }

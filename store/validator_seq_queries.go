@@ -2,7 +2,7 @@ package store
 
 const (
 	summarizeValidatorsQuerySelect = `
-	entity_uid,
+	address,
 	DATE_TRUNC(?, time)                      AS time_bucket,
    	AVG(voting_power)                        AS voting_power_avg,
    	MAX(voting_power)                        AS voting_power_max,

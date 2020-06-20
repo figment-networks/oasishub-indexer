@@ -42,9 +42,9 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
-	//if err := uc.purgeValidators(currentIndexVersion); err != nil {
-	//	return err
-	//}
+	if err := uc.purgeValidators(currentIndexVersion); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -54,9 +54,9 @@ func (uc *purgeUseCase) purgeBlocks(currentIndexVersion int64) error {
 	if err := uc.purgeBlockSequences(currentIndexVersion); uc.checkErr(err) {
 		return err
 	}
-	//if err := uc.purgeBlockSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
-	//	return err
-	//}
+	if err := uc.purgeBlockSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
+		return err
+	}
 	return nil
 }
 

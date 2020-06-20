@@ -53,7 +53,7 @@ func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	// Get transactions successCount
 	parsedBlockData.TransactionsCount = int64(len(fetchedTransactions))
 
-	// Get Proposer EntityUID
+	// Get Proposer Address
 	for _, validator := range fetchedValidators {
 		pa := fetchedBlock.GetHeader().GetProposerAddress()
 
@@ -97,8 +97,9 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedStakingState := payload.RawStakingState
 
 	parsedData := make(ParsedValidatorsData)
-	for i, rv := range fetchedValidators {
-		key := rv.Node.EntityId
+	for i, fetchedValidator := range fetchedValidators {
+		address := fetchedValidator.GetAddress()
+		tendermintAddress := fetchedValidator.GetTendermintAddress()
 		calculatedData := parsedValidator{}
 
 		// Get precommit data
@@ -132,10 +133,10 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 		calculatedData.PrecommitBlockIdFlag = blockIdFlag
 
 		// Get proposed
-		calculatedData.Proposed = fetchedBlock.GetHeader().GetProposerAddress() == rv.Address
+		calculatedData.Proposed = fetchedBlock.GetHeader().GetProposerAddress() == tendermintAddress
 
 		// Get total shares
-		delegations, ok := fetchedStakingState.GetDelegations()[rv.Node.EntityId]
+		delegations, ok := fetchedStakingState.GetDelegations()[address]
 		totalShares := big.NewInt(0)
 		if ok {
 			for _, d := range delegations.Entries {
@@ -145,7 +146,7 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 		}
 		calculatedData.TotalShares = types.NewQuantity(totalShares)
 
-		parsedData[key] = calculatedData
+		parsedData[address] = calculatedData
 	}
 	payload.ParsedValidators = parsedData
 	return nil

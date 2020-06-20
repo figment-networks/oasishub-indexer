@@ -17,7 +17,6 @@ type AccountAgg struct {
 	RecentEscrowDebondingTotalShares types.Quantity  `json:"recent_escrow_debonding_total_shares"`
 }
 
-// - METHODS
 func (AccountAgg) TableName() string {
 	return "account_aggregates"
 }

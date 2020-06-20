@@ -75,10 +75,10 @@ func (s ValidatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
 	return result, checkErr(err)
 }
 
-// FindLastByEntityUID finds last validator sequences for given entity uid
-func (s ValidatorSeqStore) FindLastByEntityUID(key string, limit int64) ([]model.ValidatorSeq, error) {
+// FindLastByAddress finds last validator sequences for given entity uid
+func (s ValidatorSeqStore) FindLastByAddress(address string, limit int64) ([]model.ValidatorSeq, error) {
 	q := model.ValidatorSeq{
-		EntityUID: key,
+		Address: address,
 	}
 	var result []model.ValidatorSeq
 
@@ -116,7 +116,7 @@ func (s *ValidatorSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, e
 }
 
 type ValidatorSeqSummary struct {
-	EntityUID       string         `json:"entity_uid"`
+	Address         string         `json:"address"`
 	TimeBucket      types.Time     `json:"time_bucket"`
 	VotingPowerAvg  float64        `json:"voting_power_avg"`
 	VotingPowerMax  float64        `json:"voting_power_max"`
@@ -135,18 +135,17 @@ func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, activityPe
 	defer logQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
 
 	tx := s.db.
-		Debug().
 		Table(model.ValidatorSeq{}.TableName()).
 		Select(summarizeValidatorsQuerySelect, interval).
 		Order("time_bucket").
-		Group("entity_uid, time_bucket")
+		Group("address, time_bucket")
 
 	if len(activityPeriods) == 1 {
 		activityPeriod := activityPeriods[0]
 		tx = tx.Or("time < ? OR time >= ?", activityPeriod.Min, activityPeriod.Max)
 	} else {
 		for i, activityPeriod := range activityPeriods {
-			isLast := i == len(activityPeriods) - 1
+			isLast := i == len(activityPeriods)-1
 
 			if isLast {
 				tx = tx.Or("time >= ?", activityPeriod.Max)
@@ -155,7 +154,7 @@ func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, activityPe
 				if err != nil {
 					return nil, err
 				}
-				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i + 1].Min)
+				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i+1].Min)
 			}
 		}
 	}

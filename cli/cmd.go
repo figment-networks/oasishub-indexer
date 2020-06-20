@@ -25,18 +25,17 @@ func runCmd(cfg *config.Config, flags CliFlags) error {
 
 	logger.Info(fmt.Sprintf("executing cmd %s ...", flags.runCommand), logger.Field("app", "cli"))
 
+	ctx := context.Background()
 	switch flags.runCommand {
+	case "status":
+		cmdHandlers.GetStatus.Handle(ctx)
 	case "indexer_start":
-		ctx := context.Background()
 		cmdHandlers.StartIndexer.Handle(ctx, flags.batchSize)
 	case "indexer_backfill":
-		ctx := context.Background()
 		cmdHandlers.BackfillIndexer.Handle(ctx, flags.parallel, flags.force, flags.targetIds)
 	case "indexer_summarize":
-		ctx := context.Background()
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	case "indexer_purge":
-		ctx := context.Background()
 		cmdHandlers.PurgeIndexer.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))

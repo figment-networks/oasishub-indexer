@@ -14,7 +14,6 @@ type DebondingDelegationSeq struct {
 	DebondEnd    uint64         `json:"debond_end"`
 }
 
-// - METHODS
 func (DebondingDelegationSeq) TableName() string {
 	return "debonding_delegation_sequences"
 }

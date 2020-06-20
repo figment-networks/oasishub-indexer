@@ -37,7 +37,7 @@ func ToAggDetailsView(m *model.ValidatorAgg, sequences []model.ValidatorSeq) *Ag
 		Aggregate: m.Aggregate,
 
 		EntityUID:                m.EntityUID,
-		RecentAddress:            m.RecentAddress,
+		RecentAddress:            m.RecentTendermintAddress,
 		RecentVotingPower:        m.RecentVotingPower,
 		RecentTotalShares:        m.RecentTotalShares,
 		RecentAsValidatorHeight:  m.RecentAsValidatorHeight,

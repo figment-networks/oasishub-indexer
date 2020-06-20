@@ -139,6 +139,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
 		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
+		address := rawValidator.GetAddress()
 		if err != nil {
 			if err == store.ErrNotFound {
 				// Create new
@@ -150,13 +151,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 						RecentAt:        payload.Syncable.Time,
 					},
 
-					EntityUID:               rawValidator.GetNode().EntityId,
-					RecentAddress:           rawValidator.GetAddress(),
+					Address:                 rawValidator.GetAddress(),
+					EntityUID:               rawValidator.GetNode().GetEntityId(),
+					RecentTendermintAddress: rawValidator.GetTendermintAddress(),
 					RecentVotingPower:       rawValidator.GetVotingPower(),
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
-				parsedValidator, ok := payload.ParsedValidators[rawValidator.GetNode().GetEntityId()]
+				parsedValidator, ok := payload.ParsedValidators[address]
 				if ok {
 					validator.RecentTotalShares = parsedValidator.TotalShares
 
@@ -192,12 +194,12 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAt:       payload.Syncable.Time,
 				},
 
-				RecentAddress:           rawValidator.GetAddress(),
+				RecentTendermintAddress: rawValidator.GetAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
 
-			parsedValidator, ok := payload.ParsedValidators[rawValidator.GetNode().GetEntityId()]
+			parsedValidator, ok := payload.ParsedValidators[address]
 			if ok {
 				validator.RecentTotalShares = parsedValidator.TotalShares
 

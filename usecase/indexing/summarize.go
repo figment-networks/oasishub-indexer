@@ -135,7 +135,7 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 		query := model.ValidatorSummary{
 			Summary: summary,
 
-			EntityUID: rawSummary.EntityUID,
+			Address: rawSummary.Address,
 		}
 
 		existingValidatorSummary, err := uc.db.ValidatorSummary.Find(&query)
@@ -144,7 +144,7 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 				validatorSummary := model.ValidatorSummary{
 					Summary: summary,
 
-					EntityUID:       rawSummary.EntityUID,
+					Address:         rawSummary.Address,
 					VotingPowerAvg:  rawSummary.VotingPowerAvg,
 					VotingPowerMax:  rawSummary.VotingPowerMax,
 					VotingPowerMin:  rawSummary.VotingPowerMin,

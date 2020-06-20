@@ -15,10 +15,10 @@ func NewGetSummaryUseCase(db *store.Store) *getSummaryUseCase {
 	}
 }
 
-func (uc *getSummaryUseCase) Execute(interval types.SummaryInterval, period string, entityUID string) (interface{}, error) {
-	if entityUID == "" {
+func (uc *getSummaryUseCase) Execute(interval types.SummaryInterval, period string, address string) (interface{}, error) {
+	if address == "" {
 		return uc.db.ValidatorSummary.FindSummary(interval, period)
 	}
-	return uc.db.ValidatorSummary.FindSummaryByEntityUID(entityUID, interval, period)
+	return uc.db.ValidatorSummary.FindSummaryByAddress(address, interval, period)
 }
 

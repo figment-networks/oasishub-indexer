@@ -41,8 +41,8 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			VotingPower:  rawValidator.GetVotingPower(),
 		}
 
-		key := rawValidator.GetNode().GetEntityId()
-		parsedValidator, ok := parsedValidators[key]
+		address := rawValidator.GetAddress()
+		parsedValidator, ok := parsedValidators[address]
 		if ok {
 			e.PrecommitValidated = parsedValidator.PrecommitValidated
 			e.Proposed = parsedValidator.Proposed

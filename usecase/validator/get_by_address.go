@@ -5,18 +5,18 @@ import (
 	"github.com/figment-networks/oasishub-indexer/store"
 )
 
-type getByEntityUidUseCase struct {
+type getByAddressUseCase struct {
 	db *store.Store
 }
 
-func NewGetByEntityUidUseCase(db *store.Store) *getByEntityUidUseCase {
-	return &getByEntityUidUseCase{
+func NewGetByAddressUseCase(db *store.Store) *getByAddressUseCase {
+	return &getByAddressUseCase{
 		db: db,
 	}
 }
 
-func (uc *getByEntityUidUseCase) Execute(key string, sequencesLimit int64) (*AggDetailsView, error) {
-	validatorAggs, err := uc.db.ValidatorAgg.FindByEntityUID(key)
+func (uc *getByAddressUseCase) Execute(key string, sequencesLimit int64) (*AggDetailsView, error) {
+	validatorAggs, err := uc.db.ValidatorAgg.FindByAddress(key)
 	if err != nil {
 		return nil, err
 	}
@@ -29,11 +29,11 @@ func (uc *getByEntityUidUseCase) Execute(key string, sequencesLimit int64) (*Agg
 	return ToAggDetailsView(validatorAggs, sequences), nil
 }
 
-func (uc *getByEntityUidUseCase) getSequences(key string, sequencesLimit int64) ([]model.ValidatorSeq, error) {
+func (uc *getByAddressUseCase) getSequences(address string, sequencesLimit int64) ([]model.ValidatorSeq, error) {
 	var sequences []model.ValidatorSeq
 	var err error
 	if sequencesLimit > 0 {
-		sequences, err = uc.db.ValidatorSeq.FindLastByEntityUID(key, sequencesLimit)
+		sequences, err = uc.db.ValidatorSeq.FindLastByAddress(address, sequencesLimit)
 		if err != nil {
 			return nil, err
 		}

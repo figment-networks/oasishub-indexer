@@ -40,7 +40,6 @@ func (k ReportKind) String() string {
 	}
 }
 
-// - METHODS
 func (Report) TableName() string {
 	return "reports"
 }

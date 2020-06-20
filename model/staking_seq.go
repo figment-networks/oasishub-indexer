@@ -14,7 +14,6 @@ type StakingSeq struct {
 	MinDelegationAmount types.Quantity `json:"min_delegation_amount"`
 }
 
-// - Methods
 func (StakingSeq) TableName() string {
 	return "staking_sequences"
 }

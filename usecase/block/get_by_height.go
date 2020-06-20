@@ -40,5 +40,5 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*DetailsView, error) {
 		return nil, err
 	}
 
-	return ToDetailsView(res.GetBlock())
+	return ToDetailsView(res.GetBlock()), nil
 }

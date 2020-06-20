@@ -11,7 +11,7 @@ WHERE time_bucket >= (
 	ORDER BY time_bucket DESC
 	LIMIT 1
 ) - ?::INTERVAL
-	AND entity_uid = ? AND time_interval = ?
+	AND address = ? AND time_interval = ?
 ORDER BY time_bucket
 `
 

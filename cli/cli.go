@@ -62,7 +62,7 @@ func Run() {
 	flag.Parse()
 
 	if flags.showVersion {
-		fmt.Println(versionString())
+		fmt.Println(config.VersionString())
 		return
 	}
 

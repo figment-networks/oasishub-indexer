@@ -7,11 +7,9 @@ type BlockSeq struct {
 
 	*Sequence
 
-	// Indexed data
 	TransactionsCount int64  `json:"transactions_count"`
 }
 
-// - METHODS
 func (BlockSeq) TableName() string {
 	return "block_sequences"
 }

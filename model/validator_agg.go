@@ -8,8 +8,9 @@ type ValidatorAgg struct {
 	*Model
 	*Aggregate
 
+	Address                  string         `json:"address"`
 	EntityUID                string         `json:"entity_uid"`
-	RecentAddress            string         `json:"recent_address"`
+	RecentTendermintAddress  string         `json:"recent_tendermint_address"`
 	RecentVotingPower        int64          `json:"recent_voting_power"`
 	RecentTotalShares        types.Quantity `json:"recent_total_shares"`
 	RecentAsValidatorHeight  int64          `json:"recent_as_validator_height"`
@@ -19,7 +20,6 @@ type ValidatorAgg struct {
 	AccumulatedUptimeCount   int64          `json:"accumulated_uptime_count"`
 }
 
-// - METHODS
 func (ValidatorAgg) TableName() string {
 	return "validator_aggregates"
 }

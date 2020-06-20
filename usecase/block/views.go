@@ -23,7 +23,7 @@ type DetailsView struct {
 	ProposerAddress    string     `json:"proposer_address"`
 }
 
-func ToDetailsView(rawBlock *blockpb.Block) (*DetailsView, error) {
+func ToDetailsView(rawBlock *blockpb.Block) *DetailsView {
 	return &DetailsView{
 		AppVersion:         rawBlock.GetHeader().GetVersion().GetApp(),
 		BlockVersion:       rawBlock.GetHeader().GetVersion().GetBlock(),
@@ -40,5 +40,5 @@ func ToDetailsView(rawBlock *blockpb.Block) (*DetailsView, error) {
 		LastResultsHash:    rawBlock.GetHeader().GetLastResultsHash(),
 		EvidenceHash:       rawBlock.GetHeader().GetEvidenceHash(),
 		ProposerAddress:    rawBlock.GetHeader().GetProposerAddress(),
-	}, nil
+	}
 }

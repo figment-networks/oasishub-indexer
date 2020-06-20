@@ -30,6 +30,12 @@ func NewGetSummaryHttpHandler(db *store.Store, c *client.Client) *getSummaryHttp
 	}
 }
 
+type GetSummaryRequest struct {
+	Interval types.SummaryInterval `form:"interval" binding:"required"`
+	Period   string                `form:"period" binding:"required"`
+	Address  string                `form:"address" binding:"-"`
+}
+
 func (h *getSummaryHttpHandler) Handle(c *gin.Context) {
 	req, err := h.validateParams(c)
 	if err != nil {
@@ -38,7 +44,7 @@ func (h *getSummaryHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.Interval, req.Period, req.EntityUID)
+	resp, err := h.getUseCase().Execute(req.Interval, req.Period, req.Address)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
@@ -46,12 +52,6 @@ func (h *getSummaryHttpHandler) Handle(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, resp)
-}
-
-type GetSummaryRequest struct {
-	Interval  types.SummaryInterval `form:"interval" binding:"required"`
-	Period    string                `form:"period" binding:"required"`
-	EntityUID string                `form:"entity_uid" binding:"-"`
 }
 
 func (h *getSummaryHttpHandler) validateParams(c *gin.Context) (*GetSummaryRequest, error) {
