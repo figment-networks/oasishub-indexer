@@ -13,7 +13,7 @@ import (
 	"strings"
 )
 
-type CliFlags struct {
+type Flags struct {
 	configPath string
 	runCommand string
 	showVersion bool
@@ -44,7 +44,7 @@ func (i *targetIds) Set(value string) error {
 	return nil
 }
 
-func (c *CliFlags) Setup() {
+func (c *Flags) Setup() {
 	flag.BoolVar(&c.showVersion, "v", false, "Show application version")
 	flag.StringVar(&c.configPath, "config", "", "Path to config")
 	flag.StringVar(&c.runCommand, "cmd", "", "Command to run")
@@ -57,7 +57,7 @@ func (c *CliFlags) Setup() {
 
 // Run executes the command line interface
 func Run() {
-	flags := CliFlags{}
+	flags := Flags{}
 	flags.Setup()
 	flag.Parse()
 
@@ -89,7 +89,7 @@ func Run() {
 	}
 }
 
-func startCommand(cfg *config.Config, flags CliFlags) error {
+func startCommand(cfg *config.Config, flags Flags) error {
 	switch flags.runCommand {
 	case "migrate":
 		return startMigrations(cfg)

@@ -19,8 +19,9 @@ type AggDetailsView struct {
 	*model.Model
 	*model.Aggregate
 
+	Address                  string         `json:"address"`
 	EntityUID                string         `json:"entity_uid"`
-	RecentAddress            string         `json:"recent_address"`
+	RecentTendermintAddress  string         `json:"recent_tendermint_address"`
 	RecentVotingPower        int64          `json:"recent_voting_power"`
 	RecentTotalShares        types.Quantity `json:"recent_total_shares"`
 	RecentAsValidatorHeight  int64          `json:"recent_as_validator_height"`
@@ -36,8 +37,9 @@ func ToAggDetailsView(m *model.ValidatorAgg, sequences []model.ValidatorSeq) *Ag
 		Model:     m.Model,
 		Aggregate: m.Aggregate,
 
+		Address:                  m.Address,
 		EntityUID:                m.EntityUID,
-		RecentAddress:            m.RecentTendermintAddress,
+		RecentTendermintAddress:  m.RecentTendermintAddress,
 		RecentVotingPower:        m.RecentVotingPower,
 		RecentTotalShares:        m.RecentTotalShares,
 		RecentAsValidatorHeight:  m.RecentAsValidatorHeight,
@@ -59,7 +61,7 @@ type SeqListItem struct {
 	TotalShares        types.Quantity `json:"total_shares"`
 	AsValidatorHeight  int64          `json:"as_validator_height"`
 	ProposedHeight     int64          `json:"proposed_height"`
-	PrecommitValidated *bool           `json:"precommit_validated"`
+	PrecommitValidated *bool          `json:"precommit_validated"`
 }
 
 type SeqListView struct {

@@ -9,7 +9,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func runCmd(cfg *config.Config, flags CliFlags) error {
+func runCmd(cfg *config.Config, flags Flags) error {
 	db, err := initStore(cfg)
 	if err != nil {
 		return err

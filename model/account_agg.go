@@ -8,13 +8,13 @@ type AccountAgg struct {
 	*Model
 	*Aggregate
 
-	PublicKey                        string `json:"public_key"`
-	RecentGeneralBalance             types.Quantity  `json:"recent_general_balance"`
-	RecentGeneralNonce               uint64     `json:"recent_general_nonce"`
-	RecentEscrowActiveBalance        types.Quantity  `json:"recent_escrow_active_balance"`
-	RecentEscrowActiveTotalShares    types.Quantity  `json:"recent_escrow_active_total_shares"`
-	RecentEscrowDebondingBalance     types.Quantity  `json:"recent_escrow_debonding_balance"`
-	RecentEscrowDebondingTotalShares types.Quantity  `json:"recent_escrow_debonding_total_shares"`
+	PublicKey                        string         `json:"public_key"`
+	RecentGeneralBalance             types.Quantity `json:"recent_general_balance"`
+	RecentGeneralNonce               uint64         `json:"recent_general_nonce"`
+	RecentEscrowActiveBalance        types.Quantity `json:"recent_escrow_active_balance"`
+	RecentEscrowActiveTotalShares    types.Quantity `json:"recent_escrow_active_total_shares"`
+	RecentEscrowDebondingBalance     types.Quantity `json:"recent_escrow_debonding_balance"`
+	RecentEscrowDebondingTotalShares types.Quantity `json:"recent_escrow_debonding_total_shares"`
 }
 
 func (AccountAgg) TableName() string {
