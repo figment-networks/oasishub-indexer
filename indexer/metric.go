@@ -10,4 +10,11 @@ var (
 		Desc:      "The total time required to process indexing task",
 		Tags:      []string{"task"},
 	})
+
+	indexerTotalErrors = metrics.MustNewCounterWithTags(metrics.Options{
+		Namespace: "indexers",
+		Subsystem: "oasishub.task",
+		Name:      "total_error",
+		Desc:      "The total number of failures during indexing",
+	})
 )

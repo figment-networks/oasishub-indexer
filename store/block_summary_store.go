@@ -68,8 +68,9 @@ type ActivityPeriodRow struct {
 }
 
 // FindActivityPeriods Finds activity periods
-func (s *blockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
-	defer logQueryDuration(time.Now(), "BlockSummaryStore_FindActivityPeriods")
+func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_FindActivityPeriods"}))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(blockSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).

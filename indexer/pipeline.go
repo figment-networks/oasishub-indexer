@@ -3,7 +3,6 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
@@ -12,15 +11,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
-	"github.com/prometheus/client_golang/prometheus"
 )
-
-var indexerTotalErrors = prometheus.NewCounter(prometheus.CounterOpts{
-	Namespace: "figment",
-	Subsystem: "indexer",
-	Name:      "total_error",
-	Help:      "The total number of failures during indexing",
-})
 
 const (
 	CtxReport = "context_report"
@@ -33,8 +24,6 @@ var (
 	ErrIndexCannotBeRun    = errors.New("cannot run index process")
 	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
 )
-
-var Now = time.Now
 
 type indexingPipeline struct {
 	cfg    *config.Config
@@ -188,7 +177,7 @@ func (o *indexingPipeline) Index(ctx context.Context, indexCfg IndexConfig) erro
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
-		indexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels(nil).Inc()
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
@@ -268,7 +257,9 @@ func (o *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels(nil).Inc()
+		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
+		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))

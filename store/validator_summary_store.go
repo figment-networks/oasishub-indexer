@@ -49,8 +49,9 @@ func (s validatorSummaryStore) Find(query *model.ValidatorSummary) (*model.Valid
 }
 
 // FindActivityPeriods Finds activity periods
-func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
+func (s *ValidatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"ValidatorSummaryStore_FindActivityPeriods"}))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).

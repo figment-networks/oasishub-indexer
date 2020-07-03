@@ -2,7 +2,7 @@ package server
 
 import (
 	"github.com/figment-networks/indexing-engine/metrics"
-	"github.com/figment-networks/indexing-engine/prometheusmetrics"
+	"github.com/figment-networks/indexing-engine/metrics/prometheusmetrics"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -37,7 +37,7 @@ func (s *Server) Start(listenAdd string) error {
 		return err
 	}
 	//s.cfg.MetricServerUrl , s.cfg.ServerMetricAddr,
-	s.engine.GET(s.cfg.ServerMetricAddr, prom.Handle())
+	s.engine.GET(s.cfg.ServerMetricAddr, prom.Handler())
 
 	return s.engine.Run(listenAdd)
 }
