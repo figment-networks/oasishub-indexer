@@ -2,7 +2,6 @@ package server
 
 import (
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -30,8 +29,7 @@ func New(cfg *config.Config, handlers *usecase.HttpHandlers) *Server {
 func (s *Server) Start(listenAdd string) error {
 	logger.Info("starting server...", logger.Field("app", "server"))
 
-	go s.startMetricsServer()
-
+	//s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl
 	return s.engine.Run(listenAdd)
 }
 
@@ -44,8 +42,3 @@ func (s *Server) init() *Server {
 
 	return s
 }
-
-func (s *Server) startMetricsServer() error {
-	return metric.NewServerMetric().StartServer(s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl)
-}
-

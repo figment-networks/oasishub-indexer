@@ -1,13 +1,21 @@
 package store
 
 import (
-	"github.com/figment-networks/oasishub-indexer/metric"
+	"reflect"
+	"time"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"reflect"
-	"time"
 )
+
+var databaseQueryDuration = metrics.MustNewGaugeWithTags(metrics.Options{
+	Namespace: "figment",
+	Subsystem: "database",
+	Name:      "query_duration",
+	Desc:      "The total time required to execute query on database",
+	Tags:      []string{"query"}})
 
 // NewIndexerMetric returns a new store from the connection string
 func New(connStr string) (*Store, error) {
@@ -99,5 +107,5 @@ func castQuantity(scope *gorm.Scope) {
 
 func logQueryDuration(start time.Time, queryName string) {
 	elapsed := time.Since(start)
-	metric.DatabaseQueryDuration.WithLabelValues(queryName).Set(elapsed.Seconds())
+	databaseQueryDuration.WithLabels([]string{queryName}).Set(elapsed.Seconds())
 }

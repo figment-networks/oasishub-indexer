@@ -2,9 +2,10 @@ package store
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
-	"time"
 
 	"github.com/figment-networks/oasishub-indexer/model"
 )

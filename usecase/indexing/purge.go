@@ -3,14 +3,14 @@ package indexing
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/indexer"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
-	"time"
 )
 
 var (
@@ -18,19 +18,19 @@ var (
 )
 
 type purgeUseCase struct {
-	cfg    *config.Config
-	db     *store.Store
+	cfg *config.Config
+	db  *store.Store
 }
 
 func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 	return &purgeUseCase{
-		cfg:    cfg,
-		db:     db,
+		cfg: cfg,
+		db:  db,
 	}
 }
 
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
-	defer metric.LogUseCaseDuration(time.Now(), "purge")
+	defer indexerUseCaseDuration.WithLabels([]string{"purge"}).Inc() // LogUseCaseDuration(time.Now(), "purge")
 
 	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
@@ -52,7 +52,6 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 
 	return nil
 }
-
 
 func (uc *purgeUseCase) purgeBlocks(currentIndexVersion int64) error {
 	if err := uc.purgeBlockSequences(currentIndexVersion); uc.checkErr(err) {
@@ -118,7 +117,7 @@ func (uc *purgeUseCase) purgeBlockSequences(currentIndexVersion int64) error {
 		return err
 	}
 
-	purgeThresholdFromLastSeq := lastSeqTime.Add(- *duration)
+	purgeThresholdFromLastSeq := lastSeqTime.Add(-*duration)
 
 	activityPeriods, err := uc.db.BlockSummary.FindActivityPeriods(types.IntervalDaily, currentIndexVersion)
 	if err != nil {
@@ -152,7 +151,7 @@ func (uc *purgeUseCase) purgeBlockSummaries(interval types.SummaryInterval, purg
 		return err
 	}
 
-	purgeThreshold := lastSummaryTimeBucket.Add(- *duration)
+	purgeThreshold := lastSummaryTimeBucket.Add(-*duration)
 
 	logger.Info(fmt.Sprintf("purging block summaries... [interval=%s] [older than=%s]", interval, purgeThreshold))
 
@@ -187,7 +186,7 @@ func (uc *purgeUseCase) purgeValidatorSequences(currentIndexVersion int64) error
 		return err
 	}
 
-	purgeThresholdFromConfig := lastSeqTime.Add(- *duration)
+	purgeThresholdFromConfig := lastSeqTime.Add(-*duration)
 
 	var purgeThreshold time.Time
 	if purgeThresholdFromConfig.Before(lastSummaryTimeBucket) {
@@ -223,7 +222,7 @@ func (uc *purgeUseCase) purgeValidatorSummaries(interval types.SummaryInterval, 
 		return err
 	}
 
-	purgeThreshold := lastSummaryTimeBucket.Add(- *duration)
+	purgeThreshold := lastSummaryTimeBucket.Add(-*duration)
 
 	logger.Info(fmt.Sprintf("purging validator summaries... [interval=%s] [older than=%s]", interval, purgeThreshold))
 

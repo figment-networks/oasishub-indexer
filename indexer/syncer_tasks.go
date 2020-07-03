@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/figment-networks/oasishub-indexer/metric"
-	"github.com/figment-networks/oasishub-indexer/types"
-
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
@@ -36,7 +34,7 @@ func (t *mainSyncerTask) GetName() string {
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 

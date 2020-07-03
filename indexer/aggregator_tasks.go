@@ -47,6 +47,7 @@ func (t *accountAggCreatorTask) GetName() string {
 }
 
 func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
+
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
@@ -139,7 +140,7 @@ func (t *validatorAggCreatorTask) GetName() string {
 }
 
 func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 

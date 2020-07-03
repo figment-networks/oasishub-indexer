@@ -3,11 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
@@ -38,7 +36,7 @@ func (t *heightMetaRetrieverTask) GetName() string {
 }
 
 func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
@@ -39,7 +38,7 @@ func (t *blockParserTask) GetName() string {
 }
 
 func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -89,7 +88,7 @@ func (t *validatorsParserTask) GetName() string {
 }
 
 func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 

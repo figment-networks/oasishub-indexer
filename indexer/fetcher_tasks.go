@@ -35,7 +35,7 @@ func (t *BlockFetcherTask) GetName() string {
 }
 
 func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 	block, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -105,7 +105,7 @@ func (t *StateFetcherTask) GetName() string {
 }
 
 func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 	state, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -140,7 +140,7 @@ func (t *StakingStateFetcherTask) GetName() string {
 }
 
 func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 	state, err := t.client.GetStakingByHeight(payload.CurrentHeight)
@@ -175,7 +175,7 @@ func (t *ValidatorFetcherTask) GetName() string {
 }
 
 func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 	validators, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -210,7 +210,7 @@ func (t *TransactionFetcherTask) GetName() string {
 }
 
 func (t *TransactionFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 	transactions, err := t.client.GetByHeight(payload.CurrentHeight)

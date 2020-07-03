@@ -3,10 +3,8 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -49,7 +47,7 @@ func (t *blockSeqCreatorTask) GetName() string {
 }
 
 func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -95,7 +93,7 @@ func (t *validatorSeqCreatorTask) GetName() string {
 }
 
 func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -149,7 +147,7 @@ func (t *transactionSeqCreatorTask) GetName() string {
 }
 
 func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -219,7 +217,7 @@ func (t *stakingSeqCreatorTask) GetName() string {
 }
 
 func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -264,7 +262,7 @@ func NewDelegationsSeqCreatorTask(db DelegationSeqCreatorTaskStore) *delegationS
 }
 
 func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 
@@ -334,7 +332,7 @@ func (t *debondingDelegationSeqCreatorTask) GetName() string {
 }
 
 func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
 
 	payload := p.(*payload)
 

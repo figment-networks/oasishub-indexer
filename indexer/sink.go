@@ -3,11 +3,35 @@ package indexer
 import (
 	"context"
 	"fmt"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
+)
+
+var (
+	indexerHeightSuccess = metrics.MustNewGaugeWithTags(metrics.Options{
+		Namespace: "figment",
+		Subsystem: "indexer",
+		Name:      "height_success",
+		Desc:      "The total number of successfully indexed heights",
+	}).WithLabels(nil)
+
+	indexerDbSizeAfterHeight = metrics.MustNewGaugeWithTags(metrics.Options{
+		Namespace: "figment",
+		Subsystem: "indexer",
+		Name:      "db_size",
+		Desc:      "The size of the database after indexing of height",
+	}).WithLabels(nil)
+
+	indexerHeightDuration = metrics.MustNewGaugeWithTags(metrics.Options{
+		Namespace: "figment",
+		Subsystem: "indexer",
+		Name:      "height_duration",
+		Desc:      "The total time required to index one height",
+	})
 )
 
 var (
@@ -67,8 +91,8 @@ func (s *sink) addMetrics(payload *payload) error {
 		return err
 	}
 
-	metric.IndexerHeightSuccess.Inc()
-	metric.IndexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
-	metric.IndexerDbSizeAfterHeight.Set(res.Size)
+	indexerHeightSuccess.Inc()
+	//indexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
+	indexerDbSizeAfterHeight.Set(res.Size)
 	return nil
 }

@@ -8,12 +8,19 @@ import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
+	"github.com/prometheus/client_golang/prometheus"
 )
+
+var indexerTotalErrors = prometheus.NewCounter(prometheus.CounterOpts{
+	Namespace: "figment",
+	Subsystem: "indexer",
+	Name:      "total_error",
+	Help:      "The total number of failures during indexing",
+})
 
 const (
 	CtxReport = "context_report"
@@ -181,7 +188,7 @@ func (o *indexingPipeline) Index(ctx context.Context, indexCfg IndexConfig) erro
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.Inc()
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
