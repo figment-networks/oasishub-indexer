@@ -36,8 +36,9 @@ func (s *Server) Start(listenAdd string) error {
 	if err != nil {
 		return err
 	}
+
 	//s.cfg.MetricServerUrl , s.cfg.ServerMetricAddr,
-	s.engine.GET(s.cfg.ServerMetricAddr, prom.Handler())
+	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(prom.Handler()))
 
 	return s.engine.Run(listenAdd)
 }
