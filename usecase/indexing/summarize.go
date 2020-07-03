@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
@@ -25,8 +26,8 @@ func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase 
 }
 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
-	defer indexerUseCaseDuration.WithLabels([]string{"summarize"}).Inc()
-	//defer metric.LogUseCaseDuration(time.Now(), "summarize")
+	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels([]string{"summarize"}))
+	t.ObserveDuration()
 
 	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {

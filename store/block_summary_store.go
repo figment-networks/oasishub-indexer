@@ -2,10 +2,12 @@ package store
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
-	"time"
 )
 
 var (
@@ -18,7 +20,7 @@ type BlockSummaryStore interface {
 	Find(*model.BlockSummary) (*model.BlockSummary, error)
 	FindMostRecentByInterval(types.SummaryInterval) (*model.BlockSummary, error)
 	FindActivityPeriods(types.SummaryInterval, int64) ([]ActivityPeriodRow, error)
-	FindSummary(types.SummaryInterval,string) ([]model.BlockSummary, error)
+	FindSummary(types.SummaryInterval, string) ([]model.BlockSummary, error)
 	DeleteOlderThan(types.SummaryInterval, time.Time) (*int64, error)
 }
 
@@ -90,8 +92,9 @@ func (s *blockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, 
 }
 
 // FindSummary Gets summary of block sequences
-func (s *blockSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
-	defer logQueryDuration(time.Now(), "BlockSummaryStore_FindSummary")
+func (s *BlockSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_FindSummary"}))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(allBlocksSummaryForIntervalQuery, interval, period, interval).

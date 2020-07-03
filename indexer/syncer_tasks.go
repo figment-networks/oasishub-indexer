@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	MainSyncerTaskName = "MainSyncer"
+	TaskNameMainSyncer = "MainSyncer"
 )
 
 type SyncerTaskStore interface {
@@ -21,20 +22,23 @@ type SyncerTaskStore interface {
 
 func NewMainSyncerTask(db SyncerTaskStore) pipeline.Task {
 	return &mainSyncerTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameMainSyncer}),
 	}
 }
 
 type mainSyncerTask struct {
-	db SyncerTaskStore
+	db             SyncerTaskStore
+	metricObserver metrics.Observer
 }
 
 func (t *mainSyncerTask) GetName() string {
-	return MainSyncerTaskName
+	return TaskNameMainSyncer
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

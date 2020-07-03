@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -11,12 +12,12 @@ import (
 )
 
 const (
-	BlockSeqCreatorTaskName               = "BlockSeqCreator"
-	ValidatorSeqCreatorTaskName           = "ValidatorSeqCreator"
-	TransactionSeqCreatorTaskName         = "TransactionSeqCreator"
-	StakingSeqCreatorTaskName             = "StakingSeqCreator"
-	DelegationSeqCreatorTaskName          = "DelegationSeqCreator"
-	DebondingDelegationSeqCreatorTaskName = "DebondingDelegationSeqCreator"
+	TaskNameBlockSeqCreator               = "BlockSeqCreator"
+	TaskNameValidatorSeqCreator           = "ValidatorSeqCreator"
+	TaskNameTransactionSeqCreator         = "TransactionSeqCreator"
+	TaskNameStakingSeqCreator             = "StakingSeqCreator"
+	TaskNameDelegationSeqCreator          = "DelegationSeqCreator"
+	TaskNameDebondingDelegationSeqCreator = "DebondingDelegationSeqCreator"
 )
 
 var (
@@ -30,12 +31,14 @@ var (
 
 func NewBlockSeqCreatorTask(db BlockSeqCreatorTaskStore) *blockSeqCreatorTask {
 	return &blockSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameBlockSeqCreator}),
 	}
 }
 
 type blockSeqCreatorTask struct {
-	db BlockSeqCreatorTaskStore
+	db             BlockSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type BlockSeqCreatorTaskStore interface {
@@ -43,11 +46,12 @@ type BlockSeqCreatorTaskStore interface {
 }
 
 func (t *blockSeqCreatorTask) GetName() string {
-	return BlockSeqCreatorTaskName
+	return TaskNameBlockSeqCreator
 }
 
 func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -76,12 +80,14 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 func NewValidatorSeqCreatorTask(db ValidatorSeqCreatorTaskStore) *validatorSeqCreatorTask {
 	return &validatorSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorSeqCreator}),
 	}
 }
 
 type validatorSeqCreatorTask struct {
-	db ValidatorSeqCreatorTaskStore
+	db             ValidatorSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type ValidatorSeqCreatorTaskStore interface {
@@ -89,11 +95,12 @@ type ValidatorSeqCreatorTaskStore interface {
 }
 
 func (t *validatorSeqCreatorTask) GetName() string {
-	return ValidatorSeqCreatorTaskName
+	return TaskNameValidatorSeqCreator
 }
 
 func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -129,12 +136,14 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 func NewTransactionSeqCreatorTask(db TransactionSeqCreatorTaskStore) *transactionSeqCreatorTask {
 	return &transactionSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameTransactionSeqCreator}),
 	}
 }
 
 type transactionSeqCreatorTask struct {
-	db TransactionSeqCreatorTaskStore
+	db             TransactionSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type TransactionSeqCreatorTaskStore interface {
@@ -143,11 +152,12 @@ type TransactionSeqCreatorTaskStore interface {
 }
 
 func (t *transactionSeqCreatorTask) GetName() string {
-	return TransactionSeqCreatorTaskName
+	return TaskNameTransactionSeqCreator
 }
 
 func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -199,12 +209,14 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 
 func NewStakingSeqCreatorTask(db StakingSeqCreatorTaskStore) *stakingSeqCreatorTask {
 	return &stakingSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameStakingSeqCreator}),
 	}
 }
 
 type stakingSeqCreatorTask struct {
-	db StakingSeqCreatorTaskStore
+	db             StakingSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type StakingSeqCreatorTaskStore interface {
@@ -213,11 +225,12 @@ type StakingSeqCreatorTaskStore interface {
 }
 
 func (t *stakingSeqCreatorTask) GetName() string {
-	return StakingSeqCreatorTaskName
+	return TaskNameStakingSeqCreator
 }
 
 func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -243,7 +256,8 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 }
 
 type delegationSeqCreatorTask struct {
-	db DelegationSeqCreatorTaskStore
+	db             DelegationSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type DelegationSeqCreatorTaskStore interface {
@@ -252,17 +266,19 @@ type DelegationSeqCreatorTaskStore interface {
 }
 
 func (t *delegationSeqCreatorTask) GetName() string {
-	return DelegationSeqCreatorTaskName
+	return TaskNameDelegationSeqCreator
 }
 
 func NewDelegationsSeqCreatorTask(db DelegationSeqCreatorTaskStore) *delegationSeqCreatorTask {
 	return &delegationSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameDelegationSeqCreator}),
 	}
 }
 
 func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -314,12 +330,14 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 func NewDebondingDelegationsSeqCreatorTask(db DebondingDelegationSeqCreatorTaskStore) *debondingDelegationSeqCreatorTask {
 	return &debondingDelegationSeqCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameDebondingDelegationSeqCreator}),
 	}
 }
 
 type debondingDelegationSeqCreatorTask struct {
-	db DebondingDelegationSeqCreatorTaskStore
+	db             DebondingDelegationSeqCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 type DebondingDelegationSeqCreatorTaskStore interface {
@@ -328,11 +346,12 @@ type DebondingDelegationSeqCreatorTaskStore interface {
 }
 
 func (t *debondingDelegationSeqCreatorTask) GetName() string {
-	return DebondingDelegationSeqCreatorTaskName
+	return TaskNameDebondingDelegationSeqCreator
 }
 
 func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

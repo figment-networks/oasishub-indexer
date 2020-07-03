@@ -2,7 +2,6 @@ package store
 
 import (
 	"reflect"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -10,7 +9,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-var databaseQueryDuration = metrics.MustNewGaugeWithTags(metrics.Options{
+var databaseQueryDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
 	Namespace: "figment",
 	Subsystem: "database",
 	Name:      "query_duration",
@@ -103,9 +102,4 @@ func castQuantity(scope *gorm.Scope) {
 			f.Field = reflect.ValueOf(gorm.Expr("cast(? AS DECIMAL(65,0))", t.String()))
 		}
 	}
-}
-
-func logQueryDuration(start time.Time, queryName string) {
-	elapsed := time.Since(start)
-	databaseQueryDuration.WithLabels([]string{queryName}).Set(elapsed.Seconds())
 }

@@ -65,12 +65,5 @@ func (w *Worker) Start() error {
 
 	w.cronJob.Start()
 
-	//return w.startMetricsServer()
 	return nil
 }
-
-/*
-func (w *Worker) startMetricsServer() error {
-	return metric.NewIndexerMetric().StartServer(w.cfg.IndexerMetricAddr, w.cfg.MetricServerUrl)
-}
-*/

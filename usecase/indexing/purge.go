@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/indexer"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -30,7 +31,8 @@ func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 }
 
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
-	defer indexerUseCaseDuration.WithLabels([]string{"purge"}).Inc() // LogUseCaseDuration(time.Now(), "purge")
+	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels([]string{"purge"}))
+	t.ObserveDuration()
 
 	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {

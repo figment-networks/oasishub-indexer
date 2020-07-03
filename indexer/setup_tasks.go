@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -11,17 +12,19 @@ import (
 )
 
 const (
-	HeightMetaRetrieverTaskName = "HeightMetaRetriever"
+	TaskNameHeightMetaRetriever = "HeightMetaRetriever"
 )
 
 func NewHeightMetaRetrieverTask(c client.ChainClient) pipeline.Task {
 	return &heightMetaRetrieverTask{
-		client: c,
+		client:         c,
+		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameHeightMetaRetriever}),
 	}
 }
 
 type heightMetaRetrieverTask struct {
-	client client.ChainClient
+	client         client.ChainClient
+	metricObserver metrics.Observer
 }
 
 type HeightMeta struct {
@@ -32,11 +35,12 @@ type HeightMeta struct {
 }
 
 func (t *heightMetaRetrieverTask) GetName() string {
-	return HeightMetaRetrieverTaskName
+	return TaskNameHeightMetaRetriever
 }
 
 func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer indexerTaskDuration.WithLabels([]string{t.GetName()})
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

@@ -2,10 +2,12 @@ package store
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/jinzhu/gorm"
-	"time"
 
 	"github.com/figment-networks/oasishub-indexer/model"
 )
@@ -58,8 +60,9 @@ type GetAvgRecentTimesResult struct {
 }
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
-func (s *blockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
-	defer logQueryDuration(time.Now(), "BlockSeqStore_GetAvgRecentTimes")
+func (s *BlockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSeqStore_GetAvgRecentTimes"}))
+	defer t.ObserveDuration()
 
 	var res GetAvgRecentTimesResult
 	s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&res)
@@ -119,8 +122,9 @@ type BlockSeqSummary struct {
 }
 
 // Summarize gets the summarized version of block sequences
-func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
-	defer logQueryDuration(time.Now(), "BlockSummaryStore_Summarize")
+func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_Summarize"}))
+	defer t.ObserveDuration()
 
 	tx := s.db.
 		Table(model.BlockSeq{}.TableName()).
@@ -133,7 +137,7 @@ func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriod
 		tx = tx.Or("time < ? OR time >= ?", activityPeriod.Min, activityPeriod.Max)
 	} else {
 		for i, activityPeriod := range activityPeriods {
-			isLast := i == len(activityPeriods) - 1
+			isLast := i == len(activityPeriods)-1
 
 			if isLast {
 				tx = tx.Or("time >= ?", activityPeriod.Max)
@@ -142,7 +146,7 @@ func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriod
 				if err != nil {
 					return nil, err
 				}
-				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i + 1].Min)
+				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i+1].Min)
 			}
 		}
 	}

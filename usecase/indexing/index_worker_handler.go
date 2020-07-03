@@ -3,6 +3,7 @@ package indexing
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -49,5 +50,3 @@ func (h *indexWorkerHandler) getUseCase() *indexUseCase {
 	}
 	return h.useCase
 }
-
-

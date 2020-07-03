@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 
@@ -93,8 +94,9 @@ type ValidatorSummaryRow struct {
 }
 
 // FindSummary gets summary for validator summary
-func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummary")
+func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"ValidatorSummaryStore_FindSummary"}))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(allValidatorsSummaryForIntervalQuery, interval, period, interval).
@@ -117,8 +119,9 @@ func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 }
 
 // FindSummaryByAddress gets summary for given validator
-func (s *validatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
+func (s *ValidatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"ValidatorSummaryStore_FindSummaryByAddress"}))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
 	if err != nil {

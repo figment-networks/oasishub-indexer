@@ -5,7 +5,7 @@ import (
 )
 
 var (
-	indexerUseCaseDuration = metrics.MustNewGaugeWithTags(metrics.Options{
+	indexerUseCaseDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
 		Namespace: "figment",
 		Subsystem: "indexer",
 		Name:      "use_case_duration",
