@@ -12,26 +12,26 @@ import (
 )
 
 var (
-	indexerHeightSuccess = metrics.MustNewGaugeWithTags(metrics.Options{
-		Namespace: "figment",
-		Subsystem: "indexer",
+	indexerHeightSuccess = metrics.MustNewCounterWithTags(metrics.Options{
+		Namespace: "indexers",
+		Subsystem: "oasishub.task",
 		Name:      "height_success",
 		Desc:      "The total number of successfully indexed heights",
 	}).WithLabels(nil)
 
-	indexerDbSizeAfterHeight = metrics.MustNewGaugeWithTags(metrics.Options{
-		Namespace: "figment",
-		Subsystem: "indexer",
+	indexerDbSizeAfterHeight = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
+		Namespace: "indexers",
+		Subsystem: "oasishub.task",
 		Name:      "db_size",
 		Desc:      "The size of the database after indexing of height",
 	}).WithLabels(nil)
 
-	indexerHeightDuration = metrics.MustNewGaugeWithTags(metrics.Options{
-		Namespace: "figment",
-		Subsystem: "indexer",
+	indexerHeightDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
+		Namespace: "indexers",
+		Subsystem: "oasishub.task",
 		Name:      "height_duration",
 		Desc:      "The total time required to index one height",
-	})
+	}).WithLabels(nil)
 )
 
 var (
@@ -92,7 +92,7 @@ func (s *sink) addMetrics(payload *payload) error {
 	}
 
 	indexerHeightSuccess.Inc()
-	//indexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
-	indexerDbSizeAfterHeight.Set(res.Size)
+	indexerHeightDuration.Observe(payload.Syncable.Duration.Seconds())
+	indexerDbSizeAfterHeight.Observe(res.Size)
 	return nil
 }

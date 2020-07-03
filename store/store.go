@@ -10,8 +10,8 @@ import (
 )
 
 var databaseQueryDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
-	Namespace: "figment",
-	Subsystem: "database",
+	Namespace: "indexers",
+	Subsystem: "oasishub.db",
 	Name:      "query_duration",
 	Desc:      "The total time required to execute query on database",
 	Tags:      []string{"query"}})
