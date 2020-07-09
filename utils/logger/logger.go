@@ -3,10 +3,11 @@ package logger
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"strings"
 )
 
 var (
@@ -92,4 +93,21 @@ func getLevel(level string) zapcore.Level {
 	default:
 		return zap.InfoLevel
 	}
+}
+
+// InitTestLogger disables most logging
+func InitTestLogger() error {
+	logConfig := zap.Config{
+		Encoding: "json",
+		Level:    zap.NewAtomicLevelAt(zap.FatalLevel),
+	}
+
+	log, err := logConfig.Build()
+	if err != nil {
+		return err
+	}
+
+	Log.log = log
+
+	return nil
 }
