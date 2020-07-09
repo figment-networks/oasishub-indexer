@@ -3,12 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/metric"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
-	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
@@ -22,14 +20,18 @@ var (
 	ErrMissingReportInCtx = errors.New("report missing in context")
 )
 
-func NewMainSyncerTask(db *store.Store) pipeline.Task {
+type syncableStore interface {
+	CreateOrUpdate(val *model.Syncable) error
+}
+
+func NewMainSyncerTask(db syncableStore) pipeline.Task {
 	return &mainSyncerTask{
 		db: db,
 	}
 }
 
 type mainSyncerTask struct {
-	db *store.Store
+	db syncableStore
 }
 
 func (t *mainSyncerTask) GetName() string {
@@ -37,7 +39,7 @@ func (t *mainSyncerTask) GetName() string {
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer metric.LogIndexerTaskDuration(Now(), t.GetName())
 
 	payload := p.(*payload)
 
@@ -49,15 +51,15 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 	}
 
 	syncable := &model.Syncable{
-		Height: payload.CurrentHeight,
-		ReportID: report.ID,
-		Time: payload.HeightMeta.Time,
-		AppVersion: payload.HeightMeta.AppVersion,
+		Height:       payload.CurrentHeight,
+		ReportID:     report.ID,
+		Time:         payload.HeightMeta.Time,
+		AppVersion:   payload.HeightMeta.AppVersion,
 		BlockVersion: payload.HeightMeta.BlockVersion,
-		Status: model.SyncableStatusRunning,
-		StartedAt: *types.NewTimeFromTime(time.Now()),
+		Status:       model.SyncableStatusRunning,
+		StartedAt:    *types.NewTimeFromTime(Now()),
 	}
-	err := t.db.Syncables.CreateOrUpdate(syncable)
+	err := t.db.CreateOrUpdate(syncable)
 	if err != nil {
 		return err
 	}
