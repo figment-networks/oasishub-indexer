@@ -8,7 +8,6 @@ import (
 	mock "github.com/figment-networks/oasishub-indexer/indexer/mock"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 
@@ -27,7 +26,7 @@ func TestRun(t *testing.T) {
 		dbMock := mock.NewMockSyncableStore(ctrl)
 		task := NewMainSyncerTask(dbMock)
 
-		if result := task.Run(ctx, testPayload()); result != ErrMissingReportInCtx {
+		if result := task.Run(ctx, testSyncerPayload()); result != ErrMissingReportInCtx {
 			t.Errorf("want: %v, got: %v", ErrMissingReportInCtx, result)
 		}
 	})
@@ -42,7 +41,7 @@ func TestRun(t *testing.T) {
 
 		task := NewMainSyncerTask(dbMock)
 
-		if result := task.Run(ctx, testPayload()); result != dbErr {
+		if result := task.Run(ctx, testSyncerPayload()); result != dbErr {
 			t.Errorf("want: %v, got: %v", ErrMissingReportInCtx, result)
 		}
 	})
@@ -50,7 +49,7 @@ func TestRun(t *testing.T) {
 	t.Run("updates syncable on payload", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
 		ctx := ctxWithReport(testReportID)
-		payload := testPayload()
+		payload := testSyncerPayload()
 		mockNow := time.Date(2009, 11, 10, 23, 0, 0, 0, time.UTC)
 		Now = func() time.Time { return mockNow }
 
@@ -81,14 +80,7 @@ func TestRun(t *testing.T) {
 	})
 }
 
-func setup(t *testing.T) {
-	err := logger.InitTestLogger()
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func testPayload() *payload {
+func testSyncerPayload() *payload {
 	return &payload{
 		CurrentHeight: 10,
 		HeightMeta: HeightMeta{
@@ -97,13 +89,4 @@ func testPayload() *payload {
 			BlockVersion: 6,
 		},
 	}
-}
-
-func ctxWithReport(modelID types.ID) context.Context {
-	ctx := context.Background()
-	report := &model.Report{
-		Model: &model.Model{ID: modelID},
-	}
-
-	return context.WithValue(ctx, CtxReport, report)
 }

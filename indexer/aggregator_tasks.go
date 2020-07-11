@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	AccountAggCreatorTaskName = "AccountAggCreator"
+	AccountAggCreatorTaskName   = "AccountAggCreator"
 	ValidatorAggCreatorTaskName = "ValidatorAggCreator"
 )
 
@@ -27,14 +27,20 @@ var (
 	ErrValidatorAggNotValid = errors.New("validator aggregator not valid")
 )
 
-func NewAccountAggCreatorTask(db *store.Store) *accountAggCreatorTask {
+type accountAggStore interface {
+	FindByPublicKey(key string) (*model.AccountAgg, error)
+	Create(record interface{}) error
+	Save(record interface{}) error
+}
+
+func NewAccountAggCreatorTask(db accountAggStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
 		db: db,
 	}
 }
 
 type accountAggCreatorTask struct {
-	db *store.Store
+	db accountAggStore
 }
 
 func (t *accountAggCreatorTask) GetName() string {
@@ -51,7 +57,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	var created []model.AccountAgg
 	var updated []model.AccountAgg
 	for publicKey, rawAccount := range payload.RawState.GetStaking().GetLedger() {
-		existing, err := t.db.AccountAgg.FindByPublicKey(publicKey)
+		existing, err := t.db.FindByPublicKey(publicKey)
 		if err != nil {
 			if err == store.ErrNotFound {
 				accountAgg := &model.AccountAgg{
@@ -75,7 +81,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 					return ErrAccountAggNotValid
 				}
 
-				if err := t.db.AccountAgg.Create(accountAgg); err != nil {
+				if err := t.db.Create(accountAgg); err != nil {
 					return err
 				}
 				created = append(created, *accountAgg)
@@ -104,7 +110,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				return ErrAccountAggNotValid
 			}
 
-			if err := t.db.AccountAgg.Save(existing); err != nil {
+			if err := t.db.Save(existing); err != nil {
 				return err
 			}
 			updated = append(updated, *accountAgg)
