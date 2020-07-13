@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"math/big"
 	"testing"
 	"time"
 
@@ -161,43 +162,96 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		description string
 		new         []*validatorpb.Validator
 		existing    []*validatorpb.Validator
+		parsed      ParsedValidatorsData
 		result      error
 	}{
 		{
 			"creates new validators",
-			[]*validatorpb.Validator{testValidator()},
+			[]*validatorpb.Validator{testValidator("key1")},
 			[]*validatorpb.Validator{},
+			make(ParsedValidatorsData, 0),
 			nil,
 		},
 		{
 			"updates existing accounts",
 			[]*validatorpb.Validator{},
-			[]*validatorpb.Validator{testValidator()},
+			[]*validatorpb.Validator{testValidator("key1")},
+			make(ParsedValidatorsData, 0),
 			nil,
 		},
 		{
 			"creates and updates accounts",
-			[]*validatorpb.Validator{testValidator(), testValidator()},
-			[]*validatorpb.Validator{testValidator(), testValidator()},
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
+			[]*validatorpb.Validator{testValidator("key3"), testValidator("key4")},
+			make(ParsedValidatorsData, 0),
 			nil,
 		},
 		{
 			"return error if there's an unexpected db error on FindByEntityUIDErr",
-			[]*validatorpb.Validator{testValidator(), testValidator()},
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
 			[]*validatorpb.Validator{},
+			make(ParsedValidatorsData, 0),
 			FindByEntityUIDErr,
 		},
 		{
 			"return error if there's a db error on create",
-			[]*validatorpb.Validator{testValidator(), testValidator()},
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
 			[]*validatorpb.Validator{},
+			make(ParsedValidatorsData, 0),
 			createErr,
 		},
 		{
 			"return error if there's a db error on save",
 			[]*validatorpb.Validator{},
-			[]*validatorpb.Validator{testValidator(), testValidator()},
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
+			make(ParsedValidatorsData, 0),
 			saveErr,
+		},
+		{
+			"updates new validators with parsedValidator data",
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
+			[]*validatorpb.Validator{testValidator("key4")},
+			ParsedValidatorsData{
+				"key1": parsedValidator{
+					Proposed:             false,
+					PrecommitBlockIdFlag: 1,
+					TotalShares:          types.NewQuantity(big.NewInt(66)),
+				},
+				"key2": parsedValidator{
+					Proposed:             true,
+					PrecommitBlockIdFlag: 2,
+					TotalShares:          types.NewQuantity(big.NewInt(67)),
+				},
+				"key3": parsedValidator{
+					Proposed:             true,
+					PrecommitBlockIdFlag: 0,
+					TotalShares:          types.NewQuantity(big.NewInt(68)),
+				},
+			},
+			nil,
+		},
+		{
+			"updates existing validators with parsedValidator data",
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
+			[]*validatorpb.Validator{testValidator("key0")},
+			ParsedValidatorsData{
+				"key1": parsedValidator{
+					Proposed:             true,
+					PrecommitBlockIdFlag: 1,
+					TotalShares:          types.NewQuantity(big.NewInt(66)),
+				},
+				"key2": parsedValidator{
+					Proposed:             true,
+					PrecommitBlockIdFlag: 2,
+					TotalShares:          types.NewQuantity(big.NewInt(67)),
+				},
+				"key3": parsedValidator{
+					Proposed:             false,
+					PrecommitBlockIdFlag: 0,
+					TotalShares:          types.NewQuantity(big.NewInt(68)),
+				},
+			},
+			nil,
 		},
 	}
 
@@ -210,6 +264,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 
 			allValidators := append(tt.new, tt.existing...)
 			payload := testValidatorAggPayload(allValidators)
+			payload.ParsedValidators = tt.parsed
 
 			for _, validator := range tt.new {
 				key := validator.GetNode().GetEntityId()
@@ -218,9 +273,15 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 					break
 				}
 				dbMock.EXPECT().FindByEntityUID(key).Return(nil, store.ErrNotFound).Times(1)
-				newValidator := newValidatorAgg(key, payload.Syncable.Height, payload.Syncable.Time)
 
+				newValidator := newValidatorAgg(key, payload.Syncable.Height, payload.Syncable.Time)
 				updatedValidator := updateValidatorAgg(newValidator, validator, payload)
+
+				parsedValidator, ok := tt.parsed[key]
+				if ok {
+					updateParsedValidatorAgg(updatedValidator, parsedValidator, payload)
+				}
+
 				if tt.result == createErr {
 					dbMock.EXPECT().Create(updatedValidator).Return(createErr).Times(1)
 					break
@@ -233,6 +294,12 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 				existingValidator := newValidatorAgg(key, 0, *types.NewTimeFromTime(time.Now()))
 				dbMock.EXPECT().FindByEntityUID(key).Return(existingValidator, nil).Times(1)
 				updated := updateValidatorAgg(existingValidator, raw, payload)
+
+				parsedValidator, ok := tt.parsed[key]
+				if ok {
+					updateParsedValidatorAgg(updated, parsedValidator, payload)
+				}
+
 				if tt.result == saveErr {
 					dbMock.EXPECT().Save(updated).Return(saveErr).Times(1)
 					break
@@ -266,6 +333,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 
 func testAccountAggPayload(ledger accountLedger) *payload {
 	return &payload{
+		CurrentHeight: 10,
 		Syncable: &model.Syncable{
 			Height: 10,
 			Time:   *types.NewTimeFromTime(time.Now()),
@@ -337,12 +405,12 @@ func updateAccountAgg(original *model.AccountAgg, acnt *accountpb.Account, pl *p
 	return m
 }
 
-func testValidator() *validatorpb.Validator {
+func testValidator(key string) *validatorpb.Validator {
 	return &validatorpb.Validator{
 		Address:     randString(5),
 		VotingPower: 64,
 		Node: &validatorpb.Node{
-			EntityId: randString(5),
+			EntityId: key,
 		},
 	}
 }
@@ -359,7 +427,6 @@ func newValidatorAgg(key string, height int64, _time types.Time) *model.Validato
 }
 
 func updateValidatorAgg(original *model.ValidatorAgg, raw *validatorpb.Validator, pl *payload) *model.ValidatorAgg {
-
 	return &model.ValidatorAgg{
 		Aggregate: &model.Aggregate{
 			StartedAtHeight: original.Aggregate.StartedAtHeight,
@@ -371,6 +438,22 @@ func updateValidatorAgg(original *model.ValidatorAgg, raw *validatorpb.Validator
 		RecentAddress:           raw.GetAddress(),
 		RecentVotingPower:       raw.GetVotingPower(),
 		RecentAsValidatorHeight: pl.Syncable.Height,
+	}
+}
+
+func updateParsedValidatorAgg(m *model.ValidatorAgg, parsed parsedValidator, pl *payload) {
+	m.RecentTotalShares = parsed.TotalShares
+
+	if parsed.PrecommitBlockIdFlag == 1 {
+		m.AccumulatedUptimeCount++
+	} else if parsed.PrecommitBlockIdFlag == 2 {
+		m.AccumulatedUptime++
+		m.AccumulatedUptimeCount++
+	}
+
+	if parsed.Proposed {
+		m.RecentProposedHeight = pl.CurrentHeight
+		m.AccumulatedProposedCount++
 	}
 }
 

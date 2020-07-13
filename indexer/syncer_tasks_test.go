@@ -21,7 +21,7 @@ func TestRun(t *testing.T) {
 
 	t.Run("returns error when report is missing from context", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
-		ctx := context.TODO()
+		ctx := context.Background()
 
 		dbMock := mock.NewMockSyncableStore(ctrl)
 		task := NewMainSyncerTask(dbMock)
@@ -73,7 +73,7 @@ func TestRun(t *testing.T) {
 		}
 
 		if !reflect.DeepEqual(payload.Syncable, syncable) {
-			t.Errorf("\n\ngot: %+v, \n\nwant: %+v", payload.Syncable, syncable)
+			t.Errorf("want: %+v, got: %+v", syncable, payload.Syncable)
 			return
 		}
 
