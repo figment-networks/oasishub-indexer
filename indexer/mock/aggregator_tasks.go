@@ -76,3 +76,69 @@ func (mr *MockaccountAggStoreMockRecorder) Save(record interface{}) *gomock.Call
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockaccountAggStore)(nil).Save), record)
 }
+
+// MockvalidatorAggCreatorStore is a mock of validatorAggCreatorStore interface
+type MockvalidatorAggCreatorStore struct {
+	ctrl     *gomock.Controller
+	recorder *MockvalidatorAggCreatorStoreMockRecorder
+}
+
+// MockvalidatorAggCreatorStoreMockRecorder is the mock recorder for MockvalidatorAggCreatorStore
+type MockvalidatorAggCreatorStoreMockRecorder struct {
+	mock *MockvalidatorAggCreatorStore
+}
+
+// NewMockvalidatorAggCreatorStore creates a new mock instance
+func NewMockvalidatorAggCreatorStore(ctrl *gomock.Controller) *MockvalidatorAggCreatorStore {
+	mock := &MockvalidatorAggCreatorStore{ctrl: ctrl}
+	mock.recorder = &MockvalidatorAggCreatorStoreMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use
+func (m *MockvalidatorAggCreatorStore) EXPECT() *MockvalidatorAggCreatorStoreMockRecorder {
+	return m.recorder
+}
+
+// FindByEntityUID mocks base method
+func (m *MockvalidatorAggCreatorStore) FindByEntityUID(key string) (*model.ValidatorAgg, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindByEntityUID", key)
+	ret0, _ := ret[0].(*model.ValidatorAgg)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindByEntityUID indicates an expected call of FindByEntityUID
+func (mr *MockvalidatorAggCreatorStoreMockRecorder) FindByEntityUID(key interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByEntityUID", reflect.TypeOf((*MockvalidatorAggCreatorStore)(nil).FindByEntityUID), key)
+}
+
+// Create mocks base method
+func (m *MockvalidatorAggCreatorStore) Create(record interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Create", record)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Create indicates an expected call of Create
+func (mr *MockvalidatorAggCreatorStoreMockRecorder) Create(record interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockvalidatorAggCreatorStore)(nil).Create), record)
+}
+
+// Save mocks base method
+func (m *MockvalidatorAggCreatorStore) Save(record interface{}) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Save", record)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Save indicates an expected call of Save
+func (mr *MockvalidatorAggCreatorStoreMockRecorder) Save(record interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockvalidatorAggCreatorStore)(nil).Save), record)
+}

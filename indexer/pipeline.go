@@ -80,7 +80,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetAggregatorStage(
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewAccountAggCreatorTask(db.AccountAgg), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewValidatorAggCreatorTask(db.ValidatorAgg), isTransient, 3),
 		),
 	)
 

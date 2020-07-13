@@ -121,14 +121,20 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	return nil
 }
 
-func NewValidatorAggCreatorTask(db *store.Store) *validatorAggCreatorTask {
+type validatorAggCreatorStore interface {
+	FindByEntityUID(key string) (*model.ValidatorAgg, error)
+	Create(record interface{}) error
+	Save(record interface{}) error
+}
+
+func NewValidatorAggCreatorTask(db validatorAggCreatorStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
 		db: db,
 	}
 }
 
 type validatorAggCreatorTask struct {
-	db *store.Store
+	db validatorAggCreatorStore
 }
 
 func (t *validatorAggCreatorTask) GetName() string {
@@ -145,7 +151,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var created []model.ValidatorAgg
 	var updated []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
-		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
+		existing, err := t.db.FindByEntityUID(rawValidator.GetNode().GetEntityId())
 		if err != nil {
 			if err == store.ErrNotFound {
 				// Create new
@@ -157,7 +163,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 						RecentAt:        payload.Syncable.Time,
 					},
 
-					EntityUID:               rawValidator.GetNode().EntityId,
+					EntityUID:               rawValidator.GetNode().GetEntityId(),
 					RecentAddress:           rawValidator.GetAddress(),
 					RecentVotingPower:       rawValidator.GetVotingPower(),
 					RecentAsValidatorHeight: payload.Syncable.Height,
@@ -191,7 +197,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					return ErrValidatorAggNotValid
 				}
 
-				if err := t.db.ValidatorAgg.Create(&validator); err != nil {
+				if err := t.db.Create(&validator); err != nil {
 					return err
 				}
 				created = append(created, validator)
@@ -206,7 +212,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAt:       payload.Syncable.Time,
 				},
 
-				RecentAddress:           rawValidator.GetAddress(),
+				RecentAddress:           rawValidator.GetAddress(), // TODO UpdateAggAttrs doesn't Update address, so need to remove this line, or change UpdateAggAttrs
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
@@ -241,7 +247,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				return ErrValidatorAggNotValid
 			}
 
-			if err := t.db.ValidatorAgg.Save(existing); err != nil {
+			if err := t.db.Save(existing); err != nil {
 				return err
 			}
 			updated = append(updated, validator)
