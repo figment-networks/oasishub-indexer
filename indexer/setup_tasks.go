@@ -16,14 +16,14 @@ const (
 	HeightMetaRetrieverTaskName = "HeightMetaRetriever"
 )
 
-func NewHeightMetaRetrieverTask(c *client.Client) pipeline.Task {
+func NewHeightMetaRetrieverTask(c client.BlockClient) pipeline.Task {
 	return &heightMetaRetrieverTask{
 		client: c,
 	}
 }
 
 type heightMetaRetrieverTask struct {
-	client *client.Client
+	client client.BlockClient
 }
 
 type HeightMeta struct {
@@ -44,7 +44,7 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
 
-	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
+	block, err := t.client.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
