@@ -34,7 +34,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Setup stage
 	p.SetSetupStage(
 		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
+			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client.Block), isTransient, 3),
 		),
 	)
 
@@ -48,11 +48,11 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Fetcher stage
 	p.SetFetcherStage(
 		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
+			pipeline.RetryingTask(NewBlockFetcherTask(client.Block), isTransient, 3),
+			pipeline.RetryingTask(NewStakingStateFetcherTask(client.State), isTransient, 3),
+			pipeline.RetryingTask(NewStateFetcherTask(client.State), isTransient, 3),
+			pipeline.RetryingTask(NewValidatorFetcherTask(client.Validator), isTransient, 3),
+			pipeline.RetryingTask(NewTransactionFetcherTask(client.Transaction), isTransient, 3),
 		),
 	)
 

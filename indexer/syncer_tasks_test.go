@@ -14,7 +14,7 @@ import (
 	"testing"
 )
 
-func TestRun(t *testing.T) {
+func TestSyncer_Run(t *testing.T) {
 	setup(t)
 
 	const testReportID types.ID = 64

@@ -11,14 +11,11 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	timestamppb "github.com/golang/protobuf/ptypes/timestamp"
 
-	"github.com/pkg/errors"
-
 	"testing"
 )
 
 func TestSetup_Run(t *testing.T) {
 	setup(t)
-	clientErr := errors.New("clientErr")
 
 	t.Run("returns error when client returns error", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
@@ -28,10 +25,10 @@ func TestSetup_Run(t *testing.T) {
 		task := NewHeightMetaRetrieverTask(mockClient)
 		pl := &payload{CurrentHeight: 6}
 
-		mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(nil, clientErr).Times(1)
+		mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(nil, testClientErr).Times(1)
 
-		if result := task.Run(ctx, pl); result != clientErr {
-			t.Errorf("want: %v, got: %v", clientErr, result)
+		if result := task.Run(ctx, pl); result != testClientErr {
+			t.Errorf("want: %v, got: %v", testClientErr, result)
 		}
 	})
 
