@@ -167,7 +167,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 	}{
 		{
 			"creates new validators",
-			[]*validatorpb.Validator{testValidator("key1")},
+			[]*validatorpb.Validator{testpbValidator("key1")},
 			[]*validatorpb.Validator{},
 			make(ParsedValidatorsData),
 			nil,
@@ -175,27 +175,27 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		{
 			"updates existing accounts",
 			[]*validatorpb.Validator{},
-			[]*validatorpb.Validator{testValidator("key1")},
+			[]*validatorpb.Validator{testpbValidator("key1")},
 			make(ParsedValidatorsData),
 			nil,
 		},
 		{
 			"creates and updates accounts",
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
-			[]*validatorpb.Validator{testValidator("key3"), testValidator("key4")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2")},
+			[]*validatorpb.Validator{testpbValidator("key3"), testpbValidator("key4")},
 			make(ParsedValidatorsData),
 			nil,
 		},
 		{
 			"return error if there's an unexpected db error on FindByEntityUIDErr",
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2")},
 			[]*validatorpb.Validator{},
 			make(ParsedValidatorsData),
 			FindByEntityUIDErr,
 		},
 		{
 			"return error if there's a db error on create",
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2")},
 			[]*validatorpb.Validator{},
 			make(ParsedValidatorsData),
 			createErr,
@@ -203,14 +203,14 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		{
 			"return error if there's a db error on save",
 			[]*validatorpb.Validator{},
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2")},
 			make(ParsedValidatorsData),
 			saveErr,
 		},
 		{
 			"updates new validators with parsedValidator data",
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
-			[]*validatorpb.Validator{testValidator("key4")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2"), testpbValidator("key3")},
+			[]*validatorpb.Validator{testpbValidator("key4")},
 			ParsedValidatorsData{
 				"key1": parsedValidator{
 					Proposed:             false,
@@ -232,8 +232,8 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		},
 		{
 			"updates existing validators with parsedValidator data",
-			[]*validatorpb.Validator{testValidator("key0")},
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
+			[]*validatorpb.Validator{testpbValidator("key0")},
+			[]*validatorpb.Validator{testpbValidator("key1"), testpbValidator("key2"), testpbValidator("key3")},
 
 			ParsedValidatorsData{
 				"key1": parsedValidator{
@@ -405,16 +405,6 @@ func updateAccountAgg(original *model.AccountAgg, acnt *accountpb.Account, pl *p
 		RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(acnt.GetEscrow().GetDebonding().GetTotalShares()),
 	}
 	return m
-}
-
-func testValidator(key string) *validatorpb.Validator {
-	return &validatorpb.Validator{
-		Address:     randString(5),
-		VotingPower: 64,
-		Node: &validatorpb.Node{
-			EntityId: key,
-		},
-	}
 }
 
 func newValidatorAgg(key string, height int64, _time types.Time) *model.ValidatorAgg {

@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -48,4 +49,14 @@ func randBytes(n int) []byte {
 	token := make([]byte, n)
 	rand.Read(token)
 	return token
+}
+
+func testpbValidator(key string) *validatorpb.Validator {
+	return &validatorpb.Validator{
+		Address:     randString(5),
+		VotingPower: 64,
+		Node: &validatorpb.Node{
+			EntityId: key,
+		},
+	}
 }

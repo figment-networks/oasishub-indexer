@@ -6,6 +6,8 @@ import (
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	mock "github.com/figment-networks/oasishub-indexer/client/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
@@ -98,14 +100,173 @@ func TestStateFetcher_Run(t *testing.T) {
 	}
 }
 
+func TestStakingStateFetcher_Run(t *testing.T) {
+	setup(t)
+
+	tests := []struct {
+		description     string
+		expectedStaking *statepb.Staking
+		result          error
+	}{
+		{"returns error if client errors", nil, testClientErr},
+		{"updates payload.RawStakingState", testpbStaking(), nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			mockClient := mock.NewMockStateClient(ctrl)
+			task := NewStakingStateFetcherTask(mockClient)
+
+			pl := &payload{CurrentHeight: 30}
+
+			mockClient.EXPECT().GetStakingByHeight(pl.CurrentHeight).Return(&statepb.GetStakingByHeightResponse{Staking: tt.expectedStaking}, tt.result).Times(1)
+
+			if result := task.Run(ctx, pl); result != tt.result {
+				t.Errorf("want %v; got %v", tt.result, result)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.result != nil {
+				return
+			}
+
+			if !reflect.DeepEqual(pl.RawStakingState, tt.expectedStaking) {
+				t.Errorf("want: %+v, got: %+v", tt.expectedStaking, pl.RawStakingState)
+				return
+			}
+		})
+	}
+}
+
+func TestValidatorFetcher_Run(t *testing.T) {
+	setup(t)
+
+	tests := []struct {
+		description        string
+		expectedValidators []*validatorpb.Validator
+		result             error
+	}{
+		{"returns error if client errors", nil, testClientErr},
+		{"updates payload.RawValidators", []*validatorpb.Validator{testpbValidator("test1"), testpbValidator("test2")}, nil},
+		{"updates payload.RawValidators when client returns empty list", []*validatorpb.Validator{}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			mockClient := mock.NewMockValidatorClient(ctrl)
+			task := NewValidatorFetcherTask(mockClient)
+
+			pl := &payload{CurrentHeight: 30}
+
+			mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(&validatorpb.GetByHeightResponse{Validators: tt.expectedValidators}, tt.result).Times(1)
+
+			if result := task.Run(ctx, pl); result != tt.result {
+				t.Errorf("want %v; got %v", tt.result, result)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.result != nil {
+				return
+			}
+
+			if len(pl.RawValidators) != len(tt.expectedValidators) {
+				t.Errorf("wrong number of vallidators in payload; want: %+v, got: %+v", tt.expectedValidators, pl.RawValidators)
+				return
+			}
+
+			for _, expected := range tt.expectedValidators {
+				id := expected.GetNode().GetEntityId()
+				for _, validator := range pl.RawValidators {
+					if validator.GetNode().GetEntityId() == id && !reflect.DeepEqual(expected, validator) {
+						t.Errorf("validators don't match; want: %+v, got: %+v", expected, validator)
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestTransactionFetcher_Run(t *testing.T) {
+	setup(t)
+
+	tests := []struct {
+		description          string
+		expectedTransactions []*transactionpb.Transaction
+		result               error
+	}{
+		{"returns error if client errors", nil, testClientErr},
+		{"updates payload.RawTransactions", []*transactionpb.Transaction{testpbTransaction("test1"), testpbTransaction("test2")}, nil},
+		{"updates payload.RawTransactions when client returns empty list", []*transactionpb.Transaction{}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			mockClient := mock.NewMockTransactionClient(ctrl)
+			task := NewTransactionFetcherTask(mockClient)
+
+			pl := &payload{CurrentHeight: 30}
+
+			mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(&transactionpb.GetByHeightResponse{Transactions: tt.expectedTransactions}, tt.result).Times(1)
+
+			if result := task.Run(ctx, pl); result != tt.result {
+				t.Errorf("want %v; got %v", tt.result, result)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.result != nil {
+				return
+			}
+
+			if len(pl.RawTransactions) != len(tt.expectedTransactions) {
+				t.Errorf("wrong number of vallidators in payload; want: %+v, got: %+v", tt.expectedTransactions, pl.RawTransactions)
+				return
+			}
+
+			for _, expected := range tt.expectedTransactions {
+				id := expected.GetPublicKey()
+				for _, transaction := range pl.RawTransactions {
+					if transaction.GetPublicKey() == id && !reflect.DeepEqual(expected, transaction) {
+						t.Errorf("transactions don't match; want: %+v, got: %+v", expected, transaction)
+					}
+				}
+			}
+		})
+	}
+}
+
+func testpbTransaction(key string) *transactionpb.Transaction {
+	return &transactionpb.Transaction{
+		Hash:      randString(5),
+		PublicKey: key,
+		Signature: randString(5),
+		GasPrice:  randBytes(5),
+	}
+}
+
 func testpbState() *statepb.State {
 	return &statepb.State{
 		ChainID: randString(10),
 		Height:  89,
-		Staking: &statepb.Staking{
-			TotalSupply: randBytes(10),
-			CommonPool:  randBytes(10),
-		},
+		Staking: testpbStaking(),
+	}
+}
+
+func testpbStaking() *statepb.Staking {
+	return &statepb.Staking{
+		TotalSupply: randBytes(10),
+		CommonPool:  randBytes(10),
 	}
 }
 
