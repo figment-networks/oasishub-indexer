@@ -169,42 +169,42 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			"creates new validators",
 			[]*validatorpb.Validator{testValidator("key1")},
 			[]*validatorpb.Validator{},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			nil,
 		},
 		{
 			"updates existing accounts",
 			[]*validatorpb.Validator{},
 			[]*validatorpb.Validator{testValidator("key1")},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			nil,
 		},
 		{
 			"creates and updates accounts",
 			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
 			[]*validatorpb.Validator{testValidator("key3"), testValidator("key4")},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			nil,
 		},
 		{
 			"return error if there's an unexpected db error on FindByEntityUIDErr",
 			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
 			[]*validatorpb.Validator{},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			FindByEntityUIDErr,
 		},
 		{
 			"return error if there's a db error on create",
 			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
 			[]*validatorpb.Validator{},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			createErr,
 		},
 		{
 			"return error if there's a db error on save",
 			[]*validatorpb.Validator{},
 			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2")},
-			make(ParsedValidatorsData, 0),
+			make(ParsedValidatorsData),
 			saveErr,
 		},
 		{
@@ -232,8 +232,9 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 		},
 		{
 			"updates existing validators with parsedValidator data",
-			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
 			[]*validatorpb.Validator{testValidator("key0")},
+			[]*validatorpb.Validator{testValidator("key1"), testValidator("key2"), testValidator("key3")},
+
 			ParsedValidatorsData{
 				"key1": parsedValidator{
 					Proposed:             true,
@@ -349,9 +350,10 @@ func testAccountAggPayload(ledger accountLedger) *payload {
 func testValidatorAggPayload(raw []*validatorpb.Validator) *payload {
 	return &payload{
 		Syncable: &model.Syncable{
-			Height: 10,
+			Height: 17,
 			Time:   *types.NewTimeFromTime(time.Now()),
 		},
+		CurrentHeight: 17,
 		RawValidators: raw,
 	}
 }
