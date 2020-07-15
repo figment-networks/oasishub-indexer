@@ -25,10 +25,10 @@ func TestSetup_Run(t *testing.T) {
 		task := NewHeightMetaRetrieverTask(mockClient)
 		pl := &payload{CurrentHeight: 6}
 
-		mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(nil, testClientErr).Times(1)
+		mockClient.EXPECT().GetByHeight(pl.CurrentHeight).Return(nil, errTestClient).Times(1)
 
-		if result := task.Run(ctx, pl); result != testClientErr {
-			t.Errorf("want: %v, got: %v", testClientErr, result)
+		if result := task.Run(ctx, pl); result != errTestClient {
+			t.Errorf("want: %v, got: %v", errTestClient, result)
 		}
 	})
 

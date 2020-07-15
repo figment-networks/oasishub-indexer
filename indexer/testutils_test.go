@@ -6,7 +6,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
+	"github.com/golang/protobuf/ptypes"
+
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -14,7 +19,7 @@ import (
 )
 
 var (
-	testClientErr = errors.New("clientErr")
+	errTestClient = errors.New("clientErr")
 
 	letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
@@ -49,6 +54,40 @@ func randBytes(n int) []byte {
 	token := make([]byte, n)
 	rand.Read(token)
 	return token
+}
+
+func testpbBlock() *blockpb.Block {
+	return &blockpb.Block{
+		Header: &blockpb.Header{
+			ProposerAddress: randString(5),
+			ChainId:         randString(5),
+			Time:            ptypes.TimestampNow(),
+		},
+	}
+}
+
+func testpbStaking() *statepb.Staking {
+	return &statepb.Staking{
+		TotalSupply: randBytes(5),
+		CommonPool:  randBytes(5),
+	}
+}
+
+func testpbState() *statepb.State {
+	return &statepb.State{
+		ChainID: randString(5),
+		Height:  89,
+		Staking: testpbStaking(),
+	}
+}
+
+func testpbTransaction(key string) *transactionpb.Transaction {
+	return &transactionpb.Transaction{
+		Hash:      randString(5),
+		PublicKey: key,
+		Signature: randString(5),
+		GasPrice:  randBytes(5),
+	}
 }
 
 func testpbValidator(key string) *validatorpb.Validator {

@@ -10,8 +10,6 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	mock "github.com/figment-networks/oasishub-indexer/client/mock"
 	"github.com/golang/mock/gomock"
-	"github.com/golang/protobuf/ptypes"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"testing"
 )
@@ -24,8 +22,8 @@ func TestBlockFetcher_Run(t *testing.T) {
 		expectedBlock *blockpb.Block
 		result        error
 	}{
-		{"returns error if client errors", nil, testClientErr},
-		{"updates payload.RawBlock", testpbBlock(35, 43, 25, ptypes.TimestampNow()), nil},
+		{"returns error if client errors", nil, errTestClient},
+		{"updates payload.RawBlock", testpbBlock(), nil},
 	}
 
 	for _, tt := range tests {
@@ -66,7 +64,7 @@ func TestStateFetcher_Run(t *testing.T) {
 		expectedState *statepb.State
 		result        error
 	}{
-		{"returns error if client errors", nil, testClientErr},
+		{"returns error if client errors", nil, errTestClient},
 		{"updates payload.RawState", testpbState(), nil},
 	}
 
@@ -108,7 +106,7 @@ func TestStakingStateFetcher_Run(t *testing.T) {
 		expectedStaking *statepb.Staking
 		result          error
 	}{
-		{"returns error if client errors", nil, testClientErr},
+		{"returns error if client errors", nil, errTestClient},
 		{"updates payload.RawStakingState", testpbStaking(), nil},
 	}
 
@@ -150,7 +148,7 @@ func TestValidatorFetcher_Run(t *testing.T) {
 		expectedValidators []*validatorpb.Validator
 		result             error
 	}{
-		{"returns error if client errors", nil, testClientErr},
+		{"returns error if client errors", nil, errTestClient},
 		{"updates payload.RawValidators", []*validatorpb.Validator{testpbValidator("test1"), testpbValidator("test2")}, nil},
 		{"updates payload.RawValidators when client returns empty list", []*validatorpb.Validator{}, nil},
 	}
@@ -202,7 +200,7 @@ func TestTransactionFetcher_Run(t *testing.T) {
 		expectedTransactions []*transactionpb.Transaction
 		result               error
 	}{
-		{"returns error if client errors", nil, testClientErr},
+		{"returns error if client errors", nil, errTestClient},
 		{"updates payload.RawTransactions", []*transactionpb.Transaction{testpbTransaction("test1"), testpbTransaction("test2")}, nil},
 		{"updates payload.RawTransactions when client returns empty list", []*transactionpb.Transaction{}, nil},
 	}
@@ -243,42 +241,5 @@ func TestTransactionFetcher_Run(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func testpbTransaction(key string) *transactionpb.Transaction {
-	return &transactionpb.Transaction{
-		Hash:      randString(5),
-		PublicKey: key,
-		Signature: randString(5),
-		GasPrice:  randBytes(5),
-	}
-}
-
-func testpbState() *statepb.State {
-	return &statepb.State{
-		ChainID: randString(10),
-		Height:  89,
-		Staking: testpbStaking(),
-	}
-}
-
-func testpbStaking() *statepb.Staking {
-	return &statepb.Staking{
-		TotalSupply: randBytes(10),
-		CommonPool:  randBytes(10),
-	}
-}
-
-func testpbBlock(appVersion, blockVersion uint64, height int64, ts *timestamppb.Timestamp) *blockpb.Block {
-	return &blockpb.Block{
-		Header: &blockpb.Header{
-			Version: &blockpb.Version{
-				App:   appVersion,
-				Block: blockVersion,
-			},
-			Height: height,
-			Time:   ts,
-		},
 	}
 }

@@ -58,7 +58,7 @@ func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 		pa := fetchedBlock.GetHeader().GetProposerAddress()
 
 		if pa == validator.Address {
-			parsedBlockData.ProposerEntityUID = string(validator.Node.EntityId)
+			parsedBlockData.ProposerEntityUID = string(validator.GetNode().GetEntityId())
 		}
 	}
 	payload.ParsedBlock = parsedBlockData
