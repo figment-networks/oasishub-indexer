@@ -149,7 +149,7 @@ func TestValidatorFetcher_Run(t *testing.T) {
 		result             error
 	}{
 		{"returns error if client errors", nil, errTestClient},
-		{"updates payload.RawValidators", []*validatorpb.Validator{testpbValidator("test1"), testpbValidator("test2")}, nil},
+		{"updates payload.RawValidators", []*validatorpb.Validator{testpbValidator(), testpbValidator()}, nil},
 		{"updates payload.RawValidators when client returns empty list", []*validatorpb.Validator{}, nil},
 	}
 
