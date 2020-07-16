@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"net/http"
+	"time"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/worker"
@@ -25,5 +29,14 @@ func startWorker(cfg *config.Config) error {
 		return err
 	}
 
-	return w.Start()
+	w.Start()
+
+	s := &http.Server{
+		Addr:           cfg.IndexerMetricAddr,
+		Handler:        metrics.DetaultMetrics.Handler(),
+		ReadTimeout:    10 * time.Second,
+		WriteTimeout:   10 * time.Second,
+		MaxHeaderBytes: 1 << 20,
+	}
+	return s.ListenAndServe()
 }

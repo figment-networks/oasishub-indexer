@@ -34,11 +34,13 @@ func (s *Server) Start(listenAdd string) error {
 	prom := prometheusmetrics.New()
 	err := metrics.DetaultMetrics.AddEngine(prom)
 	if err != nil {
-		return err
+		logger.Error(err)
 	}
-
-	//s.cfg.MetricServerUrl , s.cfg.ServerMetricAddr,
-	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(prom.Handler()))
+	err = metrics.DetaultMetrics.Hotload(prom.Name())
+	if err != nil {
+		logger.Error(err)
+	}
+	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(metrics.DetaultMetrics.Handler()))
 
 	return s.engine.Run(listenAdd)
 }

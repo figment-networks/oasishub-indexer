@@ -8,7 +8,7 @@ import (
 
 var serverRequestDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
 	Namespace: "indexer",
-	Subsystem: "oasis.http",
+	Subsystem: "oasis_http",
 	Name:      "request_duration",
 	Desc:      "The total time required to execute http request",
 	Tags:      []string{"path"}})
