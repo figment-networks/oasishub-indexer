@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
+	"github.com/figment-networks/indexing-engine/metrics/prometheusmetrics"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/worker"
 )
 
@@ -31,12 +33,20 @@ func startWorker(cfg *config.Config) error {
 
 	w.Start()
 
+	prom := prometheusmetrics.New()
+	err = metrics.DetaultMetrics.AddEngine(prom)
+	if err != nil {
+		logger.Error(err)
+	}
+	err = metrics.DetaultMetrics.Hotload(prom.Name())
+	if err != nil {
+		logger.Error(err)
+	}
 	s := &http.Server{
-		Addr:           cfg.IndexerMetricAddr,
-		Handler:        metrics.DetaultMetrics.Handler(),
-		ReadTimeout:    10 * time.Second,
-		WriteTimeout:   10 * time.Second,
-		MaxHeaderBytes: 1 << 20,
+		Addr:         cfg.IndexerMetricAddr,
+		Handler:      metrics.DetaultMetrics.Handler(),
+		ReadTimeout:  10 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 	return s.ListenAndServe()
 }
