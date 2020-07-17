@@ -2,9 +2,11 @@ package indexer
 
 import (
 	"context"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
@@ -15,7 +17,11 @@ var (
 	ErrNothingToProcess = errors.New("nothing to process")
 )
 
-func NewSource(cfg *config.Config, db *store.Store, client *client.Client, versionNumber int64, batchSize int64) *source {
+type sourceStore interface {
+	FindMostRecent() (*model.Syncable, error)
+}
+
+func NewSource(cfg *config.Config, db sourceStore, client client.ChainClient, versionNumber int64, batchSize int64) *source {
 	src := &source{
 		cfg:    cfg,
 		db:     db,
@@ -29,8 +35,8 @@ func NewSource(cfg *config.Config, db *store.Store, client *client.Client, versi
 
 type source struct {
 	cfg           *config.Config
-	db            *store.Store
-	client        *client.Client
+	db            sourceStore
+	client        client.ChainClient
 	versionNumber int64
 	batchSize     int64
 
@@ -81,7 +87,7 @@ func (s *source) init() *source {
 
 func (s *source) setStartHeight() error {
 	var startH int64
-	syncable, err := s.db.Syncables.FindMostRecent()
+	syncable, err := s.db.FindMostRecent()
 	if err != nil {
 		if err != store.ErrNotFound {
 			return err
@@ -102,7 +108,7 @@ func (s *source) setStartHeight() error {
 }
 
 func (s *source) setEndHeight() error {
-	syncableFromNode, err := s.client.Chain.GetHead()
+	syncableFromNode, err := s.client.GetHead()
 	if err != nil {
 		return err
 	}

@@ -105,7 +105,7 @@ func (p *indexingPipeline) Start(ctx context.Context, indexingOptions Options) e
 		return err
 	}
 
-	source := NewSource(p.cfg, p.db, p.client, *versionNumber, indexingOptions.BatchSize)
+	source := NewSource(p.cfg, p.db.Syncables, p.client.Chain, *versionNumber, indexingOptions.BatchSize)
 	sink := NewSink(p.db, *versionNumber)
 
 	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
@@ -163,4 +163,3 @@ func (p *indexingPipeline) completeReport(report *model.Report, totalCount int64
 func isTransient(error) bool {
 	return true
 }
-

@@ -23,6 +23,7 @@ import (
 
 var (
 	errTestClient = errors.New("clientErr")
+	errTestDb     = errors.New("dbErr")
 
 	letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
