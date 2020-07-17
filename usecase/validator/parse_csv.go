@@ -1,4 +1,4 @@
-package indexing
+package validator
 
 import (
 	"context"

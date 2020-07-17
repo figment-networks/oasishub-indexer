@@ -6,6 +6,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/usecase/indexing"
+	"github.com/figment-networks/oasishub-indexer/usecase/validator"
 )
 
 func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdHandlers {
@@ -13,7 +14,7 @@ func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdH
 		RunIndexer:       indexing.NewRunCmdHandler(cfg, db, c),
 		PurgeIndexer:     indexing.NewPurgeCmdHandler(cfg, db, c),
 		SummarizeIndexer: indexing.NewSummarizeCmdHandler(cfg, db, c),
-		ParseCSV:         indexing.NewParseCSVCmdHandler(cfg, db, c),
+		ParseCSV:         validator.NewParseCSVCmdHandler(cfg, db, c),
 	}
 }
 
