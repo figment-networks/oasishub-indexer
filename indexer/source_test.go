@@ -34,14 +34,16 @@ func TestSource_NewSource(t *testing.T) {
 		clientErr  error
 
 		expectStartHeight int64
-		expectLen         int64
+		expectEndHeight   int64
+		expectErr         error
 	}{
-		{"should start from last unprocessed block", testSyncable(startH, false), nil, testpbChainResp(endH), nil, startH, (endH - startH + 1)},
-		{"should start from next block if last block is already processed", testSyncable(startH, true), nil, testpbChainResp(endH), nil, (startH + 1), (endH - (startH + 1) + 1)},
-		{"handle client errors", testSyncable(startH, false), nil, nil, errTestClient, 0, 1},
-		{"should start from config startheight if last block doesnt exist in store", nil, store.ErrNotFound, testpbChainResp(endH), nil, configStartH, (endH - configStartH + 1)},
-		{"handle unexpected db error", nil, errTestDb, testpbChainResp(endH), nil, 0, 1},
-		{"len should not exceed batch size", testSyncable(startH, false), nil, testpbChainResp(batchSize + endH), nil, startH, (batchSize)},
+		{"should start from last unprocessed block", testSyncable(startH, false), nil, testpbChainResp(endH), nil, startH, endH, nil},
+		{"should start from next block if last block is already processed", testSyncable(startH, true), nil, testpbChainResp(endH), nil, (startH + 1), endH, nil},
+		{"handle client errors", testSyncable(startH, false), nil, nil, errTestClient, 0, 0, errTestClient},
+		{"should start from config startheight if last block doesnt exist in store", nil, store.ErrNotFound, testpbChainResp(endH), nil, configStartH, endH, nil},
+		{"handle unexpected db error", nil, errTestDb, testpbChainResp(endH), nil, 0, 0, errTestDb},
+		{"len should not exceed batch size", testSyncable(startH, false), nil, testpbChainResp(batchSize + endH), nil, startH, (batchSize - 1), nil},
+		{"error when nothing to process", testSyncable(endH, false), nil, testpbChainResp(endH), nil, endH, endH, ErrNothingToProcess},
 	}
 
 	for _, tt := range tests {
@@ -57,36 +59,36 @@ func TestSource_NewSource(t *testing.T) {
 			cfg := &config.Config{FirstBlockHeight: configStartH}
 			source := NewSource(cfg, dbMock, clientMock, versionNum, batchSize)
 
-			if tt.clientErr != nil && source.Err() != tt.clientErr {
-				t.Errorf("unexpected source.err, want %v; got %v", tt.clientErr, source.Err())
+			if tt.expectErr != source.Err() {
+				t.Errorf("unexpected source.err, want %v; got %v", tt.expectErr, source.Err())
+				return
 			}
 
-			if tt.dbErr != nil && tt.dbErr != store.ErrNotFound && source.Err() != tt.dbErr {
-				t.Errorf("unexpected source.err, want %v; got %v", tt.dbErr, source.Err())
-			}
+			expectLen := (tt.expectEndHeight - tt.expectStartHeight + 1)
 
-			if tt.expectLen != source.Len() {
-				t.Errorf("unexpected source.len, want %v; got %v", tt.expectLen, source.Len())
+			if expectLen != source.Len() {
+				t.Errorf("unexpected source.len, want %v; got %v", expectLen, source.Len())
+				return
 			}
 
 			ctx := context.Background()
 			pl := &payload{}
 			expectCurrent := tt.expectStartHeight
 
-			for i := 0; i < int(tt.expectLen-1); i++ {
+			for i := 1; i < int(expectLen); i++ {
 				if expectCurrent != source.Current() {
 					t.Errorf("unexpected source.current, want %v; got %v", expectCurrent, source.Current())
 				}
 
 				if ok := source.Next(ctx, pl); !ok {
-					t.Errorf("unexpected number of runs, want %v; got %v", tt.expectLen, i)
+					t.Errorf("expected source.Next to return true on call %v", i)
 				}
 				expectCurrent++ // current height should increase by 1 after each run
 			}
 
 			//should be no more runs left
 			if ok := source.Next(ctx, pl); ok {
-				t.Errorf("unexpected number of runs, want %v; got %v", tt.expectLen, (tt.expectLen + 1))
+				t.Errorf("expected source.Next to return false on call %v", expectLen)
 			}
 		})
 	}
