@@ -47,6 +47,7 @@ type Config struct {
 	PurgeValidatorHourlySummaryInterval string `json:"purge_validator_hourly_summary_interval" envconfig:"PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL" default:"26h"`
 	PurgeValidatorDailySummaryInterval  string `json:"purge_validator_daily_summary_interval" envconfig:"PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL" default:""`
 	IndexerVersionsDir                  string `json:"indexer_versions_dir" envconfig:"INDEXER_VERSIONS_DIR" default:"indexer/versions"`
+	NetworkEntitiesDir                  string `json:"network_entities_dir" envconfig:"NETWORK_ENTITIES_DIR"`
 }
 
 // Validate returns an error if config is invalid

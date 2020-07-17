@@ -35,9 +35,11 @@ func runCmd(cfg *config.Config, cmdName string) error {
 	case "summarize_indexer":
 		ctx := context.Background()
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
+	case "parse_csv":
+		ctx := context.Background()
+		cmdHandlers.ParseCSV.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", cmdName))
 	}
 	return nil
 }
-
