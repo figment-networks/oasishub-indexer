@@ -15,6 +15,8 @@ import (
 
 const (
 	CtxReport = "context_report"
+
+	StageAnalyzer = "AnalyzerStage"
 )
 
 type indexingPipeline struct {
@@ -91,6 +93,11 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		),
 	)
 
+	// Add analyzer stage
+	p.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
+		NewSystemEventCreatorTask(db.ValidatorSeq),
+	),)
+
 	// Set persistor stage
 	p.SetStage(
 		pipeline.StagePersistor,
@@ -99,6 +106,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
 		),
 	)
 

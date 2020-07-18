@@ -12,6 +12,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/usecase/delegation"
 	"github.com/figment-networks/oasishub-indexer/usecase/health"
 	"github.com/figment-networks/oasishub-indexer/usecase/staking"
+	"github.com/figment-networks/oasishub-indexer/usecase/systemevent"
 	"github.com/figment-networks/oasishub-indexer/usecase/transaction"
 	"github.com/figment-networks/oasishub-indexer/usecase/validator"
 )
@@ -32,6 +33,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c *client.Client) *Htt
 		GetValidatorByAddress:           validator.NewGetByAddressHttpHandler(db, c),
 		GetValidatorSummary:             validator.NewGetSummaryHttpHandler(db, c),
 		GetValidatorsForMinHeight:       validator.NewGetForMinHeightHttpHandler(db, c),
+		GetSystemEventsForAddress:       systemevent.NewGetForAddressHttpHandler(db, c),
 	}
 }
 
@@ -50,4 +52,5 @@ type HttpHandlers struct {
 	GetValidatorByAddress           types.HttpHandler
 	GetValidatorSummary             types.HttpHandler
 	GetValidatorsForMinHeight       types.HttpHandler
+	GetSystemEventsForAddress       types.HttpHandler
 }

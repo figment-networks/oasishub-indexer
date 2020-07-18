@@ -21,9 +21,10 @@ func New(connStr string) (*Store, error) {
 	return &Store{
 		db: conn,
 
-		Database:  NewDatabaseStore(conn),
-		Syncables: NewSyncablesStore(conn),
-		Reports:   NewReportsStore(conn),
+		Database:     NewDatabaseStore(conn),
+		Syncables:    NewSyncablesStore(conn),
+		Reports:      NewReportsStore(conn),
+		SystemEvents: NewSystemEventsStore(conn),
 
 		BlockSeq:               NewBlockSeqStore(conn),
 		DebondingDelegationSeq: NewDebondingDelegationSeqStore(conn),
@@ -44,16 +45,17 @@ func New(connStr string) (*Store, error) {
 type Store struct {
 	db *gorm.DB
 
-	Database  *DatabaseStore
-	Syncables *SyncablesStore
-	Reports   *ReportsStore
+	Database     *DatabaseStore
+	Syncables    *SyncablesStore
+	Reports      *ReportsStore
+	SystemEvents *systemEventsStore
 
 	BlockSeq               *BlockSeqStore
 	DebondingDelegationSeq *DebondingDelegationSeqStore
 	DelegationSeq          *DelegationSeqStore
 	StakingSeq             *StakingSeqStore
 	TransactionSeq         *TransactionSeqStore
-	ValidatorSeq           *ValidatorSeqStore
+	ValidatorSeq           *validatorSeqStore
 
 	ValidatorSummary *ValidatorSummaryStore
 	BlockSummary     *BlockSummaryStore

@@ -48,6 +48,24 @@
         "SyncerPersistor",
         "ValidatorAggPersistor"
       ]
+    },
+    {
+      "id": 4,
+      "name": "index_system_events",
+      "desc": "Creates and persists system events",
+      "tasks": [
+        "HeightMetaRetriever",
+        "MainSyncer",
+        "BlockFetcher",
+        "StakingStateFetcher",
+        "ValidatorFetcher",
+        "ValidatorsParser",
+        "ValidatorSeqCreator",
+        "SystemEventCreator",
+        "SyncerPersistor",
+        "ValidatorSeqPersistor",
+        "SystemEventPersistor"
+      ]
     }
   ]
 }

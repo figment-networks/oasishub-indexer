@@ -15,7 +15,7 @@ type SyncablesStore struct {
 	baseStore
 }
 
-// Exists returns true if a syncable exists at give height
+// FindByHeight returns syncable by height
 func (s SyncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
 	result := &model.Syncable{}
 
@@ -71,7 +71,10 @@ func (s SyncablesStore) CreateOrUpdate(val *model.Syncable) error {
 		}
 		return err
 	}
-	return s.Update(existing)
+
+	existing.Update(*val)
+
+	return s.Save(existing)
 }
 
 // CreateOrUpdate creates a new syncable or updates an existing one

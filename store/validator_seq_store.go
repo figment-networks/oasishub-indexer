@@ -9,39 +9,30 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewValidatorSeqStore(db *gorm.DB) *ValidatorSeqStore {
-	return &ValidatorSeqStore{scoped(db, model.ValidatorSeq{})}
+var (
+	_ ValidatorSeqStore = (*validatorSeqStore)(nil)
+)
+
+type ValidatorSeqStore interface {
+	FindByHeightAndEntityUID(int64, string) (*model.ValidatorSeq, error)
+	FindByHeight(int64) ([]model.ValidatorSeq, error)
+	FindLastByAddress(string, int64) ([]model.ValidatorSeq, error)
+	FindMostRecent() (*model.ValidatorSeq, error)
+	DeleteOlderThan(time.Time) (*int64, error)
+	Summarize(types.SummaryInterval, []ActivityPeriodRow) ([]ValidatorSeqSummary, error)
 }
 
-// ValidatorSeqStore handles operations on validators
-type ValidatorSeqStore struct {
+func NewValidatorSeqStore(db *gorm.DB) *validatorSeqStore {
+	return &validatorSeqStore{scoped(db, model.ValidatorSeq{})}
+}
+
+// validatorSeqStore handles operations on validators
+type validatorSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the validator if it does not exist
-func (s ValidatorSeqStore) CreateIfNotExists(validator *model.ValidatorSeq) error {
-	_, err := s.FindByHeight(validator.Height)
-	if isNotFound(err) {
-		return s.Create(validator)
-	}
-	return nil
-}
-
-//TODO: FIX
-// CreateOrUpdate creates a new validator sequence or updates an existing one
-func (s ValidatorSeqStore) CreateOrUpdate(val *model.ValidatorSeq) error {
-	existing, err := s.FindByHeight(val.Height)
-	if err != nil {
-		if err == ErrNotFound {
-			return s.Create(val)
-		}
-		return err
-	}
-	return s.Update(existing)
-}
-
-// FindByHeight finds validator by height
-func (s ValidatorSeqStore) FindByHeightAndEntityUID(h int64, key string) (*model.ValidatorSeq, error) {
+// FindByHeightAndEntityUID finds validator by height amd entity UID
+func (s validatorSeqStore) FindByHeightAndEntityUID(h int64, key string) (*model.ValidatorSeq, error) {
 	q := model.ValidatorSeq{
 		Sequence: &model.Sequence{
 			Height: h,
@@ -59,7 +50,7 @@ func (s ValidatorSeqStore) FindByHeightAndEntityUID(h int64, key string) (*model
 }
 
 // FindByHeight finds validator by height
-func (s ValidatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
+func (s validatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
 	q := model.ValidatorSeq{
 		Sequence: &model.Sequence{
 			Height: h,
@@ -76,7 +67,7 @@ func (s ValidatorSeqStore) FindByHeight(h int64) ([]model.ValidatorSeq, error) {
 }
 
 // FindLastByAddress finds last validator sequences for given entity uid
-func (s ValidatorSeqStore) FindLastByAddress(address string, limit int64) ([]model.ValidatorSeq, error) {
+func (s validatorSeqStore) FindLastByAddress(address string, limit int64) ([]model.ValidatorSeq, error) {
 	q := model.ValidatorSeq{
 		Address: address,
 	}
@@ -93,7 +84,7 @@ func (s ValidatorSeqStore) FindLastByAddress(address string, limit int64) ([]mod
 }
 
 // FindMostRecent finds most recent validator sequence
-func (s *ValidatorSeqStore) FindMostRecent() (*model.ValidatorSeq, error) {
+func (s *validatorSeqStore) FindMostRecent() (*model.ValidatorSeq, error) {
 	validatorSeq := &model.ValidatorSeq{}
 	if err := findMostRecent(s.db, "time", validatorSeq); err != nil {
 		return nil, err
@@ -102,7 +93,7 @@ func (s *ValidatorSeqStore) FindMostRecent() (*model.ValidatorSeq, error) {
 }
 
 // DeleteOlderThan deletes validator sequence older than given threshold
-func (s *ValidatorSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+func (s *validatorSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
 	tx := s.db.
 		Unscoped().
 		Where("time < ?", purgeThreshold).
@@ -131,7 +122,7 @@ type ValidatorSeqSummary struct {
 }
 
 // Summarize gets the summarized version of validator sequences
-func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
+func (s *validatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
 	defer logQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
 
 	tx := s.db.
