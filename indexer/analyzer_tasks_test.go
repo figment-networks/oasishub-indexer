@@ -30,7 +30,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
-		logger.InitTest()
+		setup()
 
 		MaxValidatorSequences = 10
 		MissedInRowThreshold = 5
@@ -89,7 +89,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
-		logger.InitTest()
+		setup()
 
 		payload := testPayload()
 
@@ -108,7 +108,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
-		logger.InitTest()
+		setup()
 
 		lastValidatorSeqsForValidator1 := []model.ValidatorSeq{
 			newValidatorSeq(ValidatorAddress, 1000, false),
@@ -139,7 +139,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
-		logger.InitTest()
+		setup()
 
 		prevHeightValidatorSequences := []model.ValidatorSeq{
 			newValidatorSeq(ValidatorAddress, 1000, true),
@@ -183,7 +183,7 @@ func TestSystemEventCreatorTask_votingPowerChange(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			logger.InitTest()
+			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
@@ -273,7 +273,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			logger.InitTest()
+			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
@@ -576,7 +576,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			logger.InitTest()
+			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
 
@@ -624,6 +624,10 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			}
 		})
 	}
+}
+
+func setup() {
+	logger.InitTest()
 }
 
 func testPayload() *payload {
