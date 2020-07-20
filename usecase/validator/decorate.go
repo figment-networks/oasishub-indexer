@@ -3,7 +3,6 @@ package validator
 import (
 	"context"
 	"encoding/csv"
-	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -15,17 +14,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-const (
-	network_entities_filename = "amber_network_entities.csv"
-)
-
 var (
 	colNames = []string{"amber entities", "entity id (new format)", "logo link"}
 
 	ErrInValidFile = errors.New("unexpected file format")
+	ErrMissingFile = errors.New("missing file path")
 )
 
-type parseCSVUseCase struct {
+type decorateUseCase struct {
 	cfg *config.Config
 	db  *store.Store
 }
@@ -35,21 +31,24 @@ type record struct {
 	logoURL    string
 }
 
-// NewParseCSVUseCase parses amber_network_entities.csv and updates logo_url and entity_name
-// for each validator entry in file
-func NewParseCSVUseCase(cfg *config.Config, db *store.Store) *parseCSVUseCase {
-	return &parseCSVUseCase{
+// NewDecorateUseCase decorate validators based on file data. It parses a csv file
+// containing logos, entity names and entity addresses for a validator, then updates
+// the logo_url and entity_name for each entry
+func NewDecorateUseCase(cfg *config.Config, db *store.Store) *decorateUseCase {
+	return &decorateUseCase{
 		cfg: cfg,
 		db:  db,
 	}
 }
 
-func (uc *parseCSVUseCase) Execute(ctx context.Context) error {
+func (uc *decorateUseCase) Execute(ctx context.Context, file string) error {
 	defer metric.LogUseCaseDuration(time.Now(), "parse csv")
 
-	file := fmt.Sprintf("%v/%v", uc.cfg.NetworkEntitiesDir, network_entities_filename)
+	if file == "" {
+		return ErrMissingFile
+	}
 
-	records, err := uc.parseNetworkEntities(file)
+	records, err := uc.parseFile(file)
 	if err != nil {
 		return err
 	}
@@ -64,7 +63,7 @@ func (uc *parseCSVUseCase) Execute(ctx context.Context) error {
 	return nil
 }
 
-func (uc *parseCSVUseCase) parseNetworkEntities(file string) (map[string]*record, error) {
+func (uc *decorateUseCase) parseFile(file string) (map[string]*record, error) {
 	f, err := os.Open(file)
 	if err != nil {
 		return nil, err
@@ -104,7 +103,7 @@ func (uc *parseCSVUseCase) parseNetworkEntities(file string) (map[string]*record
 	}
 }
 
-func (uc *parseCSVUseCase) updateValidatorAgg(addr string, data *record) error {
+func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
 	val, err := uc.db.ValidatorAgg.FindBy("recent_address", addr)
 	if err == store.ErrNotFound {
 		return nil
@@ -123,7 +122,7 @@ func (uc *parseCSVUseCase) updateValidatorAgg(addr string, data *record) error {
 	return nil
 }
 
-func (uc *parseCSVUseCase) validateHeaders(headers []string) error {
+func (uc *decorateUseCase) validateHeaders(headers []string) error {
 	if len(headers) != len(colNames) {
 		return ErrInValidFile
 	}

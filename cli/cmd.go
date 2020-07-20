@@ -3,13 +3,15 @@ package cli
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
+	"github.com/figment-networks/oasishub-indexer/usecase/validator"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
 )
 
-func runCmd(cfg *config.Config, cmdName string) error {
+func runCmd(cfg *config.Config, cmdName string, filePath string) error {
 	db, err := initStore(cfg)
 	if err != nil {
 		return err
@@ -35,9 +37,10 @@ func runCmd(cfg *config.Config, cmdName string) error {
 	case "summarize_indexer":
 		ctx := context.Background()
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
-	case "parse_csv":
+	case "decorate_validators":
 		ctx := context.Background()
-		cmdHandlers.ParseCSV.Handle(ctx)
+		ctxWithFilePath := context.WithValue(ctx, validator.CtxFilePath, filePath)
+		cmdHandlers.DecorateValidators.Handle(ctxWithFilePath)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", cmdName))
 	}

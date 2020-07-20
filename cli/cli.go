@@ -15,11 +15,13 @@ import (
 func Run() {
 	var configPath string
 	var runCommand string
+	var filePath string
 	var showVersion bool
 
 	flag.BoolVar(&showVersion, "v", false, "Show application version")
 	flag.StringVar(&configPath, "config", "", "Path to config")
 	flag.StringVar(&runCommand, "cmd", "", "Command to run")
+	flag.StringVar(&filePath, "file", "", "Complete file path")
 	flag.Parse()
 
 	if showVersion {
@@ -45,13 +47,12 @@ func Run() {
 		terminate(errors.New("command is required"))
 	}
 
-
-	if err := startCommand(cfg, runCommand); err != nil {
+	if err := startCommand(cfg, runCommand, filePath); err != nil {
 		terminate(err)
 	}
 }
 
-func startCommand(cfg *config.Config, name string) error {
+func startCommand(cfg *config.Config, name string, filePath string) error {
 	switch name {
 	case "migrate":
 		return startMigrations(cfg)
@@ -60,7 +61,7 @@ func startCommand(cfg *config.Config, name string) error {
 	case "worker":
 		return startWorker(cfg)
 	default:
-		return runCmd(cfg, name)
+		return runCmd(cfg, name, filePath)
 	}
 }
 
