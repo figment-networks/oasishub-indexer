@@ -25,6 +25,7 @@ var (
 	MissedInRowThreshold  int64 = 50
 )
 
+// NewSystemEventCreatorTask creates system events
 func NewSystemEventCreatorTask(vStore ValidatorSeqStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
 		ValidatorSeqStore: vStore,
