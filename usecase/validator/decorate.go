@@ -10,6 +10,7 @@ import (
 
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/metric"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
@@ -23,7 +24,12 @@ var (
 
 type decorateUseCase struct {
 	cfg *config.Config
-	db  *store.Store
+	db  decorateStore
+}
+
+type decorateStore interface {
+	CreateOrUpdate(val *model.ValidatorAgg) error
+	FindBy(key string, value interface{}) (*model.ValidatorAgg, error)
 }
 
 type record struct {
@@ -34,7 +40,7 @@ type record struct {
 // NewDecorateUseCase decorate validators based on file data. It parses a csv file
 // containing logos, entity names and entity addresses for a validator, then updates
 // the logo_url and entity_name for each entry
-func NewDecorateUseCase(cfg *config.Config, db *store.Store) *decorateUseCase {
+func NewDecorateUseCase(cfg *config.Config, db decorateStore) *decorateUseCase {
 	return &decorateUseCase{
 		cfg: cfg,
 		db:  db,
@@ -42,7 +48,7 @@ func NewDecorateUseCase(cfg *config.Config, db *store.Store) *decorateUseCase {
 }
 
 func (uc *decorateUseCase) Execute(ctx context.Context, file string) error {
-	defer metric.LogUseCaseDuration(time.Now(), "parse csv")
+	defer metric.LogUseCaseDuration(time.Now(), "decorate validator")
 
 	if file == "" {
 		return ErrMissingFile
@@ -104,7 +110,7 @@ func (uc *decorateUseCase) parseFile(file string) (map[string]*record, error) {
 }
 
 func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
-	val, err := uc.db.ValidatorAgg.FindBy("recent_address", addr)
+	val, err := uc.db.FindBy("recent_address", addr)
 	if err == store.ErrNotFound {
 		return nil
 	} else if err != nil {
@@ -114,7 +120,7 @@ func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
 	val.LogoURL = data.logoURL
 	val.EntityName = data.entityName
 
-	err = uc.db.ValidatorAgg.CreateOrUpdate(val)
+	err = uc.db.CreateOrUpdate(val)
 	if err != nil {
 		return err
 	}

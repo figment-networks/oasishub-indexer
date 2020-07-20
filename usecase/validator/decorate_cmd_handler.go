@@ -57,7 +57,7 @@ func (h *decorateCmdHandler) Handle(ctx context.Context) {
 
 func (h *decorateCmdHandler) getUseCase() *decorateUseCase {
 	if h.useCase == nil {
-		return NewDecorateUseCase(h.cfg, h.db)
+		return NewDecorateUseCase(h.cfg, h.db.ValidatorAgg)
 	}
 	return h.useCase
 }
