@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
-	climock "github.com/figment-networks/oasishub-indexer/client/mock"
 	"github.com/figment-networks/oasishub-indexer/config"
-	mock "github.com/figment-networks/oasishub-indexer/indexer/mock"
+	mock_client "github.com/figment-networks/oasishub-indexer/mock/client"
+	mock "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -50,10 +50,10 @@ func TestSource_NewSource(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
-			clientMock := climock.NewMockChainClient(ctrl)
+			clientMock := mock_client.NewMockChainClient(ctrl)
 			clientMock.EXPECT().GetHead().Return(tt.clientResp, tt.clientErr)
 
-			dbMock := mock.NewMocksourceStore(ctrl)
+			dbMock := mock.NewMockSyncableStore(ctrl)
 			dbMock.EXPECT().FindMostRecent().Return(tt.dbResp, tt.dbErr)
 
 			cfg := &config.Config{FirstBlockHeight: configStartH}

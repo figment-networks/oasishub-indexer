@@ -10,7 +10,7 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
-	mock "github.com/figment-networks/oasishub-indexer/indexer/mock"
+	mock "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -93,7 +93,7 @@ func TestAggCreatorTask_Run(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
-			dbMock := mock.NewMockaccountAggStore(ctrl)
+			dbMock := mock.NewMockAccountAggStore(ctrl)
 
 			ledger := combineLedgers(tt.new, tt.existing)
 			payload := testAccountAggPayload(ledger)
@@ -268,7 +268,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
-			dbMock := mock.NewMockvalidatorAggCreatorStore(ctrl)
+			dbMock := mock.NewMockValidatorAggStore(ctrl)
 
 			allValidators := append(tt.new, tt.existing...)
 			payload := testValidatorAggPayload(allValidators)

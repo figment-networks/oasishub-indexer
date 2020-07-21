@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"time"
 
-	mock "github.com/figment-networks/oasishub-indexer/indexer/mock"
+	mock "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/golang/mock/gomock"

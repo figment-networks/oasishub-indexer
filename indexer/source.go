@@ -6,7 +6,6 @@ import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
@@ -17,11 +16,7 @@ var (
 	ErrNothingToProcess = errors.New("nothing to process")
 )
 
-type sourceStore interface {
-	FindMostRecent() (*model.Syncable, error)
-}
-
-func NewSource(cfg *config.Config, db sourceStore, client client.ChainClient, versionNumber int64, batchSize int64) *source {
+func NewSource(cfg *config.Config, db SyncableStore, client client.ChainClient, versionNumber int64, batchSize int64) *source {
 	src := &source{
 		cfg:    cfg,
 		db:     db,
@@ -35,7 +30,7 @@ func NewSource(cfg *config.Config, db sourceStore, client client.ChainClient, ve
 
 type source struct {
 	cfg           *config.Config
-	db            sourceStore
+	db            SyncableStore
 	client        client.ChainClient
 	versionNumber int64
 	batchSize     int64

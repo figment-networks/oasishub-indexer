@@ -27,20 +27,14 @@ var (
 	ErrValidatorAggNotValid = errors.New("validator aggregator not valid")
 )
 
-type accountAggStore interface {
-	FindByPublicKey(key string) (*model.AccountAgg, error)
-	Create(record interface{}) error
-	Save(record interface{}) error
-}
-
-func NewAccountAggCreatorTask(db accountAggStore) *accountAggCreatorTask {
+func NewAccountAggCreatorTask(db AccountAggStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
 		db: db,
 	}
 }
 
 type accountAggCreatorTask struct {
-	db accountAggStore
+	db AccountAggStore
 }
 
 func (t *accountAggCreatorTask) GetName() string {
@@ -121,20 +115,14 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	return nil
 }
 
-type validatorAggCreatorStore interface {
-	FindByEntityUID(key string) (*model.ValidatorAgg, error)
-	Create(record interface{}) error
-	Save(record interface{}) error
-}
-
-func NewValidatorAggCreatorTask(db validatorAggCreatorStore) *validatorAggCreatorTask {
+func NewValidatorAggCreatorTask(db ValidatorAggStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
 		db: db,
 	}
 }
 
 type validatorAggCreatorTask struct {
-	db validatorAggCreatorStore
+	db ValidatorAggStore
 }
 
 func (t *validatorAggCreatorTask) GetName() string {

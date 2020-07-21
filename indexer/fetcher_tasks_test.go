@@ -8,7 +8,7 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
-	mock "github.com/figment-networks/oasishub-indexer/client/mock"
+	mock "github.com/figment-networks/oasishub-indexer/mock/client"
 	"github.com/golang/mock/gomock"
 
 	"testing"

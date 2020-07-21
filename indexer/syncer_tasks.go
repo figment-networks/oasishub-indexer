@@ -20,18 +20,14 @@ var (
 	ErrMissingReportInCtx = errors.New("report missing in context")
 )
 
-type syncableStore interface {
-	CreateOrUpdate(val *model.Syncable) error
-}
-
-func NewMainSyncerTask(db syncableStore) pipeline.Task {
+func NewMainSyncerTask(db SyncableStore) pipeline.Task {
 	return &mainSyncerTask{
 		db: db,
 	}
 }
 
 type mainSyncerTask struct {
-	db syncableStore
+	db SyncableStore
 }
 
 func (t *mainSyncerTask) GetName() string {

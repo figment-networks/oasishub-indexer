@@ -5,7 +5,7 @@ import (
 	"reflect"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
-	mock "github.com/figment-networks/oasishub-indexer/client/mock"
+	mock "github.com/figment-networks/oasishub-indexer/mock/client"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/golang/mock/gomock"
 	"github.com/golang/protobuf/ptypes"
