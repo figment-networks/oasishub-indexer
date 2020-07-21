@@ -26,5 +26,5 @@ type CmdHandlers struct {
 	PurgeIndexer       *indexing.PurgeCmdHandler
 	SummarizeIndexer   *indexing.SummarizeCmdHandler
 	GetStatus          *chain.GetStatusCmdHandler
-	DecorateValidators types.CmdHandler
+	DecorateValidators *validator.DecorateCmdHandler
 }

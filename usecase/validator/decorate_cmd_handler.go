@@ -7,23 +7,10 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"github.com/pkg/errors"
 )
 
-const (
-	// CtxFilePath is context key for value containing file path
-	CtxFilePath = "context_file"
-)
-
-var (
-	_ types.CmdHandler = (*decorateCmdHandler)(nil)
-
-	errMissingFileInCtx = errors.New("missing file path in context")
-)
-
-type decorateCmdHandler struct {
+type DecorateCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
@@ -31,22 +18,16 @@ type decorateCmdHandler struct {
 	useCase *decorateUseCase
 }
 
-func NewDecorateCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *decorateCmdHandler {
-	return &decorateCmdHandler{
+func NewDecorateCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *DecorateCmdHandler {
+	return &DecorateCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *decorateCmdHandler) Handle(ctx context.Context) {
+func (h *DecorateCmdHandler) Handle(ctx context.Context, filePath string) {
 	logger.Info(fmt.Sprintf("running decorate validators indexer use case [handler=cmd]"))
-
-	filePath, ok := ctx.Value(CtxFilePath).(string)
-	if !ok {
-		logger.Error(errMissingFileInCtx)
-		return
-	}
 
 	err := h.getUseCase().Execute(ctx, filePath)
 	if err != nil {
@@ -55,7 +36,7 @@ func (h *decorateCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *decorateCmdHandler) getUseCase() *decorateUseCase {
+func (h *DecorateCmdHandler) getUseCase() *decorateUseCase {
 	if h.useCase == nil {
 		return NewDecorateUseCase(h.cfg, h.db.ValidatorAgg)
 	}

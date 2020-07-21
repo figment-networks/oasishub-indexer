@@ -81,15 +81,15 @@ func TestDecorate_Handle(t *testing.T) {
 				createFile(tt.fileName, tt.data, t)
 			}
 
-			dbMock := mock.NewMockValidatorAggStore(ctrl)
+			dbMock := mock.NewMockDecorateStore(ctrl)
 			for i, row := range tt.data {
 				if i == 0 {
 					// skip first row of headers
 					continue
 				}
-				val := &model.ValidatorAgg{RecentAddress: row[1]}
+				val := &model.ValidatorAgg{Address: row[1]}
 
-				dbMock.EXPECT().FindBy("recent_address", row[1]).Return(val, tt.dbFindErr).Times(1)
+				dbMock.EXPECT().FindBy("address", row[1]).Return(val, tt.dbFindErr).Times(1)
 				if tt.dbFindErr == store.ErrNotFound {
 					// don't expect CreateOrUpdate to be called for this val
 					continue

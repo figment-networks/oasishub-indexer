@@ -16,6 +16,7 @@ import (
 
 type Flags struct {
 	configPath  string
+	filePath    string
 	runCommand  string
 	showVersion bool
 
@@ -48,6 +49,7 @@ func (i *targetIds) Set(value string) error {
 func (c *Flags) Setup() {
 	flag.BoolVar(&c.showVersion, "v", false, "Show application version")
 	flag.StringVar(&c.configPath, "config", "", "Path to config")
+	flag.StringVar(&c.filePath, "file", "", "Complete file path")
 	flag.StringVar(&c.runCommand, "cmd", "", "Command to run")
 
 	flag.Int64Var(&c.batchSize, "batch_size", 0, "pipeline batch size")

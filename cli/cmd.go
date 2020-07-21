@@ -6,7 +6,6 @@ import (
 
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
-	"github.com/figment-networks/oasishub-indexer/usecase/validator"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
 )
@@ -38,9 +37,7 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	case "indexer_summarize":
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	case "decorate_validators":
-		ctx := context.Background()
-		ctxWithFilePath := context.WithValue(ctx, validator.CtxFilePath, filePath)
-		cmdHandlers.DecorateValidators.Handle(ctxWithFilePath)
+		cmdHandlers.DecorateValidators.Handle(ctx, flags.filePath)
 	case "indexer_purge":
 		cmdHandlers.PurgeIndexer.Handle(ctx)
 	default:
