@@ -6,17 +6,20 @@ type ValidatorSummary struct {
 	*Model
 	*Summary
 
-	Address         string         `json:"address"`
-	VotingPowerAvg  float64        `json:"voting_power_avg"`
-	VotingPowerMax  float64        `json:"voting_power_max"`
-	VotingPowerMin  float64        `json:"voting_power_min"`
-	TotalSharesAvg  types.Quantity `json:"total_shares_avg"`
-	TotalSharesMax  types.Quantity `json:"total_shares_max"`
-	TotalSharesMin  types.Quantity `json:"total_shares_min"`
-	ValidatedSum    int64          `json:"validated_sum"`
-	NotValidatedSum int64          `json:"not_validated_sum"`
-	ProposedSum     int64          `json:"proposed_sum"`
-	UptimeAvg       float64        `json:"uptime_avg"`
+	Address                string         `json:"address"`
+	VotingPowerAvg         float64        `json:"voting_power_avg"`
+	VotingPowerMax         float64        `json:"voting_power_max"`
+	VotingPowerMin         float64        `json:"voting_power_min"`
+	TotalSharesAvg         types.Quantity `json:"total_shares_avg"`
+	TotalSharesMax         types.Quantity `json:"total_shares_max"`
+	TotalSharesMin         types.Quantity `json:"total_shares_min"`
+	ActiveEscrowBalanceAvg types.Quantity `json:"active_escrow_balance_avg"`
+	ActiveEscrowBalanceMax types.Quantity `json:"active_escrow_balance_max"`
+	ActiveEscrowBalanceMin types.Quantity `json:"active_escrow_balance_min"`
+	ValidatedSum           int64          `json:"validated_sum"`
+	NotValidatedSum        int64          `json:"not_validated_sum"`
+	ProposedSum            int64          `json:"proposed_sum"`
+	UptimeAvg              float64        `json:"uptime_avg"`
 }
 
 func (ValidatorSummary) TableName() string {

@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	ErrVotingPowerOutsideOfRange = errors.New("voting power is outside of specified buckets")
+	ErrActiveEscrowBalanceOutsideOfRange = errors.New("active escrow balance is outside of specified buckets")
 
 	MaxValidatorSequences int64 = 1000
 	MissedForMaxThreshold int64 = 50
@@ -60,8 +60,8 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 		}
 	}
 
-	votingPowerChangeSystemEvents := t.getVotingPowerChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
-	payload.SystemEvents = append(payload.SystemEvents, votingPowerChangeSystemEvents...)
+	activeEscrowBalanceChangeSystemEvents := t.getActiveEscrowBalanceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
+	payload.SystemEvents = append(payload.SystemEvents, activeEscrowBalanceChangeSystemEvents...)
 
 	activeSetPresenceChangeSystemEvents := t.getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
 	payload.SystemEvents = append(payload.SystemEvents, activeSetPresenceChangeSystemEvents...)
@@ -190,16 +190,16 @@ func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeig
 	return systemEvents
 }
 
-func (t *systemEventCreatorTask) getVotingPowerChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) []*model.SystemEvent {
+func (t *systemEventCreatorTask) getActiveEscrowBalanceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) []*model.SystemEvent {
 	var systemEvents []*model.SystemEvent
 	for _, validatorSequence := range currHeightValidatorSequences {
 		for _, prevValidatorSequence := range prevHeightValidatorSequences {
 			if validatorSequence.Address == prevValidatorSequence.Address {
-				changeRate := (float64(1) - (float64(validatorSequence.VotingPower) / float64(prevValidatorSequence.VotingPower))) * 100
+				changeRate := (float64(1) - (float64(validatorSequence.ActiveEscrowBalance.Int64()) / float64(prevValidatorSequence.ActiveEscrowBalance.Int64()))) * 100
 
-				kind, err := t.getVotingPowerChangeKind(changeRate)
+				kind, err := t.getActiveEscrowBalanceChangeKind(changeRate)
 				if err == nil {
-					logger.Debug(fmt.Sprintf("voting power change for address %s occured [kind=%s]", validatorSequence.Address, kind))
+					logger.Debug(fmt.Sprintf("active escrow balance change for address %s occured [kind=%s]", validatorSequence.Address, kind))
 
 					systemEvents = append(systemEvents, t.newSystemEventWithBody(validatorSequence, *kind))
 				}
@@ -210,18 +210,18 @@ func (t *systemEventCreatorTask) getVotingPowerChangeSystemEvents(currHeightVali
 	return systemEvents
 }
 
-func (t *systemEventCreatorTask) getVotingPowerChangeKind(changeRate float64) (*model.SystemEventKind, error) {
+func (t *systemEventCreatorTask) getActiveEscrowBalanceChangeKind(changeRate float64) (*model.SystemEventKind, error) {
 	roundedAbsChangeRate := math.Round(math.Abs(changeRate) / 0.1) * 0.1
 
 	var kind model.SystemEventKind
 	if roundedAbsChangeRate >= 0.1 && roundedAbsChangeRate < 1 {
-		kind = model.SystemEventVotingPowerChange1
+		kind = model.SystemEventActiveEscrowBalanceChange1
 	} else if roundedAbsChangeRate >= 1 && roundedAbsChangeRate < 10 {
-		kind = model.SystemEventVotingPowerChange2
+		kind = model.SystemEventActiveEscrowBalanceChange2
 	} else if roundedAbsChangeRate >= 10 {
-		kind = model.SystemEventVotingPowerChange3
+		kind = model.SystemEventActiveEscrowBalanceChange3
 	} else {
-		return nil, ErrVotingPowerOutsideOfRange
+		return nil, ErrActiveEscrowBalanceOutsideOfRange
 	}
 
 	return &kind, nil

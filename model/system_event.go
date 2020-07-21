@@ -3,13 +3,13 @@ package model
 import "github.com/figment-networks/oasishub-indexer/types"
 
 const (
-	SystemEventVotingPowerChange1 SystemEventKind = "voting_power_change_1"
-	SystemEventVotingPowerChange2 SystemEventKind = "voting_power_change_2"
-	SystemEventVotingPowerChange3 SystemEventKind = "voting_power_change_3"
-	SystemEventJoinedActiveSet    SystemEventKind = "joined_active_set"
-	SystemEventLeftActiveSet      SystemEventKind = "left_active_set"
-	SystemEventMissedMInRow       SystemEventKind = "missed_m_in_row"
-	SystemEventMissedMofN         SystemEventKind = "missed_m_of_n"
+	SystemEventActiveEscrowBalanceChange1 SystemEventKind = "active_escrow_balance_change_1"
+	SystemEventActiveEscrowBalanceChange2 SystemEventKind = "active_escrow_balance_change_2"
+	SystemEventActiveEscrowBalanceChange3 SystemEventKind = "active_escrow_balance_change_3"
+	SystemEventJoinedActiveSet            SystemEventKind = "joined_active_set"
+	SystemEventLeftActiveSet              SystemEventKind = "left_active_set"
+	SystemEventMissedMInRow               SystemEventKind = "missed_m_in_row"
+	SystemEventMissedMofN                 SystemEventKind = "missed_m_of_n"
 )
 
 type SystemEventKind string

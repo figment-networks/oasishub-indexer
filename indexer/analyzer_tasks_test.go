@@ -20,7 +20,7 @@ const (
 
 var (
 	ErrValidatorSeqFindByHeight = errors.New("could not find test")
-	ErrCouldNotFindByAddress = errors.New("could not find test")
+	ErrCouldNotFindByAddress    = errors.New("could not find test")
 )
 
 func TestSystemEventCreatorTask_Run(t *testing.T) {
@@ -167,15 +167,15 @@ func TestSystemEventCreatorTask_votingPowerChange(t *testing.T) {
 		expectedCount int
 		expectedKind  model.SystemEventKind
 	}{
-		{"returns no system events when voting power haven't changed", 0, 0, ""},
-		{"returns no system events when voting power change smaller than 0.1", 0.09, 0, ""},
-		{"returns one votingPowerChange1 system event when voting power change is 0.1", 0.1, 1, model.SystemEventVotingPowerChange1},
-		{"returns one votingPowerChange1 system events when voting power change is 0.9", 0.9, 1, model.SystemEventVotingPowerChange1},
-		{"returns one votingPowerChange2 system events when voting power change is 1", 1, 1, model.SystemEventVotingPowerChange2},
-		{"returns one votingPowerChange2 system events when voting power change is 9", 9, 1, model.SystemEventVotingPowerChange2},
-		{"returns one votingPowerChange3 system events when voting power change is 10", 10, 1, model.SystemEventVotingPowerChange3},
-		{"returns one votingPowerChange3 system events when voting power change is 100", 100, 1, model.SystemEventVotingPowerChange3},
-		{"returns one votingPowerChange3 system events when voting power change is 200", 200, 1, model.SystemEventVotingPowerChange3},
+		{"returns no system events when active escrow balance haven't changed", 0, 0, ""},
+		{"returns no system events when active escrow balance change smaller than 0.1", 0.09, 0, ""},
+		{"returns one votingPowerChange1 system event when active escrow balance change is 0.1", 0.1, 1, model.SystemEventActiveEscrowBalanceChange1},
+		{"returns one votingPowerChange1 system events when active escrow balance change is 0.9", 0.9, 1, model.SystemEventActiveEscrowBalanceChange1},
+		{"returns one votingPowerChange2 system events when active escrow balance change is 1", 1, 1, model.SystemEventActiveEscrowBalanceChange2},
+		{"returns one votingPowerChange2 system events when active escrow balance change is 9", 9, 1, model.SystemEventActiveEscrowBalanceChange2},
+		{"returns one votingPowerChange3 system events when active escrow balance change is 10", 10, 1, model.SystemEventActiveEscrowBalanceChange3},
+		{"returns one votingPowerChange3 system events when active escrow balance change is 100", 100, 1, model.SystemEventActiveEscrowBalanceChange3},
+		{"returns one votingPowerChange3 system events when active escrow balance change is 200", 200, 1, model.SystemEventActiveEscrowBalanceChange3},
 	}
 
 	for _, tt := range tests {
@@ -197,7 +197,7 @@ func TestSystemEventCreatorTask_votingPowerChange(t *testing.T) {
 			}
 
 			task := NewSystemEventCreatorTask(validatorSeqStoreMock)
-			createdSystemEvents := task.getVotingPowerChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
+			createdSystemEvents := task.getActiveEscrowBalanceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
 
 			if len(createdSystemEvents) != tt.expectedCount {
 				t.Errorf("unexpected system event count, want %v; got %v", tt.expectedCount, len(createdSystemEvents))
@@ -309,7 +309,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 		expectedErr           error
 	}{
 		{
-			description: "returns no system events when validator does not have any previous sequences in db",
+			description:           "returns no system events when validator does not have any previous sequences in db",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  2,
 			missedForMaxThreshold: 2,
@@ -325,7 +325,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns no system events when validator does not have any missed blocks in a row",
+			description:           "returns no system events when validator does not have any missed blocks in a row",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  2,
 			missedForMaxThreshold: 2,
@@ -347,7 +347,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns no system events when validator missed 2 blocks in a row",
+			description:           "returns no system events when validator missed 2 blocks in a row",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
@@ -368,7 +368,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns one missed_m_in_row system events when validator missed >= 3 blocks in a row",
+			description:           "returns one missed_m_in_row system events when validator missed >= 3 blocks in a row",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
@@ -390,7 +390,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMInRow},
 		},
 		{
-			description: "returns no missed_m_in_row system events when validator missed >= 3 blocks in a row in the past but current is validated",
+			description:           "returns no missed_m_in_row system events when validator missed >= 3 blocks in a row in the past but current is validated",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
@@ -411,7 +411,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns one missed_m_of_n system events when validator missed 3 blocks",
+			description:           "returns one missed_m_of_n system events when validator missed 3 blocks",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -433,7 +433,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
 		},
 		{
-			description: "returns one missed_m_of_n system events when validator missed 3 blocks and max < last list",
+			description:           "returns one missed_m_of_n system events when validator missed 3 blocks and max < last list",
 			maxValidatorSequences: 3,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -456,7 +456,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
 		},
 		{
-			description: "returns no missed_m_of_n system events when count of recent not validated > maxValidatorSequences",
+			description:           "returns no missed_m_of_n system events when count of recent not validated > maxValidatorSequences",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -478,7 +478,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns no missed_m_of_n system events when current is validated",
+			description:           "returns no missed_m_of_n system events when current is validated",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -500,7 +500,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			expectedCount: 0,
 		},
 		{
-			description: "returns error when first call to FindLastByAddress fails",
+			description:           "returns error when first call to FindLastByAddress fails",
 			maxValidatorSequences: 3,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -513,12 +513,12 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			lastForValidatorList: [][]model.ValidatorSeq{
 				nil,
 			},
-			errs: []error{ErrCouldNotFindByAddress},
+			errs:          []error{ErrCouldNotFindByAddress},
 			expectedCount: 0,
-			expectedErr: ErrCouldNotFindByAddress,
+			expectedErr:   ErrCouldNotFindByAddress,
 		},
 		{
-			description: "returns error when second call to FindLastByAddress fails",
+			description:           "returns error when second call to FindLastByAddress fails",
 			maxValidatorSequences: 5,
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
@@ -539,12 +539,12 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				},
 				nil,
 			},
-			errs: []error{nil, ErrCouldNotFindByAddress},
+			errs:          []error{nil, ErrCouldNotFindByAddress},
 			expectedCount: 0,
-			expectedErr: ErrCouldNotFindByAddress,
+			expectedErr:   ErrCouldNotFindByAddress,
 		},
 		{
-			description: "returns partial system events when second call to FindLastByAddress fails with ErrNotFound",
+			description:           "returns partial system events when second call to FindLastByAddress fails with ErrNotFound",
 			maxValidatorSequences: 3,
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
@@ -565,7 +565,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				},
 				nil,
 			},
-			errs: []error{nil, store.ErrNotFound},
+			errs:          []error{nil, store.ErrNotFound},
 			expectedCount: 1,
 			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
 		},
@@ -590,7 +590,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				if validatorSeq.PrecommitValidated == nil || !*validatorSeq.PrecommitValidated {
 					call := validatorSeqStoreMock.EXPECT().FindLastByAddress(gomock.Any(), gomock.Any())
 
-					if len(tt.errs) >= i + 1 && tt.errs[i] != nil {
+					if len(tt.errs) >= i+1 && tt.errs[i] != nil {
 						call = call.Return(nil, tt.errs[i])
 					} else {
 						call = call.Return(validatorSeqs, nil)
@@ -640,14 +640,14 @@ func testPayload() *payload {
 	}
 }
 
-func newValidatorSeq(address string, votingPower int64, validated bool) model.ValidatorSeq {
+func newValidatorSeq(address string, balance int64, validated bool) model.ValidatorSeq {
 	return model.ValidatorSeq{
 		Sequence: &model.Sequence{
 			Height: Height,
 			Time:   *types.NewTimeFromTime(time.Now()),
 		},
-		Address:            address,
-		VotingPower:        votingPower,
-		PrecommitValidated: &validated,
+		Address:             address,
+		ActiveEscrowBalance: types.NewQuantityFromInt64(balance),
+		PrecommitValidated:  &validated,
 	}
 }

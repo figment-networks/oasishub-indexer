@@ -144,17 +144,20 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 				validatorSummary := model.ValidatorSummary{
 					Summary: summary,
 
-					Address:         rawSummary.Address,
-					VotingPowerAvg:  rawSummary.VotingPowerAvg,
-					VotingPowerMax:  rawSummary.VotingPowerMax,
-					VotingPowerMin:  rawSummary.VotingPowerMin,
-					TotalSharesAvg:  rawSummary.TotalSharesAvg,
-					TotalSharesMax:  rawSummary.TotalSharesMax,
-					TotalSharesMin:  rawSummary.TotalSharesMin,
-					ValidatedSum:    rawSummary.ValidatedSum,
-					NotValidatedSum: rawSummary.NotValidatedSum,
-					ProposedSum:     rawSummary.ProposedSum,
-					UptimeAvg:       rawSummary.UptimeAvg,
+					Address:                rawSummary.Address,
+					VotingPowerAvg:         rawSummary.VotingPowerAvg,
+					VotingPowerMax:         rawSummary.VotingPowerMax,
+					VotingPowerMin:         rawSummary.VotingPowerMin,
+					TotalSharesAvg:         rawSummary.TotalSharesAvg,
+					TotalSharesMax:         rawSummary.TotalSharesMax,
+					TotalSharesMin:         rawSummary.TotalSharesMin,
+					ActiveEscrowBalanceAvg: rawSummary.ActiveEscrowBalanceAvg,
+					ActiveEscrowBalanceMax: rawSummary.ActiveEscrowBalanceMax,
+					ActiveEscrowBalanceMin: rawSummary.ActiveEscrowBalanceMin,
+					ValidatedSum:           rawSummary.ValidatedSum,
+					NotValidatedSum:        rawSummary.NotValidatedSum,
+					ProposedSum:            rawSummary.ProposedSum,
+					UptimeAvg:              rawSummary.UptimeAvg,
 				}
 
 				if err := uc.db.ValidatorSummary.Create(&validatorSummary); err != nil {
@@ -171,6 +174,9 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 			existingValidatorSummary.TotalSharesAvg = rawSummary.TotalSharesAvg
 			existingValidatorSummary.TotalSharesMax = rawSummary.TotalSharesMax
 			existingValidatorSummary.TotalSharesMin = rawSummary.TotalSharesMin
+			existingValidatorSummary.ActiveEscrowBalanceAvg = rawSummary.ActiveEscrowBalanceAvg
+			existingValidatorSummary.ActiveEscrowBalanceMax = rawSummary.ActiveEscrowBalanceMax
+			existingValidatorSummary.ActiveEscrowBalanceMin = rawSummary.ActiveEscrowBalanceMin
 			existingValidatorSummary.ValidatedSum = rawSummary.ValidatedSum
 			existingValidatorSummary.NotValidatedSum = rawSummary.NotValidatedSum
 			existingValidatorSummary.ProposedSum = rawSummary.ProposedSum

@@ -79,6 +79,7 @@ type parsedValidator struct {
 	PrecommitBlockIdFlag int64
 	PrecommitIndex       int64
 	TotalShares          types.Quantity
+	ActiveEscrowBalance  types.Quantity
 }
 
 func (t *validatorsParserTask) GetName() string {
@@ -151,6 +152,12 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 			}
 		}
 		calculatedData.TotalShares = types.NewQuantity(totalShares)
+
+		// Get active escrow
+		account, ok := fetchedStakingState.GetLedger()[address]
+		if ok {
+			calculatedData.ActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+		}
 
 		parsedData[address] = calculatedData
 	}
