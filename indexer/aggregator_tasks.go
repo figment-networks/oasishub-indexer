@@ -212,7 +212,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAt:       payload.Syncable.Time,
 				},
 
-				RecentAddress:           rawValidator.GetAddress(), // TODO UpdateAggAttrs doesn't Update address, so need to remove this line, or change UpdateAggAttrs
+				RecentAddress:           rawValidator.GetAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
