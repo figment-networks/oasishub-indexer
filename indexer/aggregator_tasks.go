@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	AccountAggCreatorTaskName = "AccountAggCreator"
+	AccountAggCreatorTaskName   = "AccountAggCreator"
 	ValidatorAggCreatorTaskName = "ValidatorAggCreator"
 )
 
@@ -23,8 +23,7 @@ var (
 	_ pipeline.Task = (*accountAggCreatorTask)(nil)
 	_ pipeline.Task = (*validatorAggCreatorTask)(nil)
 
-	ErrAccountAggNotValid   = errors.New("account aggregator not valid")
-	ErrValidatorAggNotValid = errors.New("validator aggregator not valid")
+	ErrAccountAggNotValid = errors.New("account aggregator not valid")
 )
 
 func NewAccountAggCreatorTask(db *store.Store) *accountAggCreatorTask {
@@ -98,7 +97,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 			}
 
-			existing.UpdateAggAttrs(accountAgg)
+			existing.Update(accountAgg)
 
 			if !existing.Valid() {
 				return ErrAccountAggNotValid
@@ -136,10 +135,11 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageAggregator, t.GetName(), payload.CurrentHeight))
 
-	var created []model.ValidatorAgg
-	var updated []model.ValidatorAgg
+	var newValidatorAggs []model.ValidatorAgg
+	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
 		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
+		address := rawValidator.GetAddress()
 		if err != nil {
 			if err == store.ErrNotFound {
 				// Create new
@@ -151,13 +151,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 						RecentAt:        payload.Syncable.Time,
 					},
 
-					EntityUID:               rawValidator.GetNode().EntityId,
-					RecentAddress:           rawValidator.GetAddress(),
+					Address:                 rawValidator.GetAddress(),
+					EntityUID:               rawValidator.GetNode().GetEntityId(),
+					RecentTendermintAddress: rawValidator.GetTendermintAddress(),
 					RecentVotingPower:       rawValidator.GetVotingPower(),
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
-				parsedValidator, ok := payload.ParsedValidators[rawValidator.GetNode().GetEntityId()]
+				parsedValidator, ok := payload.ParsedValidators[address]
 				if ok {
 					validator.RecentTotalShares = parsedValidator.TotalShares
 
@@ -181,14 +182,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					}
 				}
 
-				if !validator.Valid() {
-					return ErrValidatorAggNotValid
-				}
-
-				if err := t.db.ValidatorAgg.Create(&validator); err != nil {
-					return err
-				}
-				created = append(created, validator)
+				newValidatorAggs = append(newValidatorAggs, validator)
 			} else {
 				return err
 			}
@@ -200,12 +194,12 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAt:       payload.Syncable.Time,
 				},
 
-				RecentAddress:           rawValidator.GetAddress(),
+				RecentTendermintAddress: rawValidator.GetAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
 
-			parsedValidator, ok := payload.ParsedValidators[rawValidator.GetNode().GetEntityId()]
+			parsedValidator, ok := payload.ParsedValidators[address]
 			if ok {
 				validator.RecentTotalShares = parsedValidator.TotalShares
 
@@ -226,22 +220,18 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				if parsedValidator.Proposed {
 					validator.RecentProposedHeight = payload.Syncable.Height
 					validator.AccumulatedProposedCount = existing.AccumulatedProposedCount + 1
+				} else {
+					validator.RecentProposedHeight = existing.RecentProposedHeight
+					validator.AccumulatedProposedCount = existing.AccumulatedProposedCount
 				}
 			}
 
-			existing.UpdateAggAttrs(validator)
+			existing.Update(validator)
 
-			if !existing.Valid() {
-				return ErrValidatorAggNotValid
-			}
-
-			if err := t.db.ValidatorAgg.Save(existing); err != nil {
-				return err
-			}
-			updated = append(updated, validator)
+			updatedValidatorAggs = append(updatedValidatorAggs, *existing)
 		}
 	}
-	payload.NewAggregatedValidators = created
-	payload.UpdatedAggregatedValidators = updated
+	payload.NewAggregatedValidators = newValidatorAggs
+	payload.UpdatedAggregatedValidators = updatedValidatorAggs
 	return nil
 }

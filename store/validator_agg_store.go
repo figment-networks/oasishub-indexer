@@ -38,6 +38,11 @@ func (s ValidatorAggStore) FindByID(id int64) (*model.ValidatorAgg, error) {
 	return s.FindBy("id", id)
 }
 
+// FindByAddress return validator by entity UID
+func (s *ValidatorAggStore) FindByAddress(address string) (*model.ValidatorAgg, error) {
+	return s.FindBy("address", address)
+}
+
 // FindByEntityUID return validator by entity UID
 func (s *ValidatorAggStore) FindByEntityUID(key string) (*model.ValidatorAgg, error) {
 	return s.FindBy("entity_uid", key)

@@ -8,16 +8,15 @@ type AccountAgg struct {
 	*Model
 	*Aggregate
 
-	PublicKey                        string `json:"public_key"`
-	RecentGeneralBalance             types.Quantity  `json:"recent_general_balance"`
-	RecentGeneralNonce               uint64     `json:"recent_general_nonce"`
-	RecentEscrowActiveBalance        types.Quantity  `json:"recent_escrow_active_balance"`
-	RecentEscrowActiveTotalShares    types.Quantity  `json:"recent_escrow_active_total_shares"`
-	RecentEscrowDebondingBalance     types.Quantity  `json:"recent_escrow_debonding_balance"`
-	RecentEscrowDebondingTotalShares types.Quantity  `json:"recent_escrow_debonding_total_shares"`
+	PublicKey                        string         `json:"public_key"`
+	RecentGeneralBalance             types.Quantity `json:"recent_general_balance"`
+	RecentGeneralNonce               uint64         `json:"recent_general_nonce"`
+	RecentEscrowActiveBalance        types.Quantity `json:"recent_escrow_active_balance"`
+	RecentEscrowActiveTotalShares    types.Quantity `json:"recent_escrow_active_total_shares"`
+	RecentEscrowDebondingBalance     types.Quantity `json:"recent_escrow_debonding_balance"`
+	RecentEscrowDebondingTotalShares types.Quantity `json:"recent_escrow_debonding_total_shares"`
 }
 
-// - METHODS
 func (AccountAgg) TableName() string {
 	return "account_aggregates"
 }
@@ -32,7 +31,7 @@ func (aa *AccountAgg) Equal(m AccountAgg) bool {
 		aa.PublicKey == m.PublicKey
 }
 
-func (aa *AccountAgg) UpdateAggAttrs(u *AccountAgg) {
+func (aa *AccountAgg) Update(u *AccountAgg) {
 	aa.Aggregate.RecentAtHeight = u.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = u.Aggregate.RecentAt
 

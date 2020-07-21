@@ -32,7 +32,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*ListView, error) {
 	}
 
 	if *height > lastH {
-		return nil, errors.New("height is not indexed")
+		return nil, errors.New("height is not indexed yet")
 	}
 
 	res, err := uc.client.Transaction.GetByHeight(*height)

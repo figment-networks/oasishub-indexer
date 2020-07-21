@@ -9,8 +9,9 @@ CREATE TABLE IF NOT EXISTS validator_aggregates
     recent_at_height           DECIMAL(65, 0)           NOT NULL,
     recent_at                  TIMESTAMP WITH TIME ZONE NOT NULL,
 
+    address                    TEXT,
     entity_uid                 TEXT,
-    recent_address             TEXT,
+    recent_tendermint_address  TEXT,
     recent_voting_power        DECIMAL(65, 0),
     recent_total_shares        DECIMAL(65, 0),
     recent_as_validator_height DECIMAL(65, 0),
@@ -23,4 +24,5 @@ CREATE TABLE IF NOT EXISTS validator_aggregates
 );
 
 -- Indexes
+CREATE index idx_validator_aggregates_address on validator_aggregates (address);
 CREATE index idx_validator_aggregates_entity_uid on validator_aggregates (entity_uid);

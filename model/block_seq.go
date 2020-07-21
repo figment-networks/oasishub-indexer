@@ -7,11 +7,9 @@ type BlockSeq struct {
 
 	*Sequence
 
-	// Indexed data
 	TransactionsCount int64  `json:"transactions_count"`
 }
 
-// - METHODS
 func (BlockSeq) TableName() string {
 	return "block_sequences"
 }
@@ -24,4 +22,8 @@ func (b *BlockSeq) Valid() bool {
 func (b *BlockSeq) Equal(m BlockSeq) bool {
 	return b.Sequence.Equal(*m.Sequence) &&
 		b.TransactionsCount == m.TransactionsCount
+}
+
+func (b *BlockSeq) Update(m BlockSeq) {
+	b.TransactionsCount = m.TransactionsCount
 }

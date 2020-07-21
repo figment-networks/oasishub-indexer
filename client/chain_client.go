@@ -12,7 +12,9 @@ var (
 
 type ChainClient interface {
 	//Queries
-	GetHead() (*chainpb.GetCurrentResponse, error)
+	GetHead() (*chainpb.GetHeadResponse, error)
+	GeStatus() (*chainpb.GetStatusResponse, error)
+	GeMetaByHeight(int64) (*chainpb.GetMetaByHeightResponse, error)
 }
 
 func NewChainClient(conn *grpc.ClientConn) *chainClient {
@@ -25,8 +27,20 @@ type chainClient struct {
 	client chainpb.ChainServiceClient
 }
 
-func (r *chainClient) GetHead() (*chainpb.GetCurrentResponse, error) {
+func (r *chainClient) GetHead() (*chainpb.GetHeadResponse, error) {
 	ctx := context.Background()
 
-	return r.client.GetCurrent(ctx, &chainpb.GetCurrentRequest{})
+	return r.client.GetHead(ctx, &chainpb.GetHeadRequest{})
+}
+
+func (r *chainClient) GeStatus() (*chainpb.GetStatusResponse, error) {
+	ctx := context.Background()
+
+	return r.client.GetStatus(ctx, &chainpb.GetStatusRequest{})
+}
+
+func (r *chainClient) GeMetaByHeight(h int64) (*chainpb.GetMetaByHeightResponse, error) {
+	ctx := context.Background()
+
+	return r.client.GetMetaByHeight(ctx, &chainpb.GetMetaByHeightRequest{Height: h})
 }

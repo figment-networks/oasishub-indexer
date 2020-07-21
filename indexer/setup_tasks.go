@@ -44,16 +44,16 @@ func (t *heightMetaRetrieverTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSetup, t.GetName(), payload.CurrentHeight))
 
-	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
+	meta, err := t.client.Chain.GeMetaByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
 
 	payload.HeightMeta = HeightMeta{
-		Height:       block.GetBlock().GetHeader().GetHeight(),
-		Time:         *types.NewTimeFromTimestamp(*block.GetBlock().GetHeader().GetTime()),
-		AppVersion:   block.GetBlock().GetHeader().GetVersion().GetApp(),
-		BlockVersion: block.GetBlock().GetHeader().GetVersion().GetBlock(),
+		Height:       meta.GetHeight(),
+		Time:         *types.NewTimeFromTimestamp(*meta.GetTime()),
+		AppVersion:   meta.GetAppVersion(),
+		BlockVersion: meta.GetBlockVersion(),
 	}
 	return nil
 }

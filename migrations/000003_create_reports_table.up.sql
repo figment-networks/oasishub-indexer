@@ -4,6 +4,8 @@ CREATE TABLE IF NOT EXISTS reports
     created_at    TIMESTAMP WITH TIME ZONE NOT NULL,
     updated_at    TIMESTAMP WITH TIME ZONE NOT NULL,
 
+    kind          INT                      NOT NULL,
+    index_version INT                      NOT NULL,
     start_height  DECIMAL(65, 0)           NOT NULL,
     end_height    DECIMAL(65, 0)           NOT NULL,
     success_count INT,
@@ -16,3 +18,5 @@ CREATE TABLE IF NOT EXISTS reports
 );
 
 -- Indexes
+CREATE index idx_reports_kind on reports (kind);
+CREATE index idx_reports_index_version on reports (index_version);

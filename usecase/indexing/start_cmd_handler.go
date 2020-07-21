@@ -6,34 +6,26 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
-var (
-	_ types.CmdHandler = (*runCmdHandler)(nil)
-)
-
-type runCmdHandler struct {
+type StartCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *runUseCase
+	useCase *startUseCase
 }
 
-func NewRunCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *runCmdHandler {
-	return &runCmdHandler{
+func NewStartCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *StartCmdHandler {
+	return &StartCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *runCmdHandler) Handle(ctx context.Context) {
-	//TODO: Pass as an argument from command line
-	batchSize := int64(297)
-
+func (h *StartCmdHandler) Handle(ctx context.Context, batchSize int64) {
 	logger.Info(fmt.Sprintf("running indexer use case [handler=cmd] [batchSize=%d]", batchSize))
 
 	err := h.getUseCase().Execute(ctx, batchSize)
@@ -43,9 +35,9 @@ func (h *runCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *runCmdHandler) getUseCase() *runUseCase {
+func (h *StartCmdHandler) getUseCase() *startUseCase {
 	if h.useCase == nil {
-		return NewRunUseCase(h.cfg, h.db, h.client)
+		return NewStartUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

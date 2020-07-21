@@ -6,8 +6,9 @@ CREATE TABLE IF NOT EXISTS validator_summary
 
     time_interval     VARCHAR                  NOT NULL,
     time_bucket       TIMESTAMP WITH TIME ZONE NOT NULL,
+    index_version     INT                      NOT NULL,
 
-    entity_uid        TEXT                     NOT NULL,
+    address        TEXT                     NOT NULL,
     voting_power_avg  DECIMAL(65, 0)           NOT NULL,
     voting_power_max  DECIMAL(65, 0)           NOT NULL,
     voting_power_min  DECIMAL(65, 0)           NOT NULL,
@@ -24,4 +25,5 @@ CREATE TABLE IF NOT EXISTS validator_summary
 
 -- Indexes
 CREATE index idx_validator_summary_time on validator_summary (time_interval, time_bucket);
-CREATE index idx_validator_summary_entity_uid on validator_summary (entity_uid);
+CREATE index idx_validator_summary_index_version on validator_summary (index_version);
+CREATE index idx_validator_summary_address on validator_summary (address);

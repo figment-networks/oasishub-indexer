@@ -32,7 +32,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*DetailsView, error) {
 	}
 
 	if *height > lastH {
-		return nil, errors.New("height is not indexed")
+		return nil, errors.New("height is not indexed yet")
 	}
 
 	res, err := uc.client.Block.GetByHeight(*height)
@@ -40,5 +40,5 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*DetailsView, error) {
 		return nil, err
 	}
 
-	return ToDetailsView(res.GetBlock())
+	return ToDetailsView(res.GetBlock()), nil
 }

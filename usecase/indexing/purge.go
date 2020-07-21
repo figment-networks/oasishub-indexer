@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/indexer"
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -31,57 +32,52 @@ func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "purge")
 
-	if err := uc.purgeBlocks(); err != nil {
+	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	if err != nil {
+		return err
+	}
+	currentIndexVersion := targetsReader.GetCurrentVersion()
+
+	if err := uc.purgeBlocks(currentIndexVersion); err != nil {
 		return err
 	}
 
-	if err := uc.purgeValidators(); err != nil {
+	if err := uc.purgeValidators(currentIndexVersion); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (uc *purgeUseCase) purgeValidators() error {
-	if err := uc.purgeValidatorSequences(); uc.checkErr(err) {
+
+func (uc *purgeUseCase) purgeBlocks(currentIndexVersion int64) error {
+	if err := uc.purgeBlockSequences(currentIndexVersion); uc.checkErr(err) {
 		return err
 	}
-	if err := uc.purgeValidatorSummaries(types.IntervalHourly, uc.cfg.PurgeValidatorHourlySummaryInterval); uc.checkErr(err) {
-		return err
-	}
-	if err := uc.purgeValidatorSummaries(types.IntervalDaily, uc.cfg.PurgeValidatorDailySummaryInterval); uc.checkErr(err) {
+	if err := uc.purgeBlockSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
 		return err
 	}
 	return nil
 }
 
-func (uc *purgeUseCase) purgeBlocks() error {
-	if err := uc.purgeBlockSequences(); uc.checkErr(err) {
+func (uc *purgeUseCase) purgeValidators(currentIndexVersion int64) error {
+	if err := uc.purgeValidatorSequences(currentIndexVersion); uc.checkErr(err) {
 		return err
 	}
-	if err := uc.purgeBlockSummaries(types.IntervalHourly, uc.cfg.PurgeBlockHourlySummaryInterval); uc.checkErr(err) {
-		return err
-	}
-	if err := uc.purgeBlockSummaries(types.IntervalDaily, uc.cfg.PurgeBlockDailySummaryInterval); uc.checkErr(err) {
+	if err := uc.purgeValidatorSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
 		return err
 	}
 	return nil
 }
 
-func (uc *purgeUseCase) purgeBlockSequences() error {
+func (uc *purgeUseCase) purgeBlockSequences(currentIndexVersion int64) error {
 	blockSeq, err := uc.db.BlockSeq.FindMostRecent()
 	if err != nil {
 		return err
 	}
 	lastSeqTime := blockSeq.Time.Time
 
-	blockSummary, err := uc.db.BlockSummary.FindMostRecent()
-	if err != nil {
-		return err
-	}
-	lastSummaryTimeBucket := blockSummary.TimeBucket.Time
-
-	duration, err := uc.parseDuration(uc.cfg.PurgeBlockInterval)
+	duration, err := uc.parseDuration(uc.cfg.PurgeSequencesInterval)
 	if err != nil {
 		if err == ErrPurgingDisabled {
 			logger.Info("purging block sequences disabled. Purge interval set to 0.")
@@ -89,18 +85,16 @@ func (uc *purgeUseCase) purgeBlockSequences() error {
 		return err
 	}
 
-	purgeThresholdFromConfig := lastSeqTime.Add(- *duration)
+	purgeThresholdFromLastSeq := lastSeqTime.Add(- *duration)
 
-	var purgeThreshold time.Time
-	if purgeThresholdFromConfig.Before(lastSummaryTimeBucket) {
-		purgeThreshold = purgeThresholdFromConfig
-	} else {
-		purgeThreshold = lastSummaryTimeBucket
+	activityPeriods, err := uc.db.BlockSummary.FindActivityPeriods(types.IntervalDaily, currentIndexVersion)
+	if err != nil {
+		return err
 	}
 
-	logger.Info(fmt.Sprintf("purging block sequences... [older than=%s]", purgeThreshold))
+	logger.Info(fmt.Sprintf("purging summarized block sequences... [older than=%s]", purgeThresholdFromLastSeq))
 
-	deletedCount, err := uc.db.BlockSeq.DeleteOlderThan(purgeThreshold)
+	deletedCount, err := uc.db.BlockSeq.DeleteOlderThan(purgeThresholdFromLastSeq, activityPeriods)
 	if err != nil {
 		return err
 	}
@@ -139,7 +133,7 @@ func (uc *purgeUseCase) purgeBlockSummaries(interval types.SummaryInterval, purg
 	return nil
 }
 
-func (uc *purgeUseCase) purgeValidatorSequences() error {
+func (uc *purgeUseCase) purgeValidatorSequences(currentIndexVersion int64) error {
 	validatorSeq, err := uc.db.ValidatorSeq.FindMostRecent()
 	if err != nil {
 		return err
@@ -152,7 +146,7 @@ func (uc *purgeUseCase) purgeValidatorSequences() error {
 	}
 	lastSummaryTimeBucket := blockSummary.TimeBucket.Time
 
-	duration, err := uc.parseDuration(uc.cfg.PurgeValidatorInterval)
+	duration, err := uc.parseDuration(uc.cfg.PurgeSequencesInterval)
 	if err != nil {
 		if err == ErrPurgingDisabled {
 			logger.Info("purging validator sequences disabled. Purge interval set to 0.")

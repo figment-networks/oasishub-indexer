@@ -5,15 +5,10 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
-var (
-	_ types.CmdHandler = (*purgeCmdHandler)(nil)
-)
-
-type purgeCmdHandler struct {
+type PurgeCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
@@ -21,15 +16,15 @@ type purgeCmdHandler struct {
 	useCase *purgeUseCase
 }
 
-func NewPurgeCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *purgeCmdHandler {
-	return &purgeCmdHandler{
+func NewPurgeCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *PurgeCmdHandler {
+	return &PurgeCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *purgeCmdHandler) Handle(ctx context.Context) {
+func (h *PurgeCmdHandler) Handle(ctx context.Context) {
 	logger.Info("running purge use case [handler=cmd]")
 
 	err := h.getUseCase().Execute(ctx)
@@ -39,7 +34,7 @@ func (h *purgeCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *purgeCmdHandler) getUseCase() *purgeUseCase {
+func (h *PurgeCmdHandler) getUseCase() *purgeUseCase {
 	if h.useCase == nil {
 		return NewPurgeUseCase(h.cfg, h.db)
 	}

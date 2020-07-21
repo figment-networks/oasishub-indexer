@@ -7,16 +7,9 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	"github.com/figment-networks/oasishub-indexer/model"
-	"sync"
 )
 
 var (
-	payloadPool = sync.Pool{
-		New: func() interface{} {
-			return new(payload)
-		},
-	}
-
 	_ pipeline.PayloadFactory = (*payloadFactory)(nil)
 	_ pipeline.Payload        = (*payload)(nil)
 )
@@ -28,9 +21,9 @@ func NewPayloadFactory() *payloadFactory {
 type payloadFactory struct{}
 
 func (pf *payloadFactory) GetPayload(currentHeight int64) pipeline.Payload {
-	payload := payloadPool.Get().(*payload)
-	payload.CurrentHeight = currentHeight
-	return payload
+	return &payload{
+		CurrentHeight: currentHeight,
+	}
 }
 
 type payload struct {
@@ -60,14 +53,15 @@ type payload struct {
 	UpdatedAggregatedValidators []model.ValidatorAgg
 
 	// Sequencer stage
-	BlockSequence                *model.BlockSeq
+	NewBlockSequence          *model.BlockSeq
+	UpdatedBlockSequence      *model.BlockSeq
+	NewValidatorSequences     []model.ValidatorSeq
+	UpdatedValidatorSequences []model.ValidatorSeq
+
 	StakingSequence              *model.StakingSeq
-	ValidatorSequences           []model.ValidatorSeq
 	TransactionSequences         []model.TransactionSeq
 	DelegationSequences          []model.DelegationSeq
 	DebondingDelegationSequences []model.DebondingDelegationSeq
 }
 
-func (p *payload) MarkAsProcessed() {
-	payloadPool.Put(p)
-}
+func (p *payload) MarkAsProcessed() {}

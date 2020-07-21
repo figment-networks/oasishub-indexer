@@ -1,7 +1,6 @@
 package types
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,8 +10,4 @@ type HttpHandler interface {
 
 type WorkerHandler interface {
 	Handle()
-}
-
-type CmdHandler interface {
-	Handle(context.Context)
 }

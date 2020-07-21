@@ -4,22 +4,17 @@ import (
 	"context"
 	"fmt"
 	"github.com/figment-networks/oasishub-indexer/metric"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"github.com/pkg/errors"
 )
 
 const (
 	MainSyncerTaskName = "MainSyncer"
-)
-
-var (
-	ErrMissingReportInCtx = errors.New("report missing in context")
 )
 
 func NewMainSyncerTask(db *store.Store) pipeline.Task {
@@ -43,24 +38,28 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSyncer, t.GetName(), payload.CurrentHeight))
 
-	report, ok := ctx.Value(CtxReport).(*model.Report)
-	if !ok {
-		return ErrMissingReportInCtx
+	syncable, err := t.db.Syncables.FindByHeight(payload.CurrentHeight)
+	if err != nil {
+		if err == store.ErrNotFound {
+			syncable = &model.Syncable{
+				Height:       payload.CurrentHeight,
+				Time:         payload.HeightMeta.Time,
+				AppVersion:   payload.HeightMeta.AppVersion,
+				BlockVersion: payload.HeightMeta.BlockVersion,
+				Status:       model.SyncableStatusRunning,
+			}
+		} else {
+			return err
+		}
 	}
 
-	syncable := &model.Syncable{
-		Height: payload.CurrentHeight,
-		ReportID: report.ID,
-		Time: payload.HeightMeta.Time,
-		AppVersion: payload.HeightMeta.AppVersion,
-		BlockVersion: payload.HeightMeta.BlockVersion,
-		Status: model.SyncableStatusRunning,
-		StartedAt: *types.NewTimeFromTime(time.Now()),
+	syncable.StartedAt = *types.NewTimeFromTime(time.Now())
+
+	report, ok := ctx.Value(CtxReport).(*model.Report)
+	if ok {
+		syncable.ReportID = report.ID
 	}
-	err := t.db.Syncables.CreateOrUpdate(syncable)
-	if err != nil {
-		return err
-	}
+
 	payload.Syncable = syncable
 	return nil
 }

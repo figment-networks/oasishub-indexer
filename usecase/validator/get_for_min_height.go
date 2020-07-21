@@ -29,7 +29,7 @@ func (uc *getForMinHeightUseCase) Execute(height *int64) (*AggListView, error) {
 	}
 
 	if *height > lastH {
-		return nil, errors.New("height is not indexed")
+		return nil, errors.New("height is not indexed yet")
 	}
 
 	ms, err := uc.db.ValidatorAgg.GetAllForHeightGreaterThan(*height)

@@ -77,7 +77,7 @@ func Test_AccountAgg(t *testing.T) {
 		}
 	})
 
-	t.Run("UpdateAggAttrs()", func(t *testing.T) {
+	t.Run("Update()", func(t *testing.T) {
 		m1 := AccountAgg{
 			Model: model,
 			Aggregate: agg,
@@ -97,7 +97,7 @@ func Test_AccountAgg(t *testing.T) {
 			CurrentEscrowDebondingTotalShares: types.NewQuantity(big.NewInt(400)),
 		}
 
-		m1.UpdateAggAttrs(&m2)
+		m1.Update(&m2)
 
 		if m1.CurrentGeneralBalance.Int64() != int64(10) ||
 			!m1.CurrentGeneralNonce.Equal(uint64(1)) ||

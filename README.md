@@ -70,26 +70,26 @@ data to the format indexer understands.
 * `PURGE_VALIDATOR_INTERVAL` - Validator sequence older than given interval will be purged
 * `PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL` - Validator hourly summary records older than given interval will be purged
 * `PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL` - Validator daily summary records older than given interval will be purged
-* `INDEXER_VERSIONS_DIR` - Directory with indexer JSON version files 
+* `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
 
 ### Available endpoints:
 
 | Method | Path                               | Description                                                 | Params                                                                                                                                                |
 |--------|------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | GET    | `/health`                            | health endpoint                                             | -                                                                                                                                                     |
-| GET    | `/current_height`                    | get the height of the most recently synced and indexed data |                                                                                                                                                       |
+| GET    | `/status`                            | status of the application and chain                         | -                                                                                                                                                     |
 | GET    | `/block`                             | return block by height                                      | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/block_times/:limit`                | get last x block times                                      | limit (required) - limit of blocks                                                                                                                    |
-| GET    | `/block_summary`                     | get block summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]                                               |
+| GET    | `/blocks_summary`                    | get block summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]                                               |
 | GET    | `/transactions`                      | get list of transactions                                    | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/validators`                        | get list of validators                                      | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/staking`                           | get staking details                                         | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/delegations`                       | get delegations                                             | height (optional) - height [Default: 0 = last]                                                                                                        |
 | GET    | `/debonding_delegations`             | get debonding delegations                                   | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/accounts`                          | get account details                                         | public_key (required) - public key of account height (optional) - height [Default: 0 = last]                                                          |
+| GET    | `/account/:address`                  | get account details                                         | address (required) - address of account height (optional) - height [Default: 0 = last]                                                          |
 | GET    | `/validators/for_min_height/:height` | get the list of validators for height greater than provided | height (required) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/validators/by_entity_uid`         | get validator by entity UID                                 | entity_uid (required) - public key of entity    sequences_limit (optional) - number of sequences to include                                                                                                      |
-| GET    | `/validators_summary`                | validator summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]  entity_uid (optional) - public key of entity |
+| GET    | `/validator/:address`                | get validator by address                                 | address (required) - validator's address    sequences_limit (optional) - number of sequences to include                                                                                                      |
+| GET    | `/validators_summary`                | validator summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]  address (optional) - address of entity |
 
 ### Running app
 
@@ -116,19 +116,19 @@ IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oas
 
 ### Running one-off commands
 
-Run indexer:
+Start indexer:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=run_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_start
 ```
 
 Create summary tables for sequences:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=summarize_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_summarize
 ```
 
 Purge old data:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=purge_indexer
+oasishub-indexer -config path/to/config.json -cmd=indexer_purge
 ```
 
 ### Running tests

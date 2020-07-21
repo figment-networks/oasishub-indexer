@@ -11,7 +11,7 @@ import (
 	"github.com/pkg/errors"
 )
 
-func runCmd(cfg *config.Config, cmdName string, filePath string) error {
+func runCmd(cfg *config.Config, flags Flags) error {
 	db, err := initStore(cfg)
 	if err != nil {
 		return err
@@ -25,24 +25,26 @@ func runCmd(cfg *config.Config, cmdName string, filePath string) error {
 
 	cmdHandlers := usecase.NewCmdHandlers(cfg, db, client)
 
-	logger.Info(fmt.Sprintf("executing cmd %s ...", cmdName), logger.Field("app", "cli"))
+	logger.Info(fmt.Sprintf("executing cmd %s ...", flags.runCommand), logger.Field("app", "cli"))
 
-	switch cmdName {
-	case "run_indexer":
-		ctx := context.Background()
-		cmdHandlers.RunIndexer.Handle(ctx)
-	case "purge_indexer":
-		ctx := context.Background()
-		cmdHandlers.PurgeIndexer.Handle(ctx)
-	case "summarize_indexer":
-		ctx := context.Background()
+	ctx := context.Background()
+	switch flags.runCommand {
+	case "status":
+		cmdHandlers.GetStatus.Handle(ctx)
+	case "indexer_start":
+		cmdHandlers.StartIndexer.Handle(ctx, flags.batchSize)
+	case "indexer_backfill":
+		cmdHandlers.BackfillIndexer.Handle(ctx, flags.parallel, flags.force, flags.targetIds)
+	case "indexer_summarize":
 		cmdHandlers.SummarizeIndexer.Handle(ctx)
 	case "decorate_validators":
 		ctx := context.Background()
 		ctxWithFilePath := context.WithValue(ctx, validator.CtxFilePath, filePath)
 		cmdHandlers.DecorateValidators.Handle(ctxWithFilePath)
+	case "indexer_purge":
+		cmdHandlers.PurgeIndexer.Handle(ctx)
 	default:
-		return errors.New(fmt.Sprintf("command %s not found", cmdName))
+		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))
 	}
 	return nil
 }

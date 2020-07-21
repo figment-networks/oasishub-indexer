@@ -11,7 +11,7 @@ var (
 )
 
 type AccountClient interface {
-	GetByPublicKey(string, int64) (*accountpb.GetByPublicKeyResponse, error)
+	GetByAddress(string, int64) (*accountpb.GetByAddressResponse, error)
 }
 
 func NewAccountClient(conn *grpc.ClientConn) *accountClient {
@@ -24,8 +24,8 @@ type accountClient struct {
 	client accountpb.AccountServiceClient
 }
 
-func (r *accountClient) GetByPublicKey(key string, height int64) (*accountpb.GetByPublicKeyResponse, error) {
+func (r *accountClient) GetByAddress(address string, height int64) (*accountpb.GetByAddressResponse, error) {
 	ctx := context.Background()
 
-	return r.client.GetByPublicKey(ctx, &accountpb.GetByPublicKeyRequest{PublicKey: key, Height: height})
+	return r.client.GetByAddress(ctx, &accountpb.GetByAddressRequest{Address: address, Height: height})
 }

@@ -13,7 +13,6 @@ type DelegationSeq struct {
 	Shares       types.Quantity `json:"shares"`
 }
 
-// - METHODS
 func (DelegationSeq) TableName() string {
 	return "delegation_sequences"
 }

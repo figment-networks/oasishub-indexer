@@ -1,6 +1,7 @@
 package store
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 	"time"
@@ -29,19 +30,28 @@ func (s ValidatorSummaryStore) Find(query *model.ValidatorSummary) (*model.Valid
 	return &result, checkErr(err)
 }
 
-// FindByEntityUID finds last validator summary for given entity uid
-func (s ValidatorSummaryStore) FindByEntityUID(key string) ([]model.ValidatorSummary, error) {
-	q := model.ValidatorSummary{
-		EntityUID: key,
+// FindActivityPeriods Finds activity periods
+func (s *ValidatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
+
+	rows, err := s.db.
+		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
+		Rows()
+
+	if err != nil {
+		return nil, err
 	}
-	var result []model.ValidatorSummary
+	defer rows.Close()
 
-	err := s.db.
-		Where(&q).
-		Find(&result).
-		Error
-
-	return result, checkErr(err)
+	var res []ActivityPeriodRow
+	for rows.Next() {
+		var row ActivityPeriodRow
+		if err := s.db.ScanRows(rows, &row); err != nil {
+			return nil, err
+		}
+		res = append(res, row)
+	}
+	return res, nil
 }
 
 type ValidatorSummaryRow struct {
@@ -83,11 +93,11 @@ func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 	return res, nil
 }
 
-// FindSummaryByEntityUID gets summary for given validator
-func (s *ValidatorSummaryStore) FindSummaryByEntityUID(key string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_GetSummaryByEntityUID")
+// FindSummaryByAddress gets summary for given validator
+func (s *ValidatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
+	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
 
-	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, key, interval).Rows()
+	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
 	if err != nil {
 		return nil, err
 	}

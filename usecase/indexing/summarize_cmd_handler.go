@@ -6,15 +6,10 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
-var (
-	_ types.CmdHandler = (*summarizeCmdHandler)(nil)
-)
-
-type summarizeCmdHandler struct {
+type SummarizeCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
@@ -22,15 +17,15 @@ type summarizeCmdHandler struct {
 	useCase *summarizeUseCase
 }
 
-func NewSummarizeCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *summarizeCmdHandler {
-	return &summarizeCmdHandler{
+func NewSummarizeCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *SummarizeCmdHandler {
+	return &SummarizeCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *summarizeCmdHandler) Handle(ctx context.Context) {
+func (h *SummarizeCmdHandler) Handle(ctx context.Context) {
 	logger.Info(fmt.Sprintf("summarizing indexer use case [handler=cmd]"))
 
 	err := h.getUseCase().Execute(ctx)
@@ -40,7 +35,7 @@ func (h *summarizeCmdHandler) Handle(ctx context.Context) {
 	}
 }
 
-func (h *summarizeCmdHandler) getUseCase() *summarizeUseCase {
+func (h *SummarizeCmdHandler) getUseCase() *summarizeUseCase {
 	if h.useCase == nil {
 		return NewSummarizeUseCase(h.cfg, h.db)
 	}

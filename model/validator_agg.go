@@ -8,8 +8,9 @@ type ValidatorAgg struct {
 	*Model
 	*Aggregate
 
+	Address                  string         `json:"address"`
 	EntityUID                string         `json:"entity_uid"`
-	RecentAddress            string         `json:"recent_address"`
+	RecentTendermintAddress  string         `json:"recent_tendermint_address"`
 	RecentVotingPower        int64          `json:"recent_voting_power"`
 	RecentTotalShares        types.Quantity `json:"recent_total_shares"`
 	RecentAsValidatorHeight  int64          `json:"recent_as_validator_height"`
@@ -21,7 +22,6 @@ type ValidatorAgg struct {
 	EntityName               string         `json:"entity_name"`
 }
 
-// - METHODS
 func (ValidatorAgg) TableName() string {
 	return "validator_aggregates"
 }
@@ -36,7 +36,7 @@ func (aa *ValidatorAgg) Equal(m ValidatorAgg) bool {
 		aa.EntityUID == m.EntityUID
 }
 
-func (aa *ValidatorAgg) UpdateAggAttrs(entity ValidatorAgg) {
+func (aa *ValidatorAgg) Update(entity ValidatorAgg) {
 	aa.Aggregate.RecentAtHeight = entity.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = entity.Aggregate.RecentAt
 

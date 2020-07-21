@@ -3,6 +3,9 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -11,26 +14,61 @@ import (
 	"github.com/pkg/errors"
 )
 
+type Flags struct {
+	configPath  string
+	runCommand  string
+	showVersion bool
+
+	batchSize int64
+	parallel  bool
+	force     bool
+	targetIds targetIds
+}
+
+type targetIds []int64
+
+func (i *targetIds) String() string {
+	return fmt.Sprint(*i)
+}
+
+func (i *targetIds) Set(value string) error {
+	if len(*i) > 0 {
+		return errors.New("targetIds flag already set")
+	}
+	for _, rawTargetId := range strings.Split(value, ",") {
+		targetId, err := strconv.ParseInt(rawTargetId, 10, 64)
+		if err != nil {
+			return err
+		}
+		*i = append(*i, targetId)
+	}
+	return nil
+}
+
+func (c *Flags) Setup() {
+	flag.BoolVar(&c.showVersion, "v", false, "Show application version")
+	flag.StringVar(&c.configPath, "config", "", "Path to config")
+	flag.StringVar(&c.runCommand, "cmd", "", "Command to run")
+
+	flag.Int64Var(&c.batchSize, "batch_size", 0, "pipeline batch size")
+	flag.BoolVar(&c.parallel, "parallel", false, "should backfill be run in parallel with indexing")
+	flag.BoolVar(&c.force, "force", false, "remove existing reindexing reports")
+	flag.Var(&c.targetIds, "target_ids", "comma separated list of integers")
+}
+
 // Run executes the command line interface
 func Run() {
-	var configPath string
-	var runCommand string
-	var filePath string
-	var showVersion bool
-
-	flag.BoolVar(&showVersion, "v", false, "Show application version")
-	flag.StringVar(&configPath, "config", "", "Path to config")
-	flag.StringVar(&runCommand, "cmd", "", "Command to run")
-	flag.StringVar(&filePath, "file", "", "Complete file path")
+	flags := Flags{}
+	flags.Setup()
 	flag.Parse()
 
-	if showVersion {
-		fmt.Println(versionString())
+	if flags.showVersion {
+		fmt.Println(config.VersionString())
 		return
 	}
 
 	// Initialize configuration
-	cfg, err := initConfig(configPath)
+	cfg, err := initConfig(flags.configPath)
 	if err != nil {
 		panic(fmt.Errorf("error initializing config [ERR: %+v]", err))
 	}
@@ -43,17 +81,17 @@ func Run() {
 	// Initialize error reporting
 	initErrorReporting(cfg)
 
-	if runCommand == "" {
+	if flags.runCommand == "" {
 		terminate(errors.New("command is required"))
 	}
 
-	if err := startCommand(cfg, runCommand, filePath); err != nil {
+	if err := startCommand(cfg, flags); err != nil {
 		terminate(err)
 	}
 }
 
-func startCommand(cfg *config.Config, name string, filePath string) error {
-	switch name {
+func startCommand(cfg *config.Config, flags Flags) error {
+	switch flags.runCommand {
 	case "migrate":
 		return startMigrations(cfg)
 	case "server":
@@ -61,7 +99,7 @@ func startCommand(cfg *config.Config, name string, filePath string) error {
 	case "worker":
 		return startWorker(cfg)
 	default:
-		return runCmd(cfg, name, filePath)
+		return runCmd(cfg, flags)
 	}
 }
 

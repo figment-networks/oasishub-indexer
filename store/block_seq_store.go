@@ -1,7 +1,9 @@
 package store
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/jinzhu/gorm"
 	"time"
 
@@ -81,17 +83,32 @@ func (s *BlockSeqStore) FindMostRecent() (*model.BlockSeq, error) {
 }
 
 // DeleteOlderThan deletes block sequence older than given threshold
-func (s *BlockSeqStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
-	statement := s.db.
-		Unscoped().
-		Where("time < ?", purgeThreshold).
-		Delete(&model.BlockSeq{})
+func (s *BlockSeqStore) DeleteOlderThan(purgeThreshold time.Time, activityPeriods []ActivityPeriodRow) (*int64, error) {
+	tx := s.db.
+		Unscoped()
 
-	if statement.Error != nil {
-		return nil, checkErr(statement.Error)
+	hasIntervals := false
+	for _, activityPeriod := range activityPeriods {
+		// Make sure that there are many intervals (ie. days) in period
+		if !activityPeriod.Min.Equal(activityPeriod.Max) {
+			hasIntervals = true
+			// Thus, we do not add 1 day to Max because we don't want to purge sequences within last day of period
+			tx = tx.Where("time >= ? AND time < ?", activityPeriod.Min, activityPeriod.Max)
+		}
 	}
 
-	return &statement.RowsAffected, nil
+	if hasIntervals {
+		tx.Where("time < ?", purgeThreshold).
+			Delete(&model.BlockSeq{})
+
+		if tx.Error != nil {
+			return nil, checkErr(tx.Error)
+		}
+	} else {
+		logger.Info("no block sequences to purge")
+	}
+
+	return &tx.RowsAffected, nil
 }
 
 type BlockSeqSummary struct {
@@ -101,8 +118,8 @@ type BlockSeqSummary struct {
 }
 
 // Summarize gets the summarized version of block sequences
-func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, last *model.BlockSummary) ([]BlockSeqSummary, error) {
-	defer logQueryDuration(time.Now(), "BlockSummaryStore_CalculateSummary")
+func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
+	defer logQueryDuration(time.Now(), "BlockSummaryStore_Summarize")
 
 	tx := s.db.
 		Table(model.BlockSeq{}.TableName()).
@@ -110,8 +127,23 @@ func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, last *model.Bl
 		Order("time_bucket").
 		Group("time_bucket")
 
-	if last != nil {
-		tx = tx.Where("time >= ?", last.TimeBucket)
+	if len(activityPeriods) == 1 {
+		activityPeriod := activityPeriods[0]
+		tx = tx.Or("time < ? OR time >= ?", activityPeriod.Min, activityPeriod.Max)
+	} else {
+		for i, activityPeriod := range activityPeriods {
+			isLast := i == len(activityPeriods) - 1
+
+			if isLast {
+				tx = tx.Or("time >= ?", activityPeriod.Max)
+			} else {
+				duration, err := time.ParseDuration(fmt.Sprintf("1%s", interval))
+				if err != nil {
+					return nil, err
+				}
+				tx = tx.Or("time >= ? AND time < ?", activityPeriod.Max.Add(duration), activityPeriods[i + 1].Min)
+			}
+		}
 	}
 
 	rows, err := tx.Rows()

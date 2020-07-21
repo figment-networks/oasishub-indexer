@@ -27,7 +27,6 @@ type Syncable struct {
 	Duration     time.Duration  `json:"duration"`
 }
 
-// - Methods
 func (Syncable) TableName() string {
 	return "syncables"
 }

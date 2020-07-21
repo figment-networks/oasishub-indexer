@@ -50,16 +50,24 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	newBlockSeq, err := BlockToSequence(payload.Syncable, payload.RawBlock, payload.ParsedBlock)
+	rawBlockSeq, err := BlockToSequence(payload.Syncable, payload.RawBlock, payload.ParsedBlock)
 	if err != nil {
 		return err
 	}
 
-	if err := t.db.BlockSeq.CreateIfNotExists(newBlockSeq); err != nil {
-		return err
+	blockSeq, err := t.db.BlockSeq.FindByHeight(payload.CurrentHeight)
+	if err != nil {
+		if err == store.ErrNotFound {
+			payload.NewBlockSequence = rawBlockSeq
+			return nil
+		} else {
+			return err
+		}
 	}
 
-	payload.BlockSequence = newBlockSeq
+	blockSeq.Update(*rawBlockSeq)
+	payload.UpdatedBlockSequence = blockSeq
+
 	return nil
 }
 
@@ -84,47 +92,31 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	var res []model.ValidatorSeq
-	sequenced, err := t.db.ValidatorSeq.FindByHeight(payload.CurrentHeight)
+	rawValidatorSeqs, err := ValidatorToSequence(payload.Syncable, payload.RawValidators, payload.ParsedValidators)
 	if err != nil {
 		return err
 	}
 
-	toSequence, err := ValidatorToSequence(payload.Syncable, payload.RawValidators, payload.ParsedValidators)
-	if err != nil {
-		return err
-	}
-
-	// Nothing to sequence
-	if len(toSequence) == 0 {
-		payload.ValidatorSequences = res
-		return nil
-	}
-
-	// Everything sequenced and saved to persistence
-	if len(sequenced) == len(toSequence) {
-		payload.ValidatorSequences = sequenced
-		return nil
-	}
-
-	isSequenced := func(vs model.ValidatorSeq) bool {
-		for _, sv := range sequenced {
-			if sv.Equal(vs) {
-				return true
-			}
-		}
-		return false
-	}
-
-	for _, vs := range toSequence {
-		if !isSequenced(vs) {
-			if err := t.db.ValidatorSeq.Create(&vs); err != nil {
+	var newValidatorSeqs []model.ValidatorSeq
+	var updatedValidatorSeqs []model.ValidatorSeq
+	for _, rawValidatorSeq := range rawValidatorSeqs {
+		validatorSeq, err := t.db.ValidatorSeq.FindByHeightAndEntityUID(payload.CurrentHeight, rawValidatorSeq.EntityUID)
+		if err != nil {
+			if err == store.ErrNotFound {
+				newValidatorSeqs = append(newValidatorSeqs, rawValidatorSeq)
+				continue
+			} else {
 				return err
 			}
 		}
-		res = append(res, vs)
+
+		validatorSeq.Update(rawValidatorSeq)
+		updatedValidatorSeqs = append(updatedValidatorSeqs, *validatorSeq)
 	}
-	payload.ValidatorSequences = res
+
+	payload.NewValidatorSequences = newValidatorSeqs
+	payload.UpdatedValidatorSequences = updatedValidatorSeqs
+
 	return nil
 }
 

@@ -17,7 +17,6 @@ type TransactionSeq struct {
 	Method    string         `json:"method"`
 }
 
-// - Methods
 func (TransactionSeq) TableName() string {
 	return "transaction_sequences"
 }

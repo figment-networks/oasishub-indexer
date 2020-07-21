@@ -11,38 +11,44 @@ import (
 )
 
 var (
-	_ types.HttpHandler = (*getByEntityUidHttpHandler)(nil)
+	_ types.HttpHandler = (*getByAddressHttpHandler)(nil)
 )
 
-type getByEntityUidHttpHandler struct {
+type getByAddressHttpHandler struct {
 	db     *store.Store
 	client *client.Client
 
-	useCase *getByEntityUidUseCase
+	useCase *getByAddressUseCase
 }
 
-func NewGetByEntityUidHttpHandler(db *store.Store, c *client.Client) *getByEntityUidHttpHandler {
-	return &getByEntityUidHttpHandler{
+func NewGetByAddressHttpHandler(db *store.Store, c *client.Client) *getByAddressHttpHandler {
+	return &getByAddressHttpHandler{
 		db:     db,
 		client: c,
 	}
 }
 
 type GetByEntityUidRequest struct {
-	EntityUID      string `form:"entity_uid" binding:"required"`
+	Address        string `uri:"address" binding:"required"`
 	SequencesLimit int64  `form:"sequences_limit" binding:"-"`
 }
 
-func (h *getByEntityUidHttpHandler) Handle(c *gin.Context) {
+func (h *getByAddressHttpHandler) Handle(c *gin.Context) {
 	var req GetByEntityUidRequest
+	if err := c.ShouldBindUri(&req); err != nil {
+		logger.Error(err)
+		err := errors.New("invalid address")
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Error(err)
-		err := errors.New("invalid entity_uid")
+		err := errors.New("invalid sequences limit")
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.EntityUID, req.SequencesLimit)
+	resp, err := h.getUseCase().Execute(req.Address, req.SequencesLimit)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
@@ -52,9 +58,9 @@ func (h *getByEntityUidHttpHandler) Handle(c *gin.Context) {
 	c.JSON(http.StatusOK, resp)
 }
 
-func (h *getByEntityUidHttpHandler) getUseCase() *getByEntityUidUseCase {
+func (h *getByAddressHttpHandler) getUseCase() *getByAddressUseCase {
 	if h.useCase == nil {
-		return NewGetByEntityUidUseCase(h.db)
+		return NewGetByAddressUseCase(h.db)
 	}
 	return h.useCase
 }
