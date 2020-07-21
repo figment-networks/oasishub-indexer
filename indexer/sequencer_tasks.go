@@ -29,14 +29,14 @@ var (
 	_ pipeline.Task = (*debondingDelegationSeqCreatorTask)(nil)
 )
 
-func NewBlockSeqCreatorTask(db *store.Store) *blockSeqCreatorTask {
+func NewBlockSeqCreatorTask(db BlockSeqStore) *blockSeqCreatorTask {
 	return &blockSeqCreatorTask{
 		db: db,
 	}
 }
 
 type blockSeqCreatorTask struct {
-	db *store.Store
+	db BlockSeqStore
 }
 
 func (t *blockSeqCreatorTask) GetName() string {
@@ -55,7 +55,7 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 		return err
 	}
 
-	if err := t.db.BlockSeq.CreateIfNotExists(newBlockSeq); err != nil {
+	if err := t.db.CreateIfNotExists(newBlockSeq); err != nil {
 		return err
 	}
 
@@ -63,14 +63,14 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 	return nil
 }
 
-func NewValidatorSeqCreatorTask(db *store.Store) *validatorSeqCreatorTask {
+func NewValidatorSeqCreatorTask(db ValidatorSeqStore) *validatorSeqCreatorTask {
 	return &validatorSeqCreatorTask{
 		db: db,
 	}
 }
 
 type validatorSeqCreatorTask struct {
-	db *store.Store
+	db ValidatorSeqStore
 }
 
 func (t *validatorSeqCreatorTask) GetName() string {
@@ -85,7 +85,7 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.ValidatorSeq
-	sequenced, err := t.db.ValidatorSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -118,7 +118,7 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.ValidatorSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -128,14 +128,14 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewTransactionSeqCreatorTask(db *store.Store) *transactionSeqCreatorTask {
+func NewTransactionSeqCreatorTask(db TransactionSeqStore) *transactionSeqCreatorTask {
 	return &transactionSeqCreatorTask{
 		db: db,
 	}
 }
 
 type transactionSeqCreatorTask struct {
-	db *store.Store
+	db TransactionSeqStore
 }
 
 func (t *transactionSeqCreatorTask) GetName() string {
@@ -150,7 +150,7 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.TransactionSeq
-	sequenced, err := t.db.TransactionSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -183,7 +183,7 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.TransactionSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -193,14 +193,14 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-func NewStakingSeqCreatorTask(db *store.Store) *stakingSeqCreatorTask {
+func NewStakingSeqCreatorTask(db StakingSeqStore) *stakingSeqCreatorTask {
 	return &stakingSeqCreatorTask{
 		db: db,
 	}
 }
 
 type stakingSeqCreatorTask struct {
-	db *store.Store
+	db StakingSeqStore
 }
 
 func (t *stakingSeqCreatorTask) GetName() string {
@@ -214,14 +214,14 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	sequenced, err := t.db.StakingSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		if err == store.ErrNotFound {
 			toSequence, err := StakingToSequence(payload.Syncable, payload.RawState)
 			if err != nil {
 				return err
 			}
-			if err := t.db.StakingSeq.Create(toSequence); err != nil {
+			if err := t.db.Create(toSequence); err != nil {
 				return err
 			}
 			payload.StakingSequence = toSequence
@@ -234,14 +234,14 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 }
 
 type delegationSeqCreatorTask struct {
-	db *store.Store
+	db DelegationSeqStore
 }
 
 func (t *delegationSeqCreatorTask) GetName() string {
 	return DelegationSeqCreatorTaskName
 }
 
-func NewDelegationsSeqCreatorTask(db *store.Store) *delegationSeqCreatorTask {
+func NewDelegationsSeqCreatorTask(db DelegationSeqStore) *delegationSeqCreatorTask {
 	return &delegationSeqCreatorTask{
 		db: db,
 	}
@@ -255,7 +255,7 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DelegationSeq
-	sequenced, err := t.db.DelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.DelegationSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -298,14 +298,14 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 	return nil
 }
 
-func NewDebondingDelegationsSeqCreatorTask(db *store.Store) *debondingDelegationSeqCreatorTask {
+func NewDebondingDelegationsSeqCreatorTask(db DebondingDelegationSeqStore) *debondingDelegationSeqCreatorTask {
 	return &debondingDelegationSeqCreatorTask{
 		db: db,
 	}
 }
 
 type debondingDelegationSeqCreatorTask struct {
-	db *store.Store
+	db DebondingDelegationSeqStore
 }
 
 func (t *debondingDelegationSeqCreatorTask) GetName() string {
@@ -320,7 +320,7 @@ func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DebondingDelegationSeq
-	sequenced, err := t.db.DebondingDelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -353,7 +353,7 @@ func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.DebondingDelegationSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
