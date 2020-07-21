@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/figment-networks/oasishub-indexer/config"
+	mock "github.com/figment-networks/oasishub-indexer/mock/usecase/validator"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/usecase/validator"
-	mock "github.com/figment-networks/oasishub-indexer/usecase/validator/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/pkg/errors"
 )
@@ -81,7 +81,7 @@ func TestDecorate_Handle(t *testing.T) {
 				createFile(tt.fileName, tt.data, t)
 			}
 
-			dbMock := mock.NewMockdecorateStore(ctrl)
+			dbMock := mock.NewMockValidatorAggStore(ctrl)
 			for i, row := range tt.data {
 				if i == 0 {
 					// skip first row of headers

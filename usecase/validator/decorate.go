@@ -24,10 +24,10 @@ var (
 
 type decorateUseCase struct {
 	cfg *config.Config
-	db  decorateStore
+	db  ValidatorAggStore
 }
 
-type decorateStore interface {
+type ValidatorAggStore interface {
 	CreateOrUpdate(val *model.ValidatorAgg) error
 	FindBy(key string, value interface{}) (*model.ValidatorAgg, error)
 }
@@ -40,7 +40,7 @@ type record struct {
 // NewDecorateUseCase decorate validators based on file data. It parses a csv file
 // containing logos, entity names and entity addresses for a validator, then updates
 // the logo_url and entity_name for each entry
-func NewDecorateUseCase(cfg *config.Config, db decorateStore) *decorateUseCase {
+func NewDecorateUseCase(cfg *config.Config, db ValidatorAggStore) *decorateUseCase {
 	return &decorateUseCase{
 		cfg: cfg,
 		db:  db,
