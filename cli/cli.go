@@ -129,8 +129,7 @@ func initConfig(path string) (*config.Config, error) {
 }
 
 func initLogger(cfg *config.Config) error {
-	_, err := logger.Init(cfg)
-	return err
+	return logger.Init(cfg)
 }
 
 func initClient(cfg *config.Config) (*client.Client, error) {

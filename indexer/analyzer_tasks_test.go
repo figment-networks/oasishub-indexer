@@ -173,9 +173,9 @@ func TestSystemEventCreatorTask_votingPowerChange(t *testing.T) {
 		{"returns one votingPowerChange1 system events when voting power change is 0.9", 0.9, 1, model.SystemEventVotingPowerChange1},
 		{"returns one votingPowerChange2 system events when voting power change is 1", 1, 1, model.SystemEventVotingPowerChange2},
 		{"returns one votingPowerChange2 system events when voting power change is 9", 9, 1, model.SystemEventVotingPowerChange2},
-		{"returns one votingPowerChange2 system events when voting power change is 10", 10, 1, model.SystemEventVotingPowerChange3},
-		{"returns one votingPowerChange2 system events when voting power change is 100", 100, 1, model.SystemEventVotingPowerChange3},
-		{"returns one votingPowerChange2 system events when voting power change is 200", 200, 1, model.SystemEventVotingPowerChange3},
+		{"returns one votingPowerChange3 system events when voting power change is 10", 10, 1, model.SystemEventVotingPowerChange3},
+		{"returns one votingPowerChange3 system events when voting power change is 100", 100, 1, model.SystemEventVotingPowerChange3},
+		{"returns one votingPowerChange3 system events when voting power change is 200", 200, 1, model.SystemEventVotingPowerChange3},
 	}
 
 	for _, tt := range tests {
@@ -254,7 +254,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 			expectedKinds:  []model.SystemEventKind{model.SystemEventLeftActiveSet},
 		},
 		{
-			description: "returns one left_active_set system events when validator is in prev and is not in current lists",
+			description: "returns 2 joined_active_set system events when validators are in prev and not in current lists",
 			prevHeightList: []model.ValidatorSeq{
 				newValidatorSeq(ValidatorAddress, 1000, true),
 			},

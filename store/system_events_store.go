@@ -17,7 +17,7 @@ type SystemEventsStore interface {
 }
 
 func NewSystemEventsStore(db *gorm.DB) *systemEventsStore {
-	return &systemEventsStore{scoped(db, model.Report{})}
+	return &systemEventsStore{scoped(db, model.SystemEvent{})}
 }
 
 // systemEventsStore handles operations on syncables

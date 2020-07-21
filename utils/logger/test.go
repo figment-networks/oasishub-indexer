@@ -6,14 +6,14 @@ import (
 	"go.uber.org/zap/zaptest/observer"
 )
 
-type LevelEnabler bool
+type levelEnabler bool
 
-func (o LevelEnabler) Enabled(level zapcore.Level) bool {
+func (o levelEnabler) Enabled(level zapcore.Level) bool {
 	return bool(o)
 }
 
 func GetTestLogger() *zap.Logger {
-	core, _ := observer.New(LevelEnabler(false))
+	core, _ := observer.New(levelEnabler(false))
 	return zap.New(core)
 }
 

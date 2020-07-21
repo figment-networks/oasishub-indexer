@@ -13,7 +13,7 @@ var (
 	Log Logger
 )
 
-func Init(cfg *config.Config) (*Logger, error) {
+func Init(cfg *config.Config) error {
 	logConfig := zap.Config{
 		OutputPaths: []string{cfg.LogOutput},
 		Encoding:    "json",
@@ -30,14 +30,12 @@ func Init(cfg *config.Config) (*Logger, error) {
 
 	log, err := logConfig.Build()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	Log.Logger = log
 
-	return &Logger{
-		Logger: log,
-	}, nil
+	return nil
 }
 
 type Logger struct {

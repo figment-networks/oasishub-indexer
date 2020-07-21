@@ -96,6 +96,12 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
 
+	const (
+		NotValidated int64 = 1
+		Validated    int64 = 2
+		ValidatedNil int64 = 3
+	)
+
 	parsedData := make(ParsedValidatorsData)
 	for i, fetchedValidator := range fetchedValidators {
 		address := fetchedValidator.GetAddress()
@@ -115,17 +121,17 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
 			if i > len(votes)-1 {
 				index = int64(i)
-				blockIdFlag = 3
+				blockIdFlag = ValidatedNil
 			} else {
 				precommit := votes[i]
-				isValidated := precommit.BlockIdFlag == 2
+				isValidated := precommit.BlockIdFlag == Validated
 				validated = &isValidated
 				index = precommit.ValidatorIndex
 				blockIdFlag = precommit.BlockIdFlag
 			}
 		} else {
 			index = int64(i)
-			blockIdFlag = 3
+			blockIdFlag = ValidatedNil
 		}
 
 		calculatedData.PrecommitValidated = validated
