@@ -107,10 +107,6 @@ func setStakingDelegationEntry(entityID, entryID string, shares []byte) testStak
 			}
 		}
 
-		// if _, ok := s.Delegations[entityID].GetEntries()[entryID]; !ok {
-		// 	s.Delegations[entityID].GetEntries()[entryID] = &delegationpb.Delegation{}
-		// }
-
 		s.Delegations[entityID].GetEntries()[entryID] = &delegationpb.Delegation{
 			Shares: shares,
 		}
@@ -153,6 +149,12 @@ func setValidatorAddress(addr string) testValidatorOption {
 	}
 }
 
+func setTendermintAddress(addr string) testValidatorOption {
+	return func(v *validatorpb.Validator) {
+		v.TendermintAddress = addr
+	}
+}
+
 func setValidatorEntityID(id string) testValidatorOption {
 	return func(v *validatorpb.Validator) {
 		if v.GetNode() == nil {
@@ -164,8 +166,9 @@ func setValidatorEntityID(id string) testValidatorOption {
 
 func testpbValidator(opts ...testValidatorOption) *validatorpb.Validator {
 	v := &validatorpb.Validator{
-		Address:     randString(5),
-		VotingPower: 64,
+		Address:           randString(5),
+		TendermintAddress: randString(5),
+		VotingPower:       64,
 		Node: &validatorpb.Node{
 			EntityId: randString(5),
 		},
