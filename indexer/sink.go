@@ -4,34 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
-)
-
-var (
-	indexerHeightSuccess = metrics.MustNewCounterWithTags(metrics.Options{
-		Namespace: "indexers",
-		Subsystem: "oasishub_task",
-		Name:      "height_success",
-		Desc:      "The total number of successfully indexed heights",
-	}).WithLabels(nil)
-
-	indexerDbSizeAfterHeight = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
-		Namespace: "indexers",
-		Subsystem: "oasishub_task",
-		Name:      "db_size",
-		Desc:      "The size of the database after indexing of height",
-	}).WithLabels(nil)
-
-	indexerHeightDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
-		Namespace: "indexers",
-		Subsystem: "oasishub_task",
-		Name:      "height_duration",
-		Desc:      "The total time required to index one height",
-	}).WithLabels(nil)
 )
 
 var (
