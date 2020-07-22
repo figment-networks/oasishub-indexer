@@ -47,17 +47,17 @@ func (mr *MockDecorateStoreMockRecorder) CreateOrUpdate(arg0 interface{}) *gomoc
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdate", reflect.TypeOf((*MockDecorateStore)(nil).CreateOrUpdate), arg0)
 }
 
-// FindBy mocks base method
-func (m *MockDecorateStore) FindBy(arg0 string, arg1 interface{}) (*model.ValidatorAgg, error) {
+// FindByAddress mocks base method
+func (m *MockDecorateStore) FindByAddress(arg0 string) (*model.ValidatorAgg, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "FindBy", arg0, arg1)
+	ret := m.ctrl.Call(m, "FindByAddress", arg0)
 	ret0, _ := ret[0].(*model.ValidatorAgg)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// FindBy indicates an expected call of FindBy
-func (mr *MockDecorateStoreMockRecorder) FindBy(arg0, arg1 interface{}) *gomock.Call {
+// FindByAddress indicates an expected call of FindByAddress
+func (mr *MockDecorateStoreMockRecorder) FindByAddress(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindBy", reflect.TypeOf((*MockDecorateStore)(nil).FindBy), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByAddress", reflect.TypeOf((*MockDecorateStore)(nil).FindByAddress), arg0)
 }
