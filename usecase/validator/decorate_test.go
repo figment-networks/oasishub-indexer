@@ -104,8 +104,9 @@ func TestDecorate_Handle(t *testing.T) {
 
 			ctx := context.Background()
 			err := uc.Execute(ctx, tt.fileName)
-			if err != tt.expectErr {
-				t.Errorf("unexpected response, want: %+v, got: %+v", tt.expectErr, err)
+
+			if !errors.Is(err, tt.expectErr) {
+				t.Errorf("unexpected error, want: %+v, got: %+v", tt.expectErr, err)
 			}
 		})
 	}

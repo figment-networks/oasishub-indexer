@@ -3,6 +3,7 @@ package validator
 import (
 	"context"
 	"encoding/csv"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -130,12 +131,12 @@ func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
 
 func (uc *decorateUseCase) validateHeaders(headers []string) error {
 	if len(headers) != len(colNames) {
-		return ErrInvalidFile
+		return errors.Wrap(ErrInvalidFile, fmt.Sprintf("expected file to contain 3 columns, starting with the headers '%v'", strings.Join(colNames, "','")))
 	}
 
 	for i, name := range colNames {
 		if name != strings.ToLower(headers[i]) {
-			return ErrInvalidFile
+			return errors.Wrap(ErrInvalidFile, fmt.Sprintf("expected the first row to contain the headers '%v'", strings.Join(colNames, "','")))
 		}
 	}
 	return nil
