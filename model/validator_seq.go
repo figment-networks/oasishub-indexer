@@ -15,6 +15,7 @@ type ValidatorSeq struct {
 	VotingPower         int64          `json:"voting_power"`
 	TotalShares         types.Quantity `json:"total_shares"`
 	ActiveEscrowBalance types.Quantity `json:"active_escrow_balance"`
+	Commission          types.Quantity `json:"commission"`
 	PrecommitValidated  *bool          `json:"precommit_validated"`
 }
 
@@ -42,5 +43,6 @@ func (vs *ValidatorSeq) Update(m ValidatorSeq) {
 	vs.VotingPower = m.VotingPower
 	vs.TotalShares = m.TotalShares
 	vs.ActiveEscrowBalance = m.ActiveEscrowBalance
+	vs.Commission = m.Commission
 	vs.PrecommitValidated = m.PrecommitValidated
 }

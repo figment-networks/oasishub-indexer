@@ -155,6 +155,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					EntityUID:               rawValidator.GetNode().GetEntityId(),
 					RecentTendermintAddress: rawValidator.GetTendermintAddress(),
 					RecentVotingPower:       rawValidator.GetVotingPower(),
+					RecentCommission:        types.NewQuantityFromBytes(rawValidator.GetCommission()),
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
@@ -197,6 +198,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 				RecentTendermintAddress: rawValidator.GetAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
+				RecentCommission:        types.NewQuantityFromBytes(rawValidator.GetCommission()),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
 

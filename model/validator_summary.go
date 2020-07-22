@@ -16,6 +16,9 @@ type ValidatorSummary struct {
 	ActiveEscrowBalanceAvg types.Quantity `json:"active_escrow_balance_avg"`
 	ActiveEscrowBalanceMax types.Quantity `json:"active_escrow_balance_max"`
 	ActiveEscrowBalanceMin types.Quantity `json:"active_escrow_balance_min"`
+	CommissionAvg          types.Quantity `json:"commission_avg"`
+	CommissionMax          types.Quantity `json:"commission_max"`
+	CommissionMin          types.Quantity `json:"commission_min"`
 	ValidatedSum           int64          `json:"validated_sum"`
 	NotValidatedSum        int64          `json:"not_validated_sum"`
 	ProposedSum            int64          `json:"proposed_sum"`

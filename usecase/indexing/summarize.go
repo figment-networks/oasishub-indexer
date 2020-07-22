@@ -154,6 +154,9 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 					ActiveEscrowBalanceAvg: rawSummary.ActiveEscrowBalanceAvg,
 					ActiveEscrowBalanceMax: rawSummary.ActiveEscrowBalanceMax,
 					ActiveEscrowBalanceMin: rawSummary.ActiveEscrowBalanceMin,
+					CommissionAvg:          rawSummary.CommissionAvg,
+					CommissionMax:          rawSummary.CommissionMax,
+					CommissionMin:          rawSummary.CommissionMin,
 					ValidatedSum:           rawSummary.ValidatedSum,
 					NotValidatedSum:        rawSummary.NotValidatedSum,
 					ProposedSum:            rawSummary.ProposedSum,
@@ -177,6 +180,9 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 			existingValidatorSummary.ActiveEscrowBalanceAvg = rawSummary.ActiveEscrowBalanceAvg
 			existingValidatorSummary.ActiveEscrowBalanceMax = rawSummary.ActiveEscrowBalanceMax
 			existingValidatorSummary.ActiveEscrowBalanceMin = rawSummary.ActiveEscrowBalanceMin
+			existingValidatorSummary.CommissionAvg = rawSummary.CommissionAvg
+			existingValidatorSummary.CommissionMax = rawSummary.CommissionMax
+			existingValidatorSummary.CommissionMin = rawSummary.CommissionMin
 			existingValidatorSummary.ValidatedSum = rawSummary.ValidatedSum
 			existingValidatorSummary.NotValidatedSum = rawSummary.NotValidatedSum
 			existingValidatorSummary.ProposedSum = rawSummary.ProposedSum

@@ -1,6 +1,7 @@
 package indexer
 
 import (
+	"fmt"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
@@ -30,6 +31,7 @@ func BlockToSequence(syncable *model.Syncable, rawBlock *blockpb.Block, blockPar
 func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.Validator, parsedValidators ParsedValidatorsData) ([]model.ValidatorSeq, error) {
 	var validators []model.ValidatorSeq
 	for _, rawValidator := range rawValidators {
+		fmt.Println("jere", rawValidator.GetAddress(), rawValidator.GetCommission())
 		e := model.ValidatorSeq{
 			Sequence: &model.Sequence{
 				Height: syncable.Height,
@@ -39,6 +41,7 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			EntityUID:    rawValidator.GetNode().GetEntityId(),
 			Address:      rawValidator.GetAddress(),
 			VotingPower:  rawValidator.GetVotingPower(),
+			Commission:   types.NewQuantityFromBytes(rawValidator.GetCommission()),
 		}
 
 		address := rawValidator.GetAddress()
