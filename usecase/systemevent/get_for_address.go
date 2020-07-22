@@ -15,10 +15,10 @@ func NewGetForAddressUseCase(db *store.Store) *getForAddressUseCase {
 	}
 }
 
-func (uc *getForAddressUseCase) Execute(address string, kind *model.SystemEventKind, limit *int64) (*ListView, error) {
+func (uc *getForAddressUseCase) Execute(address string, minHeight *int64, kind *model.SystemEventKind) (*ListView, error) {
 	systemEvents, err := uc.db.SystemEvents.FindByActor(address, store.FindSystemEventByActorQuery{
-		Kind: kind,
-		Limit: limit,
+		Kind:      kind,
+		MinHeight: minHeight,
 	})
 	if err != nil {
 		return nil, err

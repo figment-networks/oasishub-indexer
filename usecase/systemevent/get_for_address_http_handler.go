@@ -31,8 +31,8 @@ func NewGetForAddressHttpHandler(db *store.Store, c *client.Client) *getForAddre
 
 type GetForAddressRequest struct {
 	Address string                 `uri:"address" binding:"required"`
+	After   *int64                 `form:"after" binding:"-"`
 	Kind    *model.SystemEventKind `form:"kind" binding:"-"`
-	Limit   *int64                 `form:"limit" binding:"-"`
 }
 
 func (h *getForAddressHttpHandler) Handle(c *gin.Context) {
@@ -45,12 +45,12 @@ func (h *getForAddressHttpHandler) Handle(c *gin.Context) {
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Error(err)
-		err := errors.New("invalid kind or/and limit")
+		err := errors.New("invalid kind or/and after")
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.Address, req.Kind, req.Limit)
+	resp, err := h.getUseCase().Execute(req.Address, req.After, req.Kind)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)

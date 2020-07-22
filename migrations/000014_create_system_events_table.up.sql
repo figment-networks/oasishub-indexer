@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS system_events
     time       TIMESTAMP WITH TIME ZONE NOT NULL,
     actor      TEXT,
     kind       TEXT                     NOT NULL,
+    data       JSONB                    NOT NULL,
 
     PRIMARY KEY (id)
 );

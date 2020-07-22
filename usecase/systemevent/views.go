@@ -8,10 +8,11 @@ import (
 type ListItem struct {
 	*model.Model
 
-	Height int64      `json:"height"`
-	Time   types.Time `json:"time"`
-	Actor  string     `json:"actor"`
-	Kind   string     `json:"kind"`
+	Height int64       `json:"height"`
+	Time   types.Time  `json:"time"`
+	Actor  string      `json:"actor"`
+	Kind   string      `json:"kind"`
+	Data   types.Jsonb `json:"data"`
 }
 
 type ListView struct {

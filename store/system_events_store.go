@@ -38,8 +38,8 @@ func (s systemEventsStore) FindByHeight(height int64) ([]model.SystemEvent, erro
 }
 
 type FindSystemEventByActorQuery struct {
-	Kind  *model.SystemEventKind
-	Limit *int64
+	Kind      *model.SystemEventKind
+	MinHeight *int64
 }
 
 // FindByActor returns system events by actor
@@ -54,8 +54,8 @@ func (s systemEventsStore) FindByActor(actorAddress string, query FindSystemEven
 		Where("actor = ?", actorAddress).
 		Where(&q)
 
-	if query.Limit != nil {
-		statement = statement.Limit(query.Limit)
+	if query.MinHeight != nil {
+		statement = statement.Where("height > ?", query.MinHeight)
 	}
 
 	err := statement.

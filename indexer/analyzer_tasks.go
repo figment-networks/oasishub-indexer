@@ -2,11 +2,13 @@ package indexer
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
 	"math"
@@ -19,6 +21,7 @@ const (
 
 var (
 	ErrActiveEscrowBalanceOutsideOfRange = errors.New("active escrow balance is outside of specified buckets")
+	ErrCommissionOutsideOfRange          = errors.New("commission is outside of specified buckets")
 
 	MaxValidatorSequences int64 = 1000
 	MissedForMaxThreshold int64 = 50
@@ -41,6 +44,8 @@ type systemEventCreatorTask struct {
 	ValidatorSeqStore
 }
 
+type systemEventRawData map[string]interface{}
+
 func (t *systemEventCreatorTask) GetName() string {
 	return SystemEventCreatorTaskName
 }
@@ -60,10 +65,16 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 		}
 	}
 
-	activeEscrowBalanceChangeSystemEvents := t.getActiveEscrowBalanceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
-	payload.SystemEvents = append(payload.SystemEvents, activeEscrowBalanceChangeSystemEvents...)
+	valueChangeSystemEvents, err := t.getValueChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
+	if err != nil {
+		return err
+	}
+	payload.SystemEvents = append(payload.SystemEvents, valueChangeSystemEvents...)
 
-	activeSetPresenceChangeSystemEvents := t.getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
+	activeSetPresenceChangeSystemEvents, err := t.getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
+	if err != nil {
+		return err
+	}
 	payload.SystemEvents = append(payload.SystemEvents, activeSetPresenceChangeSystemEvents...)
 
 	missedBlocksSystemEvents, err := t.getMissedBlocksSystemEvents(currHeightValidatorSequences)
@@ -98,7 +109,12 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			logger.Debug(fmt.Sprintf("total missed blocks for last %d blocks for address %s: %d", MaxValidatorSequences, validatorSequence.Address, totalMissedCount))
 
 			if totalMissedCount == MissedForMaxThreshold {
-				systemEvents = append(systemEvents, t.newSystemEventWithBody(validatorSequence, model.SystemEventMissedMofN))
+				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMofN, systemEventRawData{})
+				if err != nil {
+					return nil, err
+				}
+
+				systemEvents = append(systemEvents, newSystemEvent)
 			}
 
 			missedInRowCount := t.getMissedInRow(validatorSequencesToCheck, MissedInRowThreshold)
@@ -106,7 +122,12 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			logger.Debug(fmt.Sprintf("total missed blocks in a row for address %s: %d", validatorSequence.Address, missedInRowCount))
 
 			if missedInRowCount == MissedInRowThreshold {
-				systemEvents = append(systemEvents, t.newSystemEventWithBody(validatorSequence, model.SystemEventMissedMInRow))
+				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMInRow, systemEventRawData{})
+				if err != nil {
+					return nil, err
+				}
+
+				systemEvents = append(systemEvents, newSystemEvent)
 			}
 		}
 	}
@@ -153,7 +174,7 @@ func (t systemEventCreatorTask) isValidated(validatorSequence model.ValidatorSeq
 	return !t.isNotValidated(validatorSequence)
 }
 
-func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) []*model.SystemEvent {
+func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
 	var systemEvents []*model.SystemEvent
 	for _, currentValidatorSequence := range currHeightValidatorSequences {
 		joined := true
@@ -167,7 +188,12 @@ func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeig
 		if joined {
 			logger.Debug(fmt.Sprintf("address %s joined active set", currentValidatorSequence.Address))
 
-			systemEvents = append(systemEvents, t.newSystemEventWithBody(currentValidatorSequence, model.SystemEventJoinedActiveSet))
+			newSystemEvent, err := t.newSystemEvent(currentValidatorSequence, model.SystemEventJoinedActiveSet, systemEventRawData{})
+			if err != nil {
+				return nil, err
+			}
+
+			systemEvents = append(systemEvents, newSystemEvent)
 		}
 	}
 
@@ -183,35 +209,54 @@ func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeig
 		if left {
 			logger.Debug(fmt.Sprintf("address %s joined active set", prevValidatorSequence.Address))
 
-			systemEvents = append(systemEvents, t.newSystemEventWithBody(prevValidatorSequence, model.SystemEventLeftActiveSet))
+			newSystemEvent, err := t.newSystemEvent(prevValidatorSequence, model.SystemEventLeftActiveSet, systemEventRawData{})
+			if err != nil {
+				return nil, err
+			}
+
+			systemEvents = append(systemEvents, newSystemEvent)
 		}
 	}
 
-	return systemEvents
+	return systemEvents, nil
 }
 
-func (t *systemEventCreatorTask) getActiveEscrowBalanceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) []*model.SystemEvent {
+func (t *systemEventCreatorTask) getValueChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
 	var systemEvents []*model.SystemEvent
 	for _, validatorSequence := range currHeightValidatorSequences {
 		for _, prevValidatorSequence := range prevHeightValidatorSequences {
 			if validatorSequence.Address == prevValidatorSequence.Address {
-				changeRate := (float64(1) - (float64(validatorSequence.ActiveEscrowBalance.Int64()) / float64(prevValidatorSequence.ActiveEscrowBalance.Int64()))) * 100
+				newSystemEvent, err := t.getActiveEscrowBalanceChange(validatorSequence, prevValidatorSequence)
+				if err != nil {
+					if err != ErrActiveEscrowBalanceOutsideOfRange {
+						return nil, err
+					}
+				} else {
+					logger.Debug(fmt.Sprintf("active escrow balance change for address %s occured [kind=%s]", validatorSequence.Address, newSystemEvent.Kind))
+					systemEvents = append(systemEvents, newSystemEvent)
+				}
 
-				kind, err := t.getActiveEscrowBalanceChangeKind(changeRate)
-				if err == nil {
-					logger.Debug(fmt.Sprintf("active escrow balance change for address %s occured [kind=%s]", validatorSequence.Address, kind))
-
-					systemEvents = append(systemEvents, t.newSystemEventWithBody(validatorSequence, *kind))
+				newSystemEvent, err = t.getCommissionChange(validatorSequence, prevValidatorSequence)
+				if err != nil {
+					if err != ErrCommissionOutsideOfRange {
+						return nil, err
+					}
+				} else {
+					logger.Debug(fmt.Sprintf("commission change for address %s occured [kind=%s]", validatorSequence.Address, newSystemEvent.Kind))
+					systemEvents = append(systemEvents, newSystemEvent)
 				}
 			}
 		}
 	}
 
-	return systemEvents
+	return systemEvents, nil
 }
 
-func (t *systemEventCreatorTask) getActiveEscrowBalanceChangeKind(changeRate float64) (*model.SystemEventKind, error) {
-	roundedAbsChangeRate := math.Round(math.Abs(changeRate) / 0.1) * 0.1
+func (t *systemEventCreatorTask) getActiveEscrowBalanceChange(currValidatorSeq model.ValidatorSeq, prevValidatorSeq model.ValidatorSeq) (*model.SystemEvent, error) {
+	currValue := currValidatorSeq.ActiveEscrowBalance.Int64()
+	prevValue := prevValidatorSeq.ActiveEscrowBalance.Int64()
+	roundedChangeRate := t.getRoundedChangeRate(currValue, prevValue)
+	roundedAbsChangeRate := math.Abs(roundedChangeRate)
 
 	var kind model.SystemEventKind
 	if roundedAbsChangeRate >= 0.1 && roundedAbsChangeRate < 1 {
@@ -224,14 +269,61 @@ func (t *systemEventCreatorTask) getActiveEscrowBalanceChangeKind(changeRate flo
 		return nil, ErrActiveEscrowBalanceOutsideOfRange
 	}
 
-	return &kind, nil
+	return t.newSystemEvent(currValidatorSeq, kind, systemEventRawData{
+		"before": prevValue,
+		"after": currValue,
+		"change": roundedChangeRate,
+	})
 }
 
-func (t *systemEventCreatorTask) newSystemEventWithBody(seq model.ValidatorSeq, kind model.SystemEventKind) *model.SystemEvent {
+func (t *systemEventCreatorTask) getCommissionChange(currValidatorSeq model.ValidatorSeq, prevValidatorSeq model.ValidatorSeq) (*model.SystemEvent, error) {
+	currValue := currValidatorSeq.Commission.Int64()
+	prevValue := prevValidatorSeq.Commission.Int64()
+	roundedChangeRate := t.getRoundedChangeRate(currValue, prevValue)
+	roundedAbsChangeRate := math.Abs(roundedChangeRate)
+
+	var kind model.SystemEventKind
+	if roundedAbsChangeRate >= 0.1 && roundedAbsChangeRate < 1 {
+		kind = model.SystemEventCommissionChange1
+	} else if roundedAbsChangeRate >= 1 && roundedAbsChangeRate < 10 {
+		kind = model.SystemEventCommissionChange2
+	} else if roundedAbsChangeRate >= 10 {
+		kind = model.SystemEventCommissionChange3
+	} else {
+		return nil, ErrCommissionOutsideOfRange
+	}
+
+	return t.newSystemEvent(currValidatorSeq, kind, systemEventRawData{
+		"before": prevValue,
+		"after":  currValue,
+		"change": roundedChangeRate,
+	})
+}
+
+func (t *systemEventCreatorTask) getRoundedChangeRate(currValue int64, prevValue int64) float64 {
+	var changeRate float64
+
+	if prevValue == 0 {
+		changeRate = float64(currValue)
+	} else {
+		changeRate = (float64(1) - (float64(currValue) / float64(prevValue))) * 100
+	}
+
+	roundedChangeRate := math.Round(changeRate/0.1) * 0.1
+	return roundedChangeRate
+}
+
+func (t *systemEventCreatorTask) newSystemEvent(seq model.ValidatorSeq, kind model.SystemEventKind, data map[string]interface{}) (*model.SystemEvent, error) {
+	marshaledData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
 	return &model.SystemEvent{
 		Height: seq.Height,
 		Time:   seq.Time,
 		Actor:  seq.Address,
 		Kind:   kind,
-	}
+		Data:   types.Jsonb{RawMessage: marshaledData},
+	}, nil
 }
