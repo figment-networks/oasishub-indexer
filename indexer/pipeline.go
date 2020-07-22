@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
@@ -36,7 +37,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetStage(
 		pipeline.StageSetup,
 		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
+			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client.Chain), isTransient, 3),
 		),
 	)
 
@@ -119,8 +120,8 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 }
 
 type StartConfig struct {
-	BatchSize       int64
-	StartHeight     int64
+	BatchSize   int64
+	StartHeight int64
 }
 
 func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
