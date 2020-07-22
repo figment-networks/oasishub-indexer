@@ -3,11 +3,11 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
@@ -19,14 +19,14 @@ const (
 	TransactionFetcherTaskName  = "TransactionFetcher"
 )
 
-func NewBlockFetcherTask(client *client.Client) pipeline.Task {
+func NewBlockFetcherTask(client client.BlockClient) pipeline.Task {
 	return &BlockFetcherTask{
 		client: client,
 	}
 }
 
 type BlockFetcherTask struct {
-	client *client.Client
+	client client.BlockClient
 }
 
 func (t *BlockFetcherTask) GetName() string {
@@ -37,7 +37,7 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
-	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
+	block, err := t.client.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -54,14 +54,14 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewStateFetcherTask(client *client.Client) pipeline.Task {
+func NewStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StateFetcherTask{
 		client: client,
 	}
 }
 
 type StateFetcherTask struct {
-	client *client.Client
+	client client.StateClient
 }
 
 func (t *StateFetcherTask) GetName() string {
@@ -72,7 +72,7 @@ func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
-	state, err := t.client.State.GetByHeight(payload.CurrentHeight)
+	state, err := t.client.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -89,14 +89,14 @@ func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewStakingStateFetcherTask(client *client.Client) pipeline.Task {
+func NewStakingStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StakingStateFetcherTask{
 		client: client,
 	}
 }
 
 type StakingStateFetcherTask struct {
-	client *client.Client
+	client client.StateClient
 }
 
 func (t *StakingStateFetcherTask) GetName() string {
@@ -107,7 +107,7 @@ func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) e
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
-	state, err := t.client.State.GetStakingByHeight(payload.CurrentHeight)
+	state, err := t.client.GetStakingByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -124,14 +124,14 @@ func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewValidatorFetcherTask(client *client.Client) pipeline.Task {
+func NewValidatorFetcherTask(client client.ValidatorClient) pipeline.Task {
 	return &ValidatorFetcherTask{
 		client: client,
 	}
 }
 
 type ValidatorFetcherTask struct {
-	client *client.Client
+	client client.ValidatorClient
 }
 
 func (t *ValidatorFetcherTask) GetName() string {
@@ -142,7 +142,7 @@ func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) erro
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
-	validators, err := t.client.Validator.GetByHeight(payload.CurrentHeight)
+	validators, err := t.client.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -159,14 +159,14 @@ func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) erro
 	return nil
 }
 
-func NewTransactionFetcherTask(client *client.Client) pipeline.Task {
+func NewTransactionFetcherTask(client client.TransactionClient) pipeline.Task {
 	return &TransactionFetcherTask{
 		client: client,
 	}
 }
 
 type TransactionFetcherTask struct {
-	client *client.Client
+	client client.TransactionClient
 }
 
 func (t *TransactionFetcherTask) GetName() string {
@@ -177,7 +177,7 @@ func (t *TransactionFetcherTask) Run(ctx context.Context, p pipeline.Payload) er
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
-	transactions, err := t.client.Transaction.GetByHeight(payload.CurrentHeight)
+	transactions, err := t.client.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
