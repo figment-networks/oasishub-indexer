@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
@@ -17,6 +18,8 @@ import (
 const (
 	CtxReport = "context_report"
 )
+
+var Now = time.Now
 
 type indexingPipeline struct {
 	cfg    *config.Config
@@ -45,7 +48,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetStage(
 		pipeline.StageSyncer,
 		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewMainSyncerTask(db.Syncables), isTransient, 3),
 		),
 	)
 

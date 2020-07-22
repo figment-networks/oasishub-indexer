@@ -2,7 +2,6 @@ package indexer
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"math/rand"
 	"testing"
@@ -15,8 +14,6 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	"github.com/golang/protobuf/ptypes"
 
-	"github.com/figment-networks/oasishub-indexer/model"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
 )
@@ -35,15 +32,6 @@ func setup(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-}
-
-func ctxWithReport(modelID types.ID) context.Context {
-	ctx := context.Background()
-	report := &model.Report{
-		Model: &model.Model{ID: modelID},
-	}
-
-	return context.WithValue(ctx, CtxReport, report)
 }
 
 func randString(n int) string {
