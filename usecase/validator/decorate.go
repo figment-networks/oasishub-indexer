@@ -18,7 +18,7 @@ import (
 var (
 	colNames = []string{"amber entities", "entity id (new format)", "logo link"}
 
-	ErrInValidFile = errors.New("unexpected file format")
+	ErrInvalidFile = errors.New("unexpected file format")
 	ErrMissingFile = errors.New("missing file path")
 )
 
@@ -29,7 +29,7 @@ type decorateUseCase struct {
 
 type DecorateStore interface {
 	CreateOrUpdate(val *model.ValidatorAgg) error
-	FindBy(key string, value interface{}) (*model.ValidatorAgg, error)
+	FindByAddress(address string) (*model.ValidatorAgg, error)
 }
 
 type record struct {
@@ -110,7 +110,7 @@ func (uc *decorateUseCase) parseFile(file string) (map[string]*record, error) {
 }
 
 func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
-	val, err := uc.db.FindBy("address", addr)
+	val, err := uc.db.FindByAddress(addr)
 	if err == store.ErrNotFound {
 		return nil
 	} else if err != nil {
@@ -130,12 +130,12 @@ func (uc *decorateUseCase) updateValidatorAgg(addr string, data *record) error {
 
 func (uc *decorateUseCase) validateHeaders(headers []string) error {
 	if len(headers) != len(colNames) {
-		return ErrInValidFile
+		return ErrInvalidFile
 	}
 
 	for i, name := range colNames {
 		if name != strings.ToLower(headers[i]) {
-			return ErrInValidFile
+			return ErrInvalidFile
 		}
 	}
 	return nil

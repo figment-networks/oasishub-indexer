@@ -45,22 +45,22 @@ func TestDecorate_Handle(t *testing.T) {
 			data:        [][]string{row("test1"), row("test2")},
 			dbCreateErr: nil,
 			dbFindErr:   nil,
-			expectErr:   validator.ErrInValidFile},
+			expectErr:   validator.ErrInvalidFile},
 		{description: "should update valid csv",
 			fileName:    "case_1.csv",
-			data:        [][]string{headers(), row("test1"), row("test2")},
+			data:        [][]string{headers(), row("test1"), row("test2"), row("test3")},
 			dbCreateErr: nil,
 			dbFindErr:   nil,
 			expectErr:   nil},
 		{description: "should error if db errors on create method",
 			fileName:    "case_2.csv",
-			data:        [][]string{headers(), row("test1"), row("test2")},
+			data:        [][]string{headers(), row("test1")},
 			dbCreateErr: errDbCreate,
 			dbFindErr:   nil,
 			expectErr:   errDbCreate},
 		{description: "should error if unexpected db error on find method",
 			fileName:    "case_3.csv",
-			data:        [][]string{headers(), row("test1"), row("test2")},
+			data:        [][]string{headers(), row("test1")},
 			dbCreateErr: nil,
 			dbFindErr:   errDbFind,
 			expectErr:   errDbFind},
@@ -89,22 +89,15 @@ func TestDecorate_Handle(t *testing.T) {
 				}
 				val := &model.ValidatorAgg{Address: row[1]}
 
-				dbMock.EXPECT().FindBy("address", row[1]).Return(val, tt.dbFindErr).Times(1)
+				dbMock.EXPECT().FindByAddress(row[1]).Return(val, tt.dbFindErr).Times(1)
 				if tt.dbFindErr == store.ErrNotFound {
 					// don't expect CreateOrUpdate to be called for this val
 					continue
-				} else if tt.dbFindErr != nil {
-					// don't expect rest of values in file to be called
-					break
 				}
 
 				val.LogoURL = row[2]
 				val.EntityName = row[0]
 				dbMock.EXPECT().CreateOrUpdate(val).Return(tt.dbCreateErr).Times(1)
-				if tt.dbCreateErr != nil {
-					// don't expect rest of values in file to be called
-					break
-				}
 			}
 
 			uc := validator.NewDecorateUseCase(cfg, dbMock)
