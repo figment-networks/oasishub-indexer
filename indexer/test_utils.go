@@ -19,8 +19,10 @@ import (
 )
 
 var (
-	errTestClient = errors.New("clientErr")
-	errTestDb     = errors.New("dbErr")
+	errTestClient   = errors.New("clientErr")
+	errTestDbSave   = errors.New("db error on save")
+	errTestDbCreate = errors.New("db error on create")
+	errTestDbFind   = errors.New("db error on find")
 
 	letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
@@ -152,6 +154,12 @@ func setValidatorAddress(addr string) testValidatorOption {
 func setTendermintAddress(addr string) testValidatorOption {
 	return func(v *validatorpb.Validator) {
 		v.TendermintAddress = addr
+	}
+}
+
+func setValidatorVotingPower(val int64) testValidatorOption {
+	return func(v *validatorpb.Validator) {
+		v.VotingPower = val
 	}
 }
 

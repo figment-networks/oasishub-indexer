@@ -38,6 +38,7 @@ func (aa *ValidatorAgg) Update(entity ValidatorAgg) {
 	aa.Aggregate.RecentAtHeight = entity.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = entity.Aggregate.RecentAt
 
+	aa.RecentTendermintAddress = entity.RecentTendermintAddress // TODO should we add this?
 	aa.RecentVotingPower = entity.RecentVotingPower
 	aa.RecentTotalShares = entity.RecentTotalShares
 	aa.RecentAsValidatorHeight = entity.RecentAsValidatorHeight

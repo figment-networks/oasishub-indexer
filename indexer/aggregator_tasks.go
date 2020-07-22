@@ -3,10 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -26,14 +26,20 @@ var (
 	ErrAccountAggNotValid = errors.New("account aggregator not valid")
 )
 
-func NewAccountAggCreatorTask(db *store.Store) *accountAggCreatorTask {
+type AccountAggCreatorTaskStore interface {
+	FindByPublicKey(key string) (*model.AccountAgg, error)
+	Create(record interface{}) error
+	Save(record interface{}) error
+}
+
+func NewAccountAggCreatorTask(db AccountAggCreatorTaskStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
 		db: db,
 	}
 }
 
 type accountAggCreatorTask struct {
-	db *store.Store
+	db AccountAggCreatorTaskStore
 }
 
 func (t *accountAggCreatorTask) GetName() string {
@@ -50,7 +56,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	var created []model.AccountAgg
 	var updated []model.AccountAgg
 	for publicKey, rawAccount := range payload.RawState.GetStaking().GetLedger() {
-		existing, err := t.db.AccountAgg.FindByPublicKey(publicKey)
+		existing, err := t.db.FindByPublicKey(publicKey)
 		if err != nil {
 			if err == store.ErrNotFound {
 				accountAgg := &model.AccountAgg{
@@ -65,7 +71,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 					RecentGeneralBalance:             types.NewQuantityFromBytes(rawAccount.GetGeneral().GetBalance()),
 					RecentGeneralNonce:               rawAccount.GetGeneral().GetNonce(),
 					RecentEscrowActiveBalance:        types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
-					RecentEscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
+					RecentEscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetTotalShares()),
 					RecentEscrowDebondingBalance:     types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetBalance()),
 					RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 				}
@@ -74,7 +80,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 					return ErrAccountAggNotValid
 				}
 
-				if err := t.db.AccountAgg.Create(accountAgg); err != nil {
+				if err := t.db.Create(accountAgg); err != nil {
 					return err
 				}
 				created = append(created, *accountAgg)
@@ -92,7 +98,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				RecentGeneralBalance:             types.NewQuantityFromBytes(rawAccount.GetGeneral().GetBalance()),
 				RecentGeneralNonce:               rawAccount.GetGeneral().GetNonce(),
 				RecentEscrowActiveBalance:        types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
-				RecentEscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
+				RecentEscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetTotalShares()),
 				RecentEscrowDebondingBalance:     types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetBalance()),
 				RecentEscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 			}
@@ -103,7 +109,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 				return ErrAccountAggNotValid
 			}
 
-			if err := t.db.AccountAgg.Save(existing); err != nil {
+			if err := t.db.Save(existing); err != nil {
 				return err
 			}
 			updated = append(updated, *accountAgg)
@@ -114,14 +120,18 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 	return nil
 }
 
-func NewValidatorAggCreatorTask(db *store.Store) *validatorAggCreatorTask {
+func NewValidatorAggCreatorTask(db ValidatorAggCreatorTaskStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
 		db: db,
 	}
 }
 
+type ValidatorAggCreatorTaskStore interface {
+	FindByEntityUID(key string) (*model.ValidatorAgg, error)
+}
+
 type validatorAggCreatorTask struct {
-	db *store.Store
+	db ValidatorAggCreatorTaskStore
 }
 
 func (t *validatorAggCreatorTask) GetName() string {
@@ -138,7 +148,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var newValidatorAggs []model.ValidatorAgg
 	var updatedValidatorAggs []model.ValidatorAgg
 	for _, rawValidator := range payload.RawValidators {
-		existing, err := t.db.ValidatorAgg.FindByEntityUID(rawValidator.GetNode().GetEntityId())
+		existing, err := t.db.FindByEntityUID(rawValidator.GetNode().GetEntityId())
 		address := rawValidator.GetAddress()
 		if err != nil {
 			if err == store.ErrNotFound {
@@ -194,7 +204,8 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAt:       payload.Syncable.Time,
 				},
 
-				RecentTendermintAddress: rawValidator.GetAddress(),
+				// TODO should we update address to rawValidator.GetAddress()?
+				RecentTendermintAddress: rawValidator.GetAddress(), // TODO should this be tendermint address?
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
