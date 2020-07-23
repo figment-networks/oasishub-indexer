@@ -28,7 +28,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		ctrl, ctx := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 
-		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 		setup()
 
@@ -87,7 +87,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		ctrl, ctx := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 
-		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 		setup()
 
@@ -106,7 +106,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		ctrl, ctx := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 
-		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 		setup()
 
@@ -137,7 +137,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		ctrl, ctx := gomock.WithContext(context.Background(), t)
 		defer ctrl.Finish()
 
-		validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 		setup()
 
@@ -196,7 +196,7 @@ func TestSystemEventCreatorTask_getValueChangeSystemEvents(t *testing.T) {
 
 			setup()
 
-			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 			var activeEscrowBalanceBefore int64 = 1000
 			activeEscrowBalanceAfter := float64(activeEscrowBalanceBefore) + (float64(activeEscrowBalanceBefore) * tt.activeEscrowBalanceChangeRate / 100)
@@ -290,7 +290,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 
 			setup()
 
-			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 			task := NewSystemEventCreatorTask(validatorSeqStoreMock)
 			createdSystemEvents, _ := task.getActiveSetPresenceChangeSystemEvents(tt.currHeightList, tt.prevHeightList)
@@ -593,7 +593,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 
 			setup()
 
-			validatorSeqStoreMock := mock_indexer.NewMockValidatorSeqStore(ctrl)
+			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 			MaxValidatorSequences = tt.maxValidatorSequences
 			MissedInRowThreshold = tt.missedInRowThreshold

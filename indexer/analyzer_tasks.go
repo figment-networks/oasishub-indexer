@@ -29,19 +29,19 @@ var (
 )
 
 // NewSystemEventCreatorTask creates system events
-func NewSystemEventCreatorTask(vStore ValidatorSeqStore) *systemEventCreatorTask {
+func NewSystemEventCreatorTask(vStore SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
-		ValidatorSeqStore: vStore,
+		SystemEventCreatorStore: vStore,
 	}
 }
 
-type ValidatorSeqStore interface {
+type SystemEventCreatorStore interface {
 	FindByHeight(int64) ([]model.ValidatorSeq, error)
 	FindLastByAddress(string, int64) ([]model.ValidatorSeq, error)
 }
 
 type systemEventCreatorTask struct {
-	ValidatorSeqStore
+	SystemEventCreatorStore
 }
 
 type systemEventRawData map[string]interface{}
@@ -58,7 +58,7 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", "Analyzer", t.GetName(), payload.CurrentHeight))
 
 	currHeightValidatorSequences := append(payload.NewValidatorSequences, payload.UpdatedValidatorSequences...)
-	prevHeightValidatorSequences, err := t.ValidatorSeqStore.FindByHeight(payload.CurrentHeight - 1)
+	prevHeightValidatorSequences, err := t.SystemEventCreatorStore.FindByHeight(payload.CurrentHeight - 1)
 	if err != nil {
 		if err != store.ErrNotFound {
 			return err
@@ -94,7 +94,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			return systemEvents, nil
 		}
 
-		lastValidatorSequencesForAddress, err := t.ValidatorSeqStore.FindLastByAddress(validatorSequence.Address, MaxValidatorSequences)
+		lastValidatorSequencesForAddress, err := t.SystemEventCreatorStore.FindLastByAddress(validatorSequence.Address, MaxValidatorSequences)
 		if err != nil {
 			if err == store.ErrNotFound {
 				return systemEvents, nil
