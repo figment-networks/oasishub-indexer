@@ -130,7 +130,7 @@ type StartConfig struct {
 func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
 	indexVersion := p.targetsReader.GetCurrentVersion()
 
-	source, err := NewIndexSource(p.cfg, p.db, p.client, &IndexSourceConfig{
+	source, err := NewIndexSource(p.cfg, p.db.Syncables, p.client.Chain, &IndexSourceConfig{
 		BatchSize:   startCfg.BatchSize,
 		StartHeight: startCfg.StartHeight,
 	})
