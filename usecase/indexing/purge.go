@@ -46,6 +46,10 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
+	if err := uc.purgeSystemEvents(); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -67,6 +71,35 @@ func (uc *purgeUseCase) purgeValidators(currentIndexVersion int64) error {
 	if err := uc.purgeValidatorSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
 		return err
 	}
+	return nil
+}
+
+func (uc *purgeUseCase) purgeSystemEvents() error {
+	systemEvent, err := uc.db.SystemEvents.FindMostRecent()
+	if err != nil {
+		return err
+	}
+	lastRecordTime := systemEvent.Time.Time
+
+	duration, err := uc.parseDuration(uc.cfg.PurgeSystemEventsInterval)
+	if err != nil {
+		if err == ErrPurgingDisabled {
+			logger.Info("purging system events disabled. Purge interval set to 0.")
+		}
+		return err
+	}
+
+	purgeThresholdFromLastRecord := lastRecordTime.Add(- *duration)
+
+	logger.Info(fmt.Sprintf("purging system events... [older than=%s]", purgeThresholdFromLastRecord))
+
+	deletedCount, err := uc.db.SystemEvents.DeleteOlderThan(purgeThresholdFromLastRecord)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("%d system events purged", *deletedCount))
+
 	return nil
 }
 

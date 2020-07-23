@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/jinzhu/gorm"
+	"time"
 )
 
 var (
@@ -95,4 +96,23 @@ func (s systemEventsStore) CreateOrUpdate(val *model.SystemEvent) error {
 	existing.Update(*val)
 
 	return s.Save(existing)
+}
+
+// FindMostRecent finds most recent system event
+func (s *systemEventsStore) FindMostRecent() (*model.SystemEvent, error) {
+	systemEvent := &model.SystemEvent{}
+	if err := findMostRecent(s.db, "time", systemEvent); err != nil {
+		return nil, err
+	}
+	return systemEvent, nil
+}
+
+// DeleteOlderThan deletes system events older than given threshold
+func (s *systemEventsStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+	tx := s.db.
+		Unscoped().
+		Where("time < ?", purgeThreshold).
+		Delete(&model.BlockSeq{})
+
+	return &tx.RowsAffected, checkErr(tx.Error)
 }

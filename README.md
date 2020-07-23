@@ -64,12 +64,9 @@ data to the format indexer understands.
 * `INDEXER_METRIC_ADDR` - Prometheus server address for indexer metrics 
 * `SERVER_METRIC_ADDR` - Prometheus server address for server metrics 
 * `METRIC_SERVER_URL` - Url at which metrics will be accessible (for both indexer and server)
-* `PURGE_BLOCK_INTERVAL` - Block sequence older than given interval will be purged
-* `PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL` - Block hourly summary records older than given interval will be purged
-* `PURGE_BLOCK_DAILY_SUMMARY_INTERVAL` - Block daily summary records older than given interval will be purged
-* `PURGE_VALIDATOR_INTERVAL` - Validator sequence older than given interval will be purged
-* `PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL` - Validator hourly summary records older than given interval will be purged
-* `PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL` - Validator daily summary records older than given interval will be purged
+* `PURGE_SEQUENCES_INTERVAL` - Sequence older than given interval will be purged _[DEFAULT: 24h]_
+* `PURGE_SYSTE_EVENTS_INTERVAL` - System events older than given interval will be purged _[DEFAULT: 24h]_
+* `PURGE_HOURLY_SUMMARY_INTERVAL` - Hourly summaries records older than given interval will be purged _[DEFAULT: 24h]_
 * `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
 
 ### Available endpoints:
