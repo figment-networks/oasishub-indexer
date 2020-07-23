@@ -52,7 +52,7 @@ func (uc *decorateUseCase) Execute(ctx context.Context, file string) error {
 	defer metric.LogUseCaseDuration(time.Now(), "decorate validator")
 
 	if file == "" {
-		return ErrMissingFile
+		return errors.Wrap(ErrMissingFile, fmt.Sprintf("expected file with 3 columns, starting with the headers '%v'", strings.Join(colNames, "','")))
 	}
 
 	records, err := uc.parseFile(file)
