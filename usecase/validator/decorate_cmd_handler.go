@@ -2,7 +2,6 @@ package validator
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
@@ -27,7 +26,7 @@ func NewDecorateCmdHandler(cfg *config.Config, db *store.Store, c *client.Client
 }
 
 func (h *DecorateCmdHandler) Handle(ctx context.Context, filePath string) {
-	logger.Info(fmt.Sprintf("running decorate validators indexer use case [handler=cmd]"))
+	logger.Info("running decorate validators indexer use case [handler=cmd]")
 
 	err := h.getUseCase().Execute(ctx, filePath)
 	if err != nil {
