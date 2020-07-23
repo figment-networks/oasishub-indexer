@@ -3,26 +3,33 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
 
 var (
 	_ pipeline.Source = (*backfillSource)(nil)
+
+	ErrNothingToBackfill = errors.New("nothing to backfill")
 )
 
 type BackfillSourceConfig struct {
 	indexVersion int64
 }
 
-func NewBackfillSource(cfg *config.Config, db *store.Store, client *client.Client, sourceCfg *BackfillSourceConfig) (*backfillSource, error) {
+type BackfillSourceStore interface {
+	FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error)
+	FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error)
+}
+
+func NewBackfillSource(cfg *config.Config, db BackfillSourceStore, sourceCfg *BackfillSourceConfig) (*backfillSource, error) {
 	src := &backfillSource{
-		cfg:    cfg,
-		db:     db,
-		client: client,
+		cfg: cfg,
+		db:  db,
 
 		sourceCfg: sourceCfg,
 	}
@@ -35,9 +42,8 @@ func NewBackfillSource(cfg *config.Config, db *store.Store, client *client.Clien
 }
 
 type backfillSource struct {
-	cfg    *config.Config
-	db     *store.Store
-	client *client.Client
+	cfg *config.Config
+	db  BackfillSourceStore
 
 	sourceCfg *BackfillSourceConfig
 
@@ -78,10 +84,10 @@ func (s *backfillSource) init() error {
 }
 
 func (s *backfillSource) setStartHeight() error {
-	syncable, err := s.db.Syncables.FindFirstByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.FindFirstByDifferentIndexVersion(s.sourceCfg.indexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
+			return errors.Wrap(ErrNothingToBackfill, fmt.Sprintf("[currentIndexVersion=%d]", s.sourceCfg.indexVersion))
 		}
 		return err
 	}
@@ -92,10 +98,10 @@ func (s *backfillSource) setStartHeight() error {
 }
 
 func (s *backfillSource) setEndHeight() error {
-	syncable, err := s.db.Syncables.FindMostRecentByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.FindMostRecentByDifferentIndexVersion(s.sourceCfg.indexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
+			return errors.Wrap(ErrNothingToBackfill, fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
 		}
 		return err
 	}

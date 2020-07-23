@@ -175,7 +175,7 @@ type BackfillConfig struct {
 func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
 	indexVersion := p.targetsReader.GetCurrentVersion()
 
-	source, err := NewBackfillSource(p.cfg, p.db, p.client, &BackfillSourceConfig{
+	source, err := NewBackfillSource(p.cfg, p.db.Syncables, &BackfillSourceConfig{
 		indexVersion: indexVersion,
 	})
 	if err != nil {
