@@ -25,7 +25,7 @@ var (
 
 func NewBlockParserTask() *blockParserTask {
 	return &blockParserTask{
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameBlockParser}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockParser),
 	}
 }
 
@@ -73,7 +73,7 @@ func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 func NewValidatorsParserTask() *validatorsParserTask {
 	return &validatorsParserTask{
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorsParser}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorsParser),
 	}
 }
 

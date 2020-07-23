@@ -18,7 +18,7 @@ const (
 func NewHeightMetaRetrieverTask(c client.ChainClient) pipeline.Task {
 	return &heightMetaRetrieverTask{
 		client:         c,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameHeightMetaRetriever}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameHeightMetaRetriever),
 	}
 }
 

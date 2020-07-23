@@ -69,7 +69,7 @@ type ActivityPeriodRow struct {
 
 // FindActivityPeriods Finds activity periods
 func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_FindActivityPeriods"}))
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSummaryStore_FindActivityPeriods"))
 	defer t.ObserveDuration()
 
 	rows, err := s.db.
@@ -94,7 +94,7 @@ func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, 
 
 // FindSummary Gets summary of block sequences
 func (s *BlockSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_FindSummary"}))
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSummaryStore_FindSummary"))
 	defer t.ObserveDuration()
 
 	rows, err := s.db.

@@ -31,7 +31,7 @@ func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 }
 
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
-	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels([]string{"purge"}))
+	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels("purge"))
 	t.ObserveDuration()
 
 	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)

@@ -23,7 +23,7 @@ func (s *Server) setupMiddleware() {
 // MetricMiddleware is a middleware responsible for logging query execution time metric
 func MetricMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		t := metrics.NewTimer(serverRequestDuration.WithLabels([]string{c.Request.URL.Path}))
+		t := metrics.NewTimer(serverRequestDuration.WithLabels(c.Request.URL.Path))
 		defer t.ObserveDuration()
 		c.Next()
 	}

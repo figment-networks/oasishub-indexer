@@ -34,7 +34,7 @@ type AccountAggCreatorTaskStore interface {
 func NewAccountAggCreatorTask(db AccountAggCreatorTaskStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameAccountAggCreator}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameAccountAggCreator),
 	}
 }
 
@@ -125,7 +125,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 func NewValidatorAggCreatorTask(db ValidatorAggCreatorTaskStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorAggCreator}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorAggCreator),
 	}
 }
 

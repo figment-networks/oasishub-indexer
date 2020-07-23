@@ -25,7 +25,7 @@ const (
 func NewBlockFetcherTask(client client.BlockClient) pipeline.Task {
 	return &BlockFetcherTask{
 		client:         client,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameBlockFetcher}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockFetcher),
 	}
 }
 
@@ -98,7 +98,7 @@ func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 func NewStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StateFetcherTask{
 		client:         client,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameStateFetcher}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameStateFetcher),
 	}
 }
 
@@ -136,7 +136,7 @@ func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 func NewStakingStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StakingStateFetcherTask{
 		client:         client,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameStakingStateFetcher}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameStakingStateFetcher),
 	}
 }
 
@@ -174,7 +174,7 @@ func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) e
 func NewValidatorFetcherTask(client client.ValidatorClient) pipeline.Task {
 	return &ValidatorFetcherTask{
 		client:         client,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorFetcher}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorFetcher),
 	}
 }
 
@@ -212,7 +212,7 @@ func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) erro
 func NewTransactionFetcherTask(client client.TransactionClient) pipeline.Task {
 	return &TransactionFetcherTask{
 		client:         client,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameTransactionFetcher}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameTransactionFetcher),
 	}
 }
 

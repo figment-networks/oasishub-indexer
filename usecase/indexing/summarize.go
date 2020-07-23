@@ -26,7 +26,7 @@ func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase 
 }
 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
-	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels([]string{"summarize"}))
+	t := metrics.NewTimer(indexerUseCaseDuration.WithLabels("summarize"))
 	t.ObserveDuration()
 
 	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)

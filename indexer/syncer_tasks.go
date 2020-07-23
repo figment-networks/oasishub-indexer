@@ -23,7 +23,7 @@ type SyncerTaskStore interface {
 func NewMainSyncerTask(db SyncerTaskStore) pipeline.Task {
 	return &mainSyncerTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameMainSyncer}),
+		metricObserver: indexerTaskDuration.WithLabels("TaskNameMainSyncer"),
 	}
 }
 

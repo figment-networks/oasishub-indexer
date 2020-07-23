@@ -23,7 +23,7 @@ const (
 func NewSyncerPersistorTask(db SyncerPersistorTaskStore) pipeline.Task {
 	return &syncerPersistorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameSyncerPersistor}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameSyncerPersistor),
 	}
 }
 
@@ -54,7 +54,7 @@ func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error
 func NewBlockSeqPersistorTask(db BlockSeqPersistorTaskStore) pipeline.Task {
 	return &blockSeqPersistorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameBlockSeqPersistor}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockSeqPersistor),
 	}
 }
 
@@ -94,7 +94,7 @@ func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) err
 func NewValidatorSeqPersistorTask(db ValidatorSeqPersistorTaskStore) pipeline.Task {
 	return &validatorSeqPersistorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorSeqPersistor}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorSeqPersistor),
 	}
 }
 
@@ -138,7 +138,7 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 func NewValidatorAggPersistorTask(db ValidatorAggPersistorTaskStore) pipeline.Task {
 	return &validatorAggPersistorTask{
 		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels([]string{TaskNameValidatorAggPersistor}),
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorAggPersistor),
 	}
 }
 
