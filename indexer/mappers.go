@@ -88,17 +88,17 @@ func TransactionToSequence(syncable *model.Syncable, rawTransactions []*transact
 	return transactions, nil
 }
 
-func StakingToSequence(syncable *model.Syncable, rawState *statepb.State) (*model.StakingSeq, error) {
+func StakingToSequence(syncable *model.Syncable, rawStaking *statepb.Staking) (*model.StakingSeq, error) {
 	e := &model.StakingSeq{
 		Sequence: &model.Sequence{
 			Height: syncable.Height,
 			Time:   syncable.Time,
 		},
 
-		TotalSupply:         types.NewQuantityFromBytes(rawState.GetStaking().GetTotalSupply()),
-		CommonPool:          types.NewQuantityFromBytes(rawState.GetStaking().GetCommonPool()),
-		DebondingInterval:   rawState.GetStaking().GetParameters().GetDebondingInterval(),
-		MinDelegationAmount: types.NewQuantityFromBytes(rawState.GetStaking().GetParameters().GetMinDelegationAmount()),
+		TotalSupply:         types.NewQuantityFromBytes(rawStaking.GetTotalSupply()),
+		CommonPool:          types.NewQuantityFromBytes(rawStaking.GetCommonPool()),
+		DebondingInterval:   rawStaking.GetParameters().GetDebondingInterval(),
+		MinDelegationAmount: types.NewQuantityFromBytes(rawStaking.GetParameters().GetMinDelegationAmount()),
 	}
 
 	if !e.Valid() {

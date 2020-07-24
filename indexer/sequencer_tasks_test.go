@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"reflect"
 	"testing"
 	"time"
 
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	mock "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
@@ -335,6 +337,139 @@ func TestValidatorSeqCreator_Run(t *testing.T) {
 				if !found {
 					t.Errorf("missing entry in payload.UpdatedValidatorSequences, want: %v", expectVal)
 				}
+			}
+		})
+	}
+}
+
+func TestStakingSeqCreator_Run(t *testing.T) {
+	setup(t)
+	var currHeight int64 = 20
+
+	sync := &model.Syncable{
+		Height: 18,
+		Time:   *types.NewTimeFromTime(time.Date(2020, 11, 10, 23, 0, 0, 0, time.UTC)),
+	}
+
+	existing := &model.StakingSeq{
+		Sequence: &model.Sequence{
+			Height: 20,
+			Time:   *types.NewTimeFromTime(time.Date(1987, 12, 11, 14, 0, 0, 0, time.UTC)),
+		},
+		TotalSupply:         types.NewQuantityFromBytes(randBytes(6)),
+		CommonPool:          types.NewQuantityFromBytes(randBytes(6)),
+		DebondingInterval:   rand.Uint64(),
+		MinDelegationAmount: types.NewQuantityFromBytes(randBytes(6)),
+	}
+
+	tests := []struct {
+		description      string
+		raw              *statepb.Staking
+		dbErr            error
+		expectErr        error
+		expectStakingSeq *model.StakingSeq
+	}{
+		{
+			description:      "Adds exisitng staking seq to payload",
+			raw:              testpbStaking(),
+			dbErr:            nil,
+			expectErr:        nil,
+			expectStakingSeq: existing,
+		},
+		{
+			description: "Adds new staking seq to payload",
+			raw: testpbStaking(
+				setStakingTotalSupply([]byte{1}),
+				setStakingCommonPool([]byte{2}),
+				setStakingDebondingInterval(3),
+				setStakingMinDelegationAmount([]byte{4}),
+			),
+			dbErr:     store.ErrNotFound,
+			expectErr: nil,
+			expectStakingSeq: &model.StakingSeq{
+				Sequence: &model.Sequence{
+					Height: sync.Height,
+					Time:   sync.Time,
+				},
+				TotalSupply:         types.NewQuantityFromBytes([]byte{1}),
+				CommonPool:          types.NewQuantityFromBytes([]byte{2}),
+				DebondingInterval:   3,
+				MinDelegationAmount: types.NewQuantityFromBytes([]byte{4}),
+			},
+		},
+		{
+			description:      "Returns error on unexpected FindByHeight database error",
+			raw:              testpbStaking(),
+			dbErr:            errTestDbFind,
+			expectErr:        errTestDbFind,
+			expectStakingSeq: nil,
+		},
+		{
+			description: "Returns error on unexpected Create database error",
+			raw: testpbStaking(
+				setStakingTotalSupply([]byte{1}),
+				setStakingCommonPool([]byte{2}),
+				setStakingDebondingInterval(3),
+				setStakingMinDelegationAmount([]byte{4}),
+			),
+			dbErr:     errTestDbCreate,
+			expectErr: errTestDbCreate,
+			expectStakingSeq: &model.StakingSeq{
+				Sequence: &model.Sequence{
+					Height: sync.Height,
+					Time:   sync.Time,
+				},
+				TotalSupply:         types.NewQuantityFromBytes([]byte{1}),
+				CommonPool:          types.NewQuantityFromBytes([]byte{2}),
+				DebondingInterval:   3,
+				MinDelegationAmount: types.NewQuantityFromBytes([]byte{4}),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			mockDb := mock.NewMockStakingSeqCreatorTaskStore(ctrl)
+
+			if tt.dbErr == errTestDbFind {
+				mockDb.EXPECT().FindByHeight(currHeight).Return(nil, errTestDbFind).Times(1)
+			} else if tt.dbErr == errTestDbCreate {
+				mockDb.EXPECT().FindByHeight(currHeight).Return(nil, store.ErrNotFound).Times(1)
+				mockDb.EXPECT().Create(tt.expectStakingSeq).Return(errTestDbCreate).Times(1)
+			} else if tt.dbErr == store.ErrNotFound {
+				// expet new seq to be created and added to payload
+				mockDb.EXPECT().FindByHeight(currHeight).Return(nil, store.ErrNotFound).Times(1)
+				mockDb.EXPECT().Create(tt.expectStakingSeq).Return(nil).Times(1)
+			} else {
+				// expect existing seq to be added to payload
+				mockDb.EXPECT().FindByHeight(currHeight).Return(existing, nil).Times(1)
+			}
+
+			task := NewStakingSeqCreatorTask(mockDb)
+			pl := &payload{
+				CurrentHeight: currHeight,
+				Syncable:      sync,
+				RawState: &statepb.State{
+					Staking: tt.raw,
+				},
+			}
+
+			if err := task.Run(ctx, pl); err != tt.expectErr {
+				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.expectErr != nil {
+				return
+			}
+
+			if !reflect.DeepEqual(pl.StakingSequence, tt.expectStakingSeq) {
+				t.Errorf("unexpected NewBlockSequence, want: %+v, got: %+v", tt.expectStakingSeq, pl.StakingSequence)
+				return
 			}
 		})
 	}

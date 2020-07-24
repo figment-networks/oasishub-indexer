@@ -194,14 +194,19 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-func NewStakingSeqCreatorTask(db *store.Store) *stakingSeqCreatorTask {
+func NewStakingSeqCreatorTask(db StakingSeqCreatorTaskStore) *stakingSeqCreatorTask {
 	return &stakingSeqCreatorTask{
 		db: db,
 	}
 }
 
 type stakingSeqCreatorTask struct {
-	db *store.Store
+	db StakingSeqCreatorTaskStore
+}
+
+type StakingSeqCreatorTaskStore interface {
+	Create(record interface{}) error
+	FindByHeight(height int64) (*model.StakingSeq, error)
 }
 
 func (t *stakingSeqCreatorTask) GetName() string {
@@ -215,14 +220,14 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	sequenced, err := t.db.StakingSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		if err == store.ErrNotFound {
-			toSequence, err := StakingToSequence(payload.Syncable, payload.RawState)
+			toSequence, err := StakingToSequence(payload.Syncable, payload.RawState.GetStaking())
 			if err != nil {
 				return err
 			}
-			if err := t.db.StakingSeq.Create(toSequence); err != nil {
+			if err := t.db.Create(toSequence); err != nil {
 				return err
 			}
 			payload.StakingSequence = toSequence

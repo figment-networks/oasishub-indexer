@@ -119,11 +119,39 @@ func testpbStaking(opts ...testStakingOption) *statepb.Staking {
 	s := &statepb.Staking{
 		TotalSupply: randBytes(5),
 		CommonPool:  randBytes(5),
+		Parameters: &statepb.StakingParameters{
+			DebondingInterval:   rand.Uint64(),
+			MinDelegationAmount: randBytes(5),
+		},
 	}
 	for _, opt := range opts {
 		opt(s)
 	}
 	return s
+}
+
+func setStakingTotalSupply(supply []byte) testStakingOption {
+	return func(s *statepb.Staking) {
+		s.TotalSupply = supply
+	}
+}
+
+func setStakingCommonPool(pool []byte) testStakingOption {
+	return func(s *statepb.Staking) {
+		s.CommonPool = pool
+	}
+}
+
+func setStakingDebondingInterval(val uint64) testStakingOption {
+	return func(s *statepb.Staking) {
+		s.GetParameters().DebondingInterval = val
+	}
+}
+
+func setStakingMinDelegationAmount(amt []byte) testStakingOption {
+	return func(s *statepb.Staking) {
+		s.GetParameters().MinDelegationAmount = amt
+	}
 }
 
 func testpbState() *statepb.State {
