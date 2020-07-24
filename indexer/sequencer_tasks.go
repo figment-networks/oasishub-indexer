@@ -3,12 +3,13 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"time"
 )
 
 const (
@@ -29,14 +30,18 @@ var (
 	_ pipeline.Task = (*debondingDelegationSeqCreatorTask)(nil)
 )
 
-func NewBlockSeqCreatorTask(db *store.Store) *blockSeqCreatorTask {
+func NewBlockSeqCreatorTask(db BlockSeqCreatorTaskStore) *blockSeqCreatorTask {
 	return &blockSeqCreatorTask{
 		db: db,
 	}
 }
 
 type blockSeqCreatorTask struct {
-	db *store.Store
+	db BlockSeqCreatorTaskStore
+}
+
+type BlockSeqCreatorTaskStore interface {
+	FindByHeight(height int64) (*model.BlockSeq, error)
 }
 
 func (t *blockSeqCreatorTask) GetName() string {
@@ -50,12 +55,12 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
-	rawBlockSeq, err := BlockToSequence(payload.Syncable, payload.RawBlock, payload.ParsedBlock)
+	rawBlockSeq, err := BlockToSequence(payload.Syncable, payload.ParsedBlock)
 	if err != nil {
 		return err
 	}
 
-	blockSeq, err := t.db.BlockSeq.FindByHeight(payload.CurrentHeight)
+	blockSeq, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		if err == store.ErrNotFound {
 			payload.NewBlockSequence = rawBlockSeq
@@ -71,14 +76,18 @@ func (t *blockSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) error
 	return nil
 }
 
-func NewValidatorSeqCreatorTask(db *store.Store) *validatorSeqCreatorTask {
+func NewValidatorSeqCreatorTask(db ValidatorSeqCreatorTaskStore) *validatorSeqCreatorTask {
 	return &validatorSeqCreatorTask{
 		db: db,
 	}
 }
 
 type validatorSeqCreatorTask struct {
-	db *store.Store
+	db ValidatorSeqCreatorTaskStore
+}
+
+type ValidatorSeqCreatorTaskStore interface {
+	FindByHeightAndEntityUID(h int64, key string) (*model.ValidatorSeq, error)
 }
 
 func (t *validatorSeqCreatorTask) GetName() string {
@@ -100,7 +109,7 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	var newValidatorSeqs []model.ValidatorSeq
 	var updatedValidatorSeqs []model.ValidatorSeq
 	for _, rawValidatorSeq := range rawValidatorSeqs {
-		validatorSeq, err := t.db.ValidatorSeq.FindByHeightAndEntityUID(payload.CurrentHeight, rawValidatorSeq.EntityUID)
+		validatorSeq, err := t.db.FindByHeightAndEntityUID(payload.CurrentHeight, rawValidatorSeq.EntityUID)
 		if err != nil {
 			if err == store.ErrNotFound {
 				newValidatorSeqs = append(newValidatorSeqs, rawValidatorSeq)
