@@ -23,19 +23,19 @@ var (
 		Subsystem: "oasishub_task",
 		Name:      "height_success",
 		Desc:      "The total number of successfully indexed heights",
-	}).WithLabels(nil)
+	}).WithLabels()
 
 	indexerDbSizeAfterHeight = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
 		Namespace: "indexers",
 		Subsystem: "oasishub_task",
 		Name:      "db_size",
 		Desc:      "The size of the database after indexing of height",
-	}).WithLabels(nil)
+	}).WithLabels()
 
 	indexerHeightDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
 		Namespace: "indexers",
 		Subsystem: "oasishub_task",
 		Name:      "height_duration",
 		Desc:      "The total time required to index one height",
-	}).WithLabels(nil)
+	}).WithLabels()
 )

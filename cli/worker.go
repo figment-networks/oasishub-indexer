@@ -34,17 +34,17 @@ func startWorker(cfg *config.Config) error {
 	w.Start()
 
 	prom := prometheusmetrics.New()
-	err = metrics.DetaultMetrics.AddEngine(prom)
+	err = metrics.AddEngine(prom)
 	if err != nil {
 		logger.Error(err)
 	}
-	err = metrics.DetaultMetrics.Hotload(prom.Name())
+	err = metrics.Hotload(prom.Name())
 	if err != nil {
 		logger.Error(err)
 	}
 	s := &http.Server{
 		Addr:         cfg.IndexerMetricAddr,
-		Handler:      metrics.DetaultMetrics.Handler(),
+		Handler:      metrics.Handler(),
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}

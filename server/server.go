@@ -32,15 +32,15 @@ func (s *Server) Start(listenAdd string) error {
 	logger.Info("starting server...", logger.Field("app", "server"))
 
 	prom := prometheusmetrics.New()
-	err := metrics.DetaultMetrics.AddEngine(prom)
+	err := metrics.AddEngine(prom)
 	if err != nil {
 		logger.Error(err)
 	}
-	err = metrics.DetaultMetrics.Hotload(prom.Name())
+	err = metrics.Hotload(prom.Name())
 	if err != nil {
 		logger.Error(err)
 	}
-	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(metrics.DetaultMetrics.Handler()))
+	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(metrics.Handler()))
 
 	return s.engine.Run(listenAdd)
 }
