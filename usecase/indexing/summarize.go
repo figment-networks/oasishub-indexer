@@ -33,7 +33,7 @@ func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	currentIndexVersion := targetsReader.GetCurrentVersion()
+	currentIndexVersion := targetsReader.GetCurrentVersionID()
 
 	if err := uc.summarizeBlockSeq(types.IntervalHourly, currentIndexVersion); err != nil {
 		return err

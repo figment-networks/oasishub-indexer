@@ -132,7 +132,7 @@ type StartConfig struct {
 }
 
 func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersion()
+	indexVersion := p.targetsReader.GetCurrentVersionID()
 
 	source, err := NewIndexSource(p.cfg, p.db, p.client, &IndexSourceConfig{
 		BatchSize:   startCfg.BatchSize,
@@ -177,7 +177,7 @@ type BackfillConfig struct {
 }
 
 func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersion()
+	indexVersion := p.targetsReader.GetCurrentVersionID()
 
 	source, err := NewBackfillSource(p.cfg, p.db, p.client, &BackfillSourceConfig{
 		indexVersion: indexVersion,
@@ -274,8 +274,6 @@ func (p *indexingPipeline) getTasksWhitelist(targetIds []int64) ([]pipeline.Task
 	var err error
 	if len(targetIds) == 0 {
 		taskWhitelist = p.targetsReader.GetAllTasks()
-	} else if len(targetIds) == 1 {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetId(targetIds[0])
 	} else {
 		taskWhitelist, err = p.targetsReader.GetTasksByTargetIds(targetIds)
 	}
