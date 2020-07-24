@@ -3,19 +3,21 @@ package cli
 import (
 	"flag"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
 )
 
 type Flags struct {
-	configPath string
-	runCommand string
+	configPath  string
+	filePath    string
+	runCommand  string
 	showVersion bool
 
 	batchSize int64
@@ -47,6 +49,7 @@ func (i *targetIds) Set(value string) error {
 func (c *Flags) Setup() {
 	flag.BoolVar(&c.showVersion, "v", false, "Show application version")
 	flag.StringVar(&c.configPath, "config", "", "Path to config")
+	flag.StringVar(&c.filePath, "file", "", "Complete file path")
 	flag.StringVar(&c.runCommand, "cmd", "", "Command to run")
 
 	flag.Int64Var(&c.batchSize, "batch_size", 0, "pipeline batch size")

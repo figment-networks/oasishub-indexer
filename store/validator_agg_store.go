@@ -16,14 +16,14 @@ type ValidatorAggStore struct {
 
 // CreateOrUpdate creates a new validator or updates an existing one
 func (s ValidatorAggStore) CreateOrUpdate(val *model.ValidatorAgg) error {
-	existing, err := s.FindByEntityUID(val.EntityUID)
+	_, err := s.FindByEntityUID(val.EntityUID)
 	if err != nil {
 		if err == ErrNotFound {
 			return s.Create(val)
 		}
 		return err
 	}
-	return s.Update(existing)
+	return s.Update(val)
 }
 
 // FindBy returns an validator for a matching attribute
