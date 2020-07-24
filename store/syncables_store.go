@@ -38,6 +38,17 @@ func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
 	return result, checkErr(err)
 }
 
+// FindSmallestIndexVersion returns smallest index version
+func (s SyncablesStore) FindSmallestIndexVersion() (*int64, error) {
+	result := &model.Syncable{}
+
+	err := s.db.
+		Order("index_version").
+		First(result).Error
+
+	return &result.IndexVersion, checkErr(err)
+}
+
 // FindFirstByDifferentIndexVersion returns first syncable with different index version
 func (s SyncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
 	result := &model.Syncable{}

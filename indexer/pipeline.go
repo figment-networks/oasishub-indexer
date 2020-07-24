@@ -96,7 +96,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Add analyzer stage
 	p.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
 		NewSystemEventCreatorTask(db.ValidatorSeq),
-	),)
+	), )
 
 	// Set persistor stage
 	p.SetStage(
@@ -127,12 +127,12 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 }
 
 type StartConfig struct {
-	BatchSize       int64
-	StartHeight     int64
+	BatchSize   int64
+	StartHeight int64
 }
 
 func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersionID()
+	currentIndexVersion := p.targetsReader.GetCurrentVersionID()
 
 	source, err := NewIndexSource(p.cfg, p.db, p.client, &IndexSourceConfig{
 		BatchSize:   startCfg.BatchSize,
@@ -142,16 +142,16 @@ func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) erro
 		return err
 	}
 
-	sink := NewSink(p.db, indexVersion)
+	sink := NewSink(p.db, currentIndexVersion)
 
-	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, indexVersion)
+	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, currentIndexVersion)
 	if err != nil {
 		return err
 	}
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	pipelineOptions, err := p.getPipelineOptions(false)
+	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{})
 	if err != nil {
 		return err
 	}
@@ -171,22 +171,23 @@ func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) erro
 }
 
 type BackfillConfig struct {
-	Parallel  bool
-	Force     bool
-	TargetIds []int64
+	Parallel   bool
+	Force      bool
+	VersionIds []int64
+	TargetIds  []int64
 }
 
 func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersionID()
+	currentIndexVersion := p.targetsReader.GetCurrentVersionID()
 
 	source, err := NewBackfillSource(p.cfg, p.db, p.client, &BackfillSourceConfig{
-		indexVersion: indexVersion,
+		indexVersion: currentIndexVersion,
 	})
 	if err != nil {
 		return err
 	}
 
-	sink := NewSink(p.db, indexVersion)
+	sink := NewSink(p.db, currentIndexVersion)
 
 	kind := model.ReportKindSequentialReindex
 	if backfillCfg.Parallel {
@@ -199,7 +200,7 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 		}
 	}
 
-	report, err := p.getReport(indexVersion, source, kind)
+	report, err := p.getReport(currentIndexVersion, source, kind)
 	if err != nil {
 		return err
 	}
@@ -210,7 +211,11 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	pipelineOptions, err := p.getPipelineOptions(false, backfillCfg.TargetIds...)
+	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
+		currentIndexVersion: currentIndexVersion,
+		versionIds:          backfillCfg.VersionIds,
+		targetIds:           backfillCfg.TargetIds,
+	})
 	if err != nil {
 		return err
 	}
@@ -231,13 +236,18 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 }
 
 type RunConfig struct {
-	Height          int64
-	DesiredTargetID int64
-	Dry             bool
+	Height           int64
+	DesiredVersionID int64
+	DesiredTargetID  int64
+	Dry              bool
 }
 
 func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
-	pipelineOptions, err := p.getPipelineOptions(runCfg.Dry, runCfg.DesiredTargetID)
+	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
+		dry: runCfg.Dry,
+		versionIds: []int64{runCfg.DesiredVersionID},
+		targetIds: []int64{runCfg.DesiredTargetID},
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -257,27 +267,72 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 	return payload, nil
 }
 
-func (p *indexingPipeline) getPipelineOptions(dry bool, targetIds ...int64) (*pipeline.Options, error) {
-	taskWhitelist, err := p.getTasksWhitelist(targetIds)
+type pipelineOptionsConfig struct {
+	dry                 bool
+	currentIndexVersion int64
+	versionIds          []int64
+	targetIds           []int64
+}
+
+func (p *indexingPipeline) getPipelineOptions(optionsCfg pipelineOptionsConfig) (*pipeline.Options, error) {
+	taskWhitelist, err := p.getTasksWhitelist(optionsCfg.currentIndexVersion, optionsCfg.versionIds, optionsCfg.targetIds)
 	if err != nil {
 		return nil, err
 	}
 
 	return &pipeline.Options{
 		TaskWhitelist:   taskWhitelist,
-		StagesBlacklist: p.getStagesBlacklist(dry),
+		StagesBlacklist: p.getStagesBlacklist(optionsCfg.dry),
 	}, nil
 }
 
-func (p *indexingPipeline) getTasksWhitelist(targetIds []int64) ([]pipeline.TaskName, error) {
+func (p *indexingPipeline) getTasksWhitelist(currentVersionId int64, versionIds []int64, targetIds []int64) ([]pipeline.TaskName, error) {
 	var taskWhitelist []pipeline.TaskName
-	var err error
-	if len(targetIds) == 0 {
-		taskWhitelist = p.targetsReader.GetAllTasks()
+
+	if len(versionIds) == 0 && len(targetIds) == 0 {
+		smallestIndexVersion, err := p.db.Syncables.FindSmallestIndexVersion()
+		if err != nil {
+			return nil, err
+		}
+
+		if currentVersionId == 0 || *smallestIndexVersion == currentVersionId {
+			// No gaps in index versions
+			// Do normal indexing including all available tasks
+			taskWhitelist = p.targetsReader.GetAllTasks()
+		} else {
+			// There are records with smaller index versions
+			// Include tasks from missing versions
+			nextIndexVersion := *smallestIndexVersion + 1
+			var ids []int64
+			for i := nextIndexVersion; i <= currentVersionId; i++ {
+				ids = append(ids, i)
+			}
+
+			taskWhitelist, err = p.targetsReader.GetTasksByVersionIds(ids)
+			if err != nil {
+				return nil, err
+			}
+		}
+
 	} else {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetIds(targetIds)
+		if len(versionIds) > 0 {
+			tasks, err := p.targetsReader.GetTasksByVersionIds(versionIds)
+			if err != nil {
+				return nil, err
+			}
+			taskWhitelist = append(taskWhitelist, tasks...)
+		}
+
+		if len(targetIds) > 0 {
+			tasks, err := p.targetsReader.GetTasksByTargetIds(targetIds)
+			if err != nil {
+				return nil, err
+			}
+			taskWhitelist = append(taskWhitelist, tasks...)
+		}
 	}
-	return taskWhitelist, err
+
+	return getUniqueTaskNames(taskWhitelist), nil
 }
 
 func (p *indexingPipeline) getStagesBlacklist(dry bool) []pipeline.StageName {

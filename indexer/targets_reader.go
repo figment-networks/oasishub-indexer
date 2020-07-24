@@ -21,7 +21,7 @@ var (
 type TargetsReader interface {
 	GetCurrentVersionID() int64
 	GetAllTasks() []pipeline.TaskName
-	GetTasksForVersion(int64) ([]pipeline.TaskName, error)
+	GetTasksByVersionIds([]int64) ([]pipeline.TaskName, error)
 	GetTasksByTargetIds([]int64) ([]pipeline.TaskName, error)
 }
 
@@ -79,11 +79,28 @@ func (p *targetsReader) GetAllTasks() []pipeline.TaskName {
 		allAvailableTaskNames = append(allAvailableTaskNames, t.Tasks...)
 	}
 
-	return uniqueStr(allAvailableTaskNames)
+	return getUniqueTaskNames(allAvailableTaskNames)
 }
 
-// GetTasksByVersion get lists of tasks for specific version id
-func (p *targetsReader) GetTasksForVersion(versionID int64) ([]pipeline.TaskName, error) {
+// GetTasksByTargetIds get lists of tasks for specific version ids
+func (p *targetsReader) GetTasksByVersionIds(versionIds []int64) ([]pipeline.TaskName, error) {
+	var allTaskNames []pipeline.TaskName
+
+	allTaskNames = p.appendSharedTasks(allTaskNames)
+
+	for _, t := range versionIds {
+		tasks, err := p.getTasksByVersionId(t)
+		if err != nil {
+			return nil, err
+		}
+		allTaskNames = append(allTaskNames, tasks...)
+	}
+
+	return getUniqueTaskNames(allTaskNames), nil
+}
+
+// getTasksByVersionId get lists of tasks for specific version id
+func (p *targetsReader) getTasksByVersionId(versionID int64) ([]pipeline.TaskName, error) {
 	var targetIds []int64
 	versionFound := false
 	for _, version := range p.cfg.Versions {
@@ -114,14 +131,14 @@ func (p *targetsReader) GetTasksByTargetIds(targetIds []int64) ([]pipeline.TaskN
 		allTaskNames = append(allTaskNames, tasks...)
 	}
 
-	return uniqueStr(allTaskNames), nil
+	return getUniqueTaskNames(allTaskNames), nil
 }
 
 // getTasksByTargetId get list of tasks for desired target id
 func (p *targetsReader) getTasksByTargetId(targetId int64) ([]pipeline.TaskName, error) {
 	for _, t := range p.cfg.AvailableTargets {
 		if t.ID == targetId {
-			return uniqueStr(t.Tasks), nil
+			return getUniqueTaskNames(t.Tasks), nil
 		}
 	}
 	return nil, errors.New(fmt.Sprintf("target id %d does not exists", targetId))
@@ -149,8 +166,8 @@ func (p *targetsReader) appendSharedTasks(tasks []pipeline.TaskName) []pipeline.
 	return tasks
 }
 
-// UniqueStr return slice with unique elements
-func uniqueStr(slice []pipeline.TaskName) []pipeline.TaskName {
+// getUniqueTaskNames return slice with unique task names
+func getUniqueTaskNames(slice []pipeline.TaskName) []pipeline.TaskName {
 	keys := make(map[pipeline.TaskName]bool)
 	var list []pipeline.TaskName
 	for _, entry := range slice {

@@ -129,6 +129,11 @@ Purge old data:
 oasishub-indexer -config path/to/config.json -cmd=indexer_purge
 ```
 
+Start backfill process:
+```bash
+oasishub-indexer -config path/to/config.json -cmd=indexer_backfill
+```
+
 ### Running tests
 
 To run tests with coverage you can use `test` Makefile target:

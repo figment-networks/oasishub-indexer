@@ -141,7 +141,7 @@ func TestTargetsReader_GetAllTasks(t *testing.T) {
 	})
 }
 
-func TestTargetsReader_GetTasksForVersion(t *testing.T) {
+func TestTargetsReader_GetTasksByVersionIds(t *testing.T) {
 	fileName := "test_targets.json"
 	var targetsJsonBlob = []byte(`
 		{
@@ -203,7 +203,7 @@ func TestTargetsReader_GetTasksForVersion(t *testing.T) {
 			return
 		}
 
-		tasks, err := reader.GetTasksForVersion(1)
+		tasks, err := reader.GetTasksByVersionIds([]int64{1})
 		if err != nil {
 			t.Errorf("GetTasksForVersion should not return error: err=%+v", err)
 			return
@@ -231,7 +231,7 @@ func TestTargetsReader_GetTasksForVersion(t *testing.T) {
 			return
 		}
 
-		_, err = reader.GetTasksForVersion(40)
+		_, err = reader.GetTasksByVersionIds([]int64{40})
 		if err == nil {
 			t.Errorf("GetTasksForVersion should return error")
 		}
