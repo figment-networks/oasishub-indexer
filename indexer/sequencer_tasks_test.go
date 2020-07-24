@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	mock "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
@@ -470,6 +471,149 @@ func TestStakingSeqCreator_Run(t *testing.T) {
 			if !reflect.DeepEqual(pl.StakingSequence, tt.expectStakingSeq) {
 				t.Errorf("unexpected NewBlockSequence, want: %+v, got: %+v", tt.expectStakingSeq, pl.StakingSequence)
 				return
+			}
+		})
+	}
+}
+
+func TestTransactionSeqCreator_Run(t *testing.T) {
+	setup(t)
+	var currHeight int64 = 18
+
+	sync := &model.Syncable{
+		Height: 18,
+		Time:   *types.NewTimeFromTime(time.Date(2020, 11, 10, 23, 0, 0, 0, time.UTC)),
+	}
+	seq := &model.Sequence{
+		Height: sync.Height,
+		Time:   sync.Time,
+	}
+
+	emptyRaw := make([]*transactionpb.Transaction, 0)
+	// emptyModel := make([]model.TransactionSeq, 0)
+
+	rawToModel := func(raw *transactionpb.Transaction) *model.TransactionSeq {
+		return &model.TransactionSeq{
+			Sequence:  seq,
+			PublicKey: raw.GetPublicKey(),
+			Hash:      raw.GetHash(),
+			GasPrice:  types.NewQuantityFromBytes(raw.GetGasPrice()),
+		}
+	}
+
+	raw1 := testpbTransaction("raw1")
+	raw2 := testpbTransaction("raw2")
+	raw3 := testpbTransaction("raw3")
+
+	tests := []struct {
+		description string
+		rawExisting []*transactionpb.Transaction
+		rawNew      []*transactionpb.Transaction
+
+		dbErr     error
+		expectErr error
+		expectSeq []*model.TransactionSeq
+	}{
+		{
+			description: "Adds exisitng transaction seq to payload",
+			rawExisting: []*transactionpb.Transaction{raw1},
+			rawNew:      emptyRaw,
+			dbErr:       nil,
+			expectErr:   nil,
+			expectSeq:   []*model.TransactionSeq{rawToModel(raw1)},
+		},
+		{
+			description: "Adds new transaction seq to payload",
+			rawExisting: emptyRaw,
+			rawNew:      []*transactionpb.Transaction{raw1},
+			dbErr:       nil,
+			expectErr:   nil,
+			expectSeq:   []*model.TransactionSeq{rawToModel(raw1)},
+		},
+		{
+			description: "Returns err on unexpected FindByHeight error",
+			rawExisting: emptyRaw,
+			rawNew:      []*transactionpb.Transaction{raw1},
+			dbErr:       errTestDbFind,
+			expectErr:   errTestDbFind,
+			expectSeq:   []*model.TransactionSeq{},
+		},
+		{
+			description: "Adds empty list to payload when there's no transaction seq",
+			rawExisting: emptyRaw,
+			rawNew:      emptyRaw,
+			dbErr:       nil,
+			expectErr:   nil,
+			expectSeq:   []*model.TransactionSeq{},
+		},
+		{
+			description: "Adds new and existing transaction sequences to payload",
+			rawExisting: []*transactionpb.Transaction{raw1, raw2},
+			rawNew:      []*transactionpb.Transaction{raw3},
+			dbErr:       nil,
+			expectErr:   nil,
+			expectSeq:   []*model.TransactionSeq{rawToModel(raw1), rawToModel(raw2), rawToModel(raw3)},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+			mockDb := mock.NewMockTransactionSeqCreatorTaskStore(ctrl)
+
+			if tt.dbErr != nil {
+				mockDb.EXPECT().FindByHeight(currHeight).Return(nil, tt.dbErr).Times(1)
+			} else {
+				dbReturn := make([]model.TransactionSeq, len(tt.rawExisting))
+				for i, raw := range tt.rawExisting {
+					dbReturn[i] = *rawToModel(raw)
+				}
+
+				mockDb.EXPECT().FindByHeight(currHeight).Return(dbReturn, nil).Times(1)
+
+				// expect create to be called on new raw transaction seq
+				for _, raw := range tt.rawNew {
+					mockDb.EXPECT().Create(rawToModel(raw)).Return(nil).Times(1)
+				}
+			}
+
+			task := NewTransactionSeqCreatorTask(mockDb)
+			pl := &payload{
+				CurrentHeight:   currHeight,
+				Syncable:        sync,
+				RawTransactions: append(tt.rawExisting, tt.rawNew...),
+			}
+
+			if err := task.Run(ctx, pl); err != tt.expectErr {
+				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.expectErr != nil {
+				return
+			}
+
+			if len(pl.TransactionSequences) != len(tt.expectSeq) {
+				t.Errorf("expected payload.TransactionSequences to contain all sequences, got: %v; want: %v", len(pl.TransactionSequences), len(tt.expectSeq))
+				return
+			}
+
+			for _, expectVal := range tt.expectSeq {
+				var found bool
+				for _, val := range pl.TransactionSequences {
+					if val.PublicKey == expectVal.PublicKey {
+						if !reflect.DeepEqual(val, *expectVal) {
+							t.Errorf("unexpected entry in payload.TransactionSequences, got: %v; want: %v", val, expectVal)
+						}
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("missing entry in payload.TransactionSequences, want: %v", expectVal)
+				}
 			}
 		})
 	}

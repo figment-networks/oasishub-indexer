@@ -129,14 +129,19 @@ func (t *validatorSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 	return nil
 }
 
-func NewTransactionSeqCreatorTask(db *store.Store) *transactionSeqCreatorTask {
+func NewTransactionSeqCreatorTask(db TransactionSeqCreatorTaskStore) *transactionSeqCreatorTask {
 	return &transactionSeqCreatorTask{
 		db: db,
 	}
 }
 
 type transactionSeqCreatorTask struct {
-	db *store.Store
+	db TransactionSeqCreatorTaskStore
+}
+
+type TransactionSeqCreatorTaskStore interface {
+	Create(record interface{}) error
+	FindByHeight(h int64) ([]model.TransactionSeq, error)
 }
 
 func (t *transactionSeqCreatorTask) GetName() string {
@@ -151,7 +156,7 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.TransactionSeq
-	sequenced, err := t.db.TransactionSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -184,7 +189,7 @@ func (t *transactionSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.TransactionSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -240,14 +245,19 @@ func (t *stakingSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 }
 
 type delegationSeqCreatorTask struct {
-	db *store.Store
+	db DelegationSeqCreatorTaskStore
+}
+
+type DelegationSeqCreatorTaskStore interface {
+	Create(record interface{}) error
+	FindByHeight(h int64) ([]model.DelegationSeq, error)
 }
 
 func (t *delegationSeqCreatorTask) GetName() string {
 	return DelegationSeqCreatorTaskName
 }
 
-func NewDelegationsSeqCreatorTask(db *store.Store) *delegationSeqCreatorTask {
+func NewDelegationsSeqCreatorTask(db DelegationSeqCreatorTaskStore) *delegationSeqCreatorTask {
 	return &delegationSeqCreatorTask{
 		db: db,
 	}
@@ -261,7 +271,7 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DelegationSeq
-	sequenced, err := t.db.DelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -294,7 +304,7 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.DelegationSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}
@@ -304,14 +314,19 @@ func (t *delegationSeqCreatorTask) Run(ctx context.Context, p pipeline.Payload) 
 	return nil
 }
 
-func NewDebondingDelegationsSeqCreatorTask(db *store.Store) *debondingDelegationSeqCreatorTask {
+func NewDebondingDelegationsSeqCreatorTask(db DebondingDelegationSeqCreatorTaskStore) *debondingDelegationSeqCreatorTask {
 	return &debondingDelegationSeqCreatorTask{
 		db: db,
 	}
 }
 
 type debondingDelegationSeqCreatorTask struct {
-	db *store.Store
+	db DebondingDelegationSeqCreatorTaskStore
+}
+
+type DebondingDelegationSeqCreatorTaskStore interface {
+	Create(record interface{}) error
+	FindByHeight(h int64) ([]model.DebondingDelegationSeq, error)
 }
 
 func (t *debondingDelegationSeqCreatorTask) GetName() string {
@@ -326,7 +341,7 @@ func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSequencer, t.GetName(), payload.CurrentHeight))
 
 	var res []model.DebondingDelegationSeq
-	sequenced, err := t.db.DebondingDelegationSeq.FindByHeight(payload.CurrentHeight)
+	sequenced, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -359,7 +374,7 @@ func (t *debondingDelegationSeqCreatorTask) Run(ctx context.Context, p pipeline.
 
 	for _, vs := range toSequence {
 		if !isSequenced(vs) {
-			if err := t.db.DebondingDelegationSeq.Create(&vs); err != nil {
+			if err := t.db.Create(&vs); err != nil {
 				return err
 			}
 		}

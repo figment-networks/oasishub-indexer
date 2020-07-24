@@ -78,11 +78,11 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		pipeline.StageSequencer,
 		pipeline.AsyncRunner(
 			pipeline.RetryingTask(NewBlockSeqCreatorTask(db.BlockSeq), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db.TransactionSeq), isTransient, 3),
 			pipeline.RetryingTask(NewStakingSeqCreatorTask(db.StakingSeq), isTransient, 3),
 			pipeline.RetryingTask(NewValidatorSeqCreatorTask(db.ValidatorSeq), isTransient, 3),
-			pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db.DelegationSeq), isTransient, 3),
+			pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db.DebondingDelegationSeq), isTransient, 3),
 		),
 	)
 
