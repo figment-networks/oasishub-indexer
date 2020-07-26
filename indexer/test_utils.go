@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/debondingdelegation/debondingdelegationpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/delegation/delegationpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
@@ -112,6 +113,34 @@ func setStakingDelegationEntry(entityID, entryID string, shares []byte) testStak
 		s.Delegations[entityID].GetEntries()[entryID] = &delegationpb.Delegation{
 			Shares: shares,
 		}
+	}
+}
+
+func setDebondingDelegationEntry(entityID, entryID string, shares []byte, endTime uint64) testStakingOption {
+	return func(s *statepb.Staking) {
+		if s.GetDebondingDelegations() == nil {
+			s.DebondingDelegations = make(map[string]*debondingdelegationpb.DebondingDelegationEntry)
+		}
+
+		if _, ok := s.DebondingDelegations[entityID]; !ok {
+			s.DebondingDelegations[entityID] = &debondingdelegationpb.DebondingDelegationEntry{
+				Entries: make(map[string]*debondingdelegationpb.DebondingDelegationInnerEntry),
+			}
+		}
+
+		if s.DebondingDelegations[entityID].GetEntries()[entryID] == nil {
+			s.DebondingDelegations[entityID].GetEntries()[entryID] = &debondingdelegationpb.DebondingDelegationInnerEntry{
+				DebondingDelegations: []*debondingdelegationpb.DebondingDelegation{},
+			}
+		}
+
+		s.DebondingDelegations[entityID].GetEntries()[entryID].DebondingDelegations = append(
+			s.DebondingDelegations[entityID].GetEntries()[entryID].GetDebondingDelegations(),
+			&debondingdelegationpb.DebondingDelegation{
+				Shares:        shares,
+				DebondEndTime: endTime,
+			},
+		)
 	}
 }
 
