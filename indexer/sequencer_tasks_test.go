@@ -619,6 +619,167 @@ func TestTransactionSeqCreator_Run(t *testing.T) {
 	}
 }
 
+func TestDelegationSeqCreator_Run(t *testing.T) {
+	setup(t)
+	var currHeight int64 = 18
+
+	sync := &model.Syncable{
+		Height: currHeight,
+		Time:   *types.NewTimeFromTime(time.Date(2020, 11, 10, 23, 0, 0, 0, time.UTC)),
+	}
+
+	toModel := func(valUID, delUID string, shares []byte) model.DelegationSeq {
+		return model.DelegationSeq{
+			Sequence: &model.Sequence{
+				Height: sync.Height,
+				Time:   sync.Time,
+			},
+
+			ValidatorUID: valUID,
+			DelegatorUID: delUID,
+			Shares:       types.NewQuantityFromBytes(shares),
+		}
+	}
+
+	tests := []struct {
+		description string
+		rawStaking  *statepb.Staking
+		dbReturn    []model.DelegationSeq
+		dbErr       error
+		expectErr   error
+		expectSeq   []model.DelegationSeq
+	}{
+		{
+			description: "Adds exisitng delegation seq to payload",
+			rawStaking: testpbStaking(
+				setStakingDelegationEntry("t0", "del1", uintToBytes(100, t)),
+			),
+			dbReturn:  []model.DelegationSeq{toModel("t0", "del1", uintToBytes(100, t))},
+			dbErr:     nil,
+			expectErr: nil,
+			expectSeq: []model.DelegationSeq{toModel("t0", "del1", uintToBytes(100, t))},
+		},
+		{
+			description: "Adds new delegation seq to payload",
+			rawStaking: testpbStaking(
+				setStakingDelegationEntry("t0", "del1", uintToBytes(100, t)),
+			),
+			dbReturn:  []model.DelegationSeq{},
+			dbErr:     nil,
+			expectErr: nil,
+			expectSeq: []model.DelegationSeq{toModel("t0", "del1", uintToBytes(100, t))},
+		},
+		{
+			description: "Returns err on unexpected FindByHeight error",
+			rawStaking: testpbStaking(
+				setStakingDelegationEntry("t0", "del1", uintToBytes(100, t)),
+			),
+			dbReturn:  []model.DelegationSeq{},
+			dbErr:     errTestDbFind,
+			expectErr: errTestDbFind,
+			expectSeq: []model.DelegationSeq{},
+		},
+		{
+			description: "Adds empty list to payload when there's no delegations sequence",
+			rawStaking:  testpbStaking(),
+			dbReturn:    []model.DelegationSeq{},
+			dbErr:       nil,
+			expectErr:   nil,
+			expectSeq:   []model.DelegationSeq{},
+		},
+		{
+			description: "Adds new and existing delegations sequence to payload",
+			rawStaking: testpbStaking(
+				setStakingDelegationEntry("t0", "del1", uintToBytes(100, t)),
+				setStakingDelegationEntry("t0", "newdel", uintToBytes(200, t)),
+				setStakingDelegationEntry("t3", "newdel2", uintToBytes(300, t)),
+				setStakingDelegationEntry("t1", "del1", uintToBytes(400, t)),
+			),
+			dbReturn: []model.DelegationSeq{
+				toModel("t0", "del1", uintToBytes(100, t)),
+				toModel("t1", "del1", uintToBytes(400, t)),
+			},
+			dbErr:     nil,
+			expectErr: nil,
+			expectSeq: []model.DelegationSeq{
+				toModel("t0", "del1", uintToBytes(100, t)),
+				toModel("t0", "newdel", uintToBytes(200, t)),
+				toModel("t3", "newdel2", uintToBytes(300, t)),
+				toModel("t1", "del1", uintToBytes(400, t)),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+			mockDb := mock.NewMockDelegationSeqCreatorTaskStore(ctrl)
+
+			if tt.dbErr != nil {
+				mockDb.EXPECT().FindByHeight(currHeight).Return(nil, tt.dbErr).Times(1)
+			} else {
+				mockDb.EXPECT().FindByHeight(currHeight).Return(tt.dbReturn, nil).Times(1)
+
+				// expect create to be called on each delegation seq not in dbReturn
+				for _, seq := range tt.expectSeq {
+					var found bool
+					for _, extSeq := range tt.dbReturn {
+						if reflect.DeepEqual(seq, extSeq) {
+							found = true
+							break
+						}
+					}
+					if !found {
+						s := seq
+						mockDb.EXPECT().Create(&s).Return(nil).Times(1)
+					}
+				}
+			}
+
+			task := NewDelegationsSeqCreatorTask(mockDb)
+			pl := &payload{
+				CurrentHeight: currHeight,
+				Syncable:      sync,
+				RawState: &statepb.State{
+					Staking: tt.rawStaking,
+				},
+			}
+
+			if err := task.Run(ctx, pl); err != tt.expectErr {
+				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.expectErr != nil {
+				return
+			}
+
+			if len(pl.DelegationSequences) != len(tt.expectSeq) {
+				t.Errorf("expected payload.DelegationSequences to contain all sequences, got: %v; want: %v", len(pl.DelegationSequences), len(tt.expectSeq))
+				return
+			}
+
+			for _, expectVal := range tt.expectSeq {
+				var found bool
+				for _, val := range pl.DelegationSequences {
+					if val.DelegatorUID == expectVal.DelegatorUID && val.ValidatorUID == expectVal.ValidatorUID {
+						if !reflect.DeepEqual(val, expectVal) {
+							t.Errorf("unexpected entry in payload.DelegationSequences, got: %v; want: %v", val, expectVal)
+						}
+						found = true
+						break
+					}
+				}
+				if !found {
+					t.Errorf("missing entry in payload.DelegationSequences, want: %v", expectVal)
+				}
+			}
+		})
+	}
+}
+
 func newValidatorSeq(key string, addr string, power int64, height int64, _time types.Time) *model.ValidatorSeq {
 	return &model.ValidatorSeq{
 		Sequence: &model.Sequence{
