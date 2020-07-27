@@ -99,10 +99,10 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	p.SetStage(
 		pipeline.StagePersistor,
 		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
+			pipeline.RetryingTask(NewSyncerPersistorTask(db.Syncables), isTransient, 3),
+			pipeline.RetryingTask(NewBlockSeqPersistorTask(db.BlockSeq), isTransient, 3),
+			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db.ValidatorSeq), isTransient, 3),
+			pipeline.RetryingTask(NewValidatorAggPersistorTask(db.ValidatorAgg), isTransient, 3),
 		),
 	)
 

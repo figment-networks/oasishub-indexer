@@ -3,11 +3,12 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/metric"
-	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
-	"time"
 )
 
 const (
@@ -17,14 +18,18 @@ const (
 	ValidatorAggPersistorTaskName = "ValidatorAggPersistor"
 )
 
-func NewSyncerPersistorTask(db *store.Store) pipeline.Task {
+func NewSyncerPersistorTask(db SyncerPersistorTaskStore) pipeline.Task {
 	return &syncerPersistorTask{
 		db: db,
 	}
 }
 
+type SyncerPersistorTaskStore interface {
+	CreateOrUpdate(val *model.Syncable) error
+}
+
 type syncerPersistorTask struct {
-	db *store.Store
+	db SyncerPersistorTaskStore
 }
 
 func (t *syncerPersistorTask) GetName() string {
@@ -38,17 +43,22 @@ func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	return t.db.Syncables.CreateOrUpdate(payload.Syncable)
+	return t.db.CreateOrUpdate(payload.Syncable)
 }
 
-func NewBlockSeqPersistorTask(db *store.Store) pipeline.Task {
+func NewBlockSeqPersistorTask(db BlockSeqPersistorTaskStore) pipeline.Task {
 	return &blockSeqPersistorTask{
 		db: db,
 	}
 }
 
 type blockSeqPersistorTask struct {
-	db *store.Store
+	db BlockSeqPersistorTaskStore
+}
+
+type BlockSeqPersistorTaskStore interface {
+	Create(record interface{}) error
+	Save(record interface{}) error
 }
 
 func (t *blockSeqPersistorTask) GetName() string {
@@ -63,24 +73,29 @@ func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) err
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	if payload.NewBlockSequence != nil {
-		return t.db.BlockSeq.Create(payload.NewBlockSequence)
+		return t.db.Create(payload.NewBlockSequence)
 	}
 
 	if payload.UpdatedBlockSequence != nil {
-		return t.db.BlockSeq.Save(payload.UpdatedBlockSequence)
+		return t.db.Save(payload.UpdatedBlockSequence)
 	}
 
 	return nil
 }
 
-func NewValidatorSeqPersistorTask(db *store.Store) pipeline.Task {
+func NewValidatorSeqPersistorTask(db ValidatorSeqPersistorTaskStore) pipeline.Task {
 	return &validatorSeqPersistorTask{
 		db: db,
 	}
 }
 
+type ValidatorSeqPersistorTaskStore interface {
+	Create(record interface{}) error
+	Save(record interface{}) error
+}
+
 type validatorSeqPersistorTask struct {
-	db *store.Store
+	db ValidatorSeqPersistorTaskStore
 }
 
 func (t *validatorSeqPersistorTask) GetName() string {
@@ -95,13 +110,13 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	for _, sequence := range payload.NewValidatorSequences {
-		if err := t.db.ValidatorSeq.Create(&sequence); err != nil {
+		if err := t.db.Create(&sequence); err != nil {
 			return err
 		}
 	}
 
 	for _, sequence := range payload.UpdatedValidatorSequences {
-		if err := t.db.ValidatorSeq.Save(&sequence); err != nil {
+		if err := t.db.Save(&sequence); err != nil {
 			return err
 		}
 	}
@@ -109,14 +124,19 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-func NewValidatorAggPersistorTask(db *store.Store) pipeline.Task {
+func NewValidatorAggPersistorTask(db ValidatorAggPersistorTaskStore) pipeline.Task {
 	return &validatorAggPersistorTask{
 		db: db,
 	}
 }
 
+type ValidatorAggPersistorTaskStore interface {
+	Create(record interface{}) error
+	Save(record interface{}) error
+}
+
 type validatorAggPersistorTask struct {
-	db *store.Store
+	db ValidatorAggPersistorTaskStore
 }
 
 func (t *validatorAggPersistorTask) GetName() string {
@@ -131,13 +151,13 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
 	for _, aggregate := range payload.NewAggregatedValidators {
-		if err := t.db.ValidatorAgg.Create(&aggregate); err != nil {
+		if err := t.db.Create(&aggregate); err != nil {
 			return err
 		}
 	}
 
 	for _, aggregate := range payload.UpdatedAggregatedValidators {
-		if err := t.db.ValidatorAgg.Save(&aggregate); err != nil {
+		if err := t.db.Save(&aggregate); err != nil {
 			return err
 		}
 	}
