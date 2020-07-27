@@ -60,7 +60,7 @@ func (h *GetStatusCmdHandler) Handle(ctx context.Context) {
 
 func (h *GetStatusCmdHandler) getUseCase() *getStatusUseCase {
 	if h.useCase == nil {
-		return NewGetStatusUseCase(h.db, h.client)
+		h.useCase = NewGetStatusUseCase(h.db, h.client)
 	}
 	return h.useCase
 }

@@ -29,14 +29,14 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	switch flags.runCommand {
 	case "status":
 		cmdHandlers.GetStatus.Handle(ctx)
-	case "indexer_start":
-		cmdHandlers.StartIndexer.Handle(ctx, flags.batchSize)
+	case "indexer_index":
+		cmdHandlers.IndexerIndex.Handle(ctx, flags.batchSize)
 	case "indexer_backfill":
-		cmdHandlers.BackfillIndexer.Handle(ctx, flags.parallel, flags.force, flags.versionIds, flags.targetIds)
+		cmdHandlers.IndexerBackfill.Handle(ctx, flags.parallel, flags.force, flags.versionIds, flags.targetIds)
 	case "indexer_summarize":
-		cmdHandlers.SummarizeIndexer.Handle(ctx)
+		cmdHandlers.IndexerSummarize.Handle(ctx)
 	case "indexer_purge":
-		cmdHandlers.PurgeIndexer.Handle(ctx)
+		cmdHandlers.IndexerPurge.Handle(ctx)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))
 	}

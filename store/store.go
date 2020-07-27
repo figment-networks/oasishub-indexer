@@ -45,23 +45,23 @@ func New(connStr string) (*Store, error) {
 type Store struct {
 	db *gorm.DB
 
-	Database     *DatabaseStore
-	Syncables    *SyncablesStore
-	Reports      *ReportsStore
-	SystemEvents *systemEventsStore
+	Database     DatabaseStore
+	Syncables    SyncablesStore
+	Reports      ReportsStore
+	SystemEvents SystemEventsStore
 
-	BlockSeq               *BlockSeqStore
-	DebondingDelegationSeq *DebondingDelegationSeqStore
-	DelegationSeq          *DelegationSeqStore
-	StakingSeq             *StakingSeqStore
-	TransactionSeq         *TransactionSeqStore
-	ValidatorSeq           *validatorSeqStore
+	BlockSeq               BlockSeqStore
+	DebondingDelegationSeq DebondingDelegationSeqStore
+	DelegationSeq          DelegationSeqStore
+	StakingSeq             StakingSeqStore
+	TransactionSeq         TransactionSeqStore
+	ValidatorSeq           ValidatorSeqStore
 
-	ValidatorSummary *ValidatorSummaryStore
-	BlockSummary     *BlockSummaryStore
+	BlockSummary     BlockSummaryStore
+	ValidatorSummary ValidatorSummaryStore
 
-	AccountAgg   *AccountAggStore
-	ValidatorAgg *ValidatorAggStore
+	AccountAgg   AccountAggStore
+	ValidatorAgg ValidatorAggStore
 }
 
 // Test checks the connection status

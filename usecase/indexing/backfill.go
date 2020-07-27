@@ -40,10 +40,7 @@ func (uc *backfillUseCase) Execute(ctx context.Context, useCaseConfig BackfillUs
 		return err
 	}
 
-	indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
-	if err != nil {
-		return err
-	}
+	indexingPipeline := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
 
 	return indexingPipeline.Backfill(ctx, indexer.BackfillConfig{
 		Parallel:   useCaseConfig.Parallel,

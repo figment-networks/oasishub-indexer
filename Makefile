@@ -8,8 +8,9 @@ DOCKER_TAG   ?= latest
 # Generate mocks
 mockgen:
 	@echo "[mockgen] generating mocks"
-	@mockgen -destination mock/store/mocks.go github.com/figment-networks/oasishub-indexer/store ValidatorSeqStore,SystemEventsStore
+	@mockgen -destination mock/store/mocks.go github.com/figment-networks/oasishub-indexer/store DatabaseStore,SyncablesStore,ReportsStore,SystemEventsStore,BlockSeqStore,DebondingDelegationSeqStore,DelegationSeqStore,StakingSeqStore,TransactionSeqStore,ValidatorSeqStore,BlockSummaryStore,ValidatorSummaryStore,AccountAggStore,ValidatorAggStore
 	@mockgen -destination mock/indexer/mocks.go github.com/figment-networks/oasishub-indexer/indexer SystemEventCreatorStore
+	@mockgen -destination mock/client/mocks.go github.com/figment-networks/oasishub-indexer/client AccountClient,BlockClient,ChainClient,StateClient,TransactionClient,ValidatorClient
 
 # Build the binary
 build:

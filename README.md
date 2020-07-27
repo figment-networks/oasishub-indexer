@@ -114,9 +114,14 @@ IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oas
 
 ### Running one-off commands
 
-Start indexer:
+Start indexing process:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_start
+oasishub-indexer -config path/to/config.json -cmd=indexer_index
+```
+
+Start backfill process:
+```bash
+oasishub-indexer -config path/to/config.json -cmd=indexer_backfill
 ```
 
 Create summary tables for sequences:
@@ -127,11 +132,6 @@ oasishub-indexer -config path/to/config.json -cmd=indexer_summarize
 Purge old data:
 ```bash
 oasishub-indexer -config path/to/config.json -cmd=indexer_purge
-```
-
-Start backfill process:
-```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_backfill
 ```
 
 ### Running tests

@@ -6,17 +6,33 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewSyncablesStore(db *gorm.DB) *SyncablesStore {
-	return &SyncablesStore{scoped(db, model.Report{})}
+var (
+	_ SyncablesStore = (*syncablesStore)(nil)
+)
+
+type SyncablesStore interface {
+	BaseStore
+
+	FindByHeight(int64) (*model.Syncable, error)
+	FindMostRecent() (*model.Syncable, error)
+	FindSmallestIndexVersion() (*int64, error)
+	FindFirstByDifferentIndexVersion(int64) (*model.Syncable, error)
+	FindMostRecentByDifferentIndexVersion(int64) (*model.Syncable, error)
+	CreateOrUpdate(*model.Syncable) error
+	SetProcessedAtForRange(types.ID, int64, int64) error
 }
 
-// SyncablesStore handles operations on syncables
-type SyncablesStore struct {
+func NewSyncablesStore(db *gorm.DB) *syncablesStore {
+	return &syncablesStore{scoped(db, model.Report{})}
+}
+
+// syncablesStore handles operations on syncables
+type syncablesStore struct {
 	baseStore
 }
 
 // FindByHeight returns syncable by height
-func (s SyncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
+func (s syncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
 	result := &model.Syncable{}
 
 	err = s.db.
@@ -28,7 +44,7 @@ func (s SyncablesStore) FindByHeight(height int64) (syncable *model.Syncable, er
 }
 
 // FindMostRecent returns the most recent syncable
-func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
+func (s syncablesStore) FindMostRecent() (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -39,7 +55,7 @@ func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
 }
 
 // FindSmallestIndexVersion returns smallest index version
-func (s SyncablesStore) FindSmallestIndexVersion() (*int64, error) {
+func (s syncablesStore) FindSmallestIndexVersion() (*int64, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -50,7 +66,7 @@ func (s SyncablesStore) FindSmallestIndexVersion() (*int64, error) {
 }
 
 // FindFirstByDifferentIndexVersion returns first syncable with different index version
-func (s SyncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
+func (s syncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -62,7 +78,7 @@ func (s SyncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*m
 }
 
 // FindMostRecentByDifferentIndexVersion returns the most recent syncable with different index version
-func (s SyncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
+func (s syncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -74,7 +90,7 @@ func (s SyncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64
 }
 
 // CreateOrUpdate creates a new syncable or updates an existing one
-func (s SyncablesStore) CreateOrUpdate(val *model.Syncable) error {
+func (s syncablesStore) CreateOrUpdate(val *model.Syncable) error {
 	existing, err := s.FindByHeight(val.Height)
 	if err != nil {
 		if err == ErrNotFound {
@@ -89,7 +105,7 @@ func (s SyncablesStore) CreateOrUpdate(val *model.Syncable) error {
 }
 
 // CreateOrUpdate creates a new syncable or updates an existing one
-func (s SyncablesStore) SetProcessedAtForRange(reportID types.ID, startHeight int64, endHeight int64) error {
+func (s syncablesStore) SetProcessedAtForRange(reportID types.ID, startHeight int64, endHeight int64) error {
 	err := s.db.
 		Exec("UPDATE syncables SET report_id = ?, processed_at = NULL WHERE height >= ? AND height <= ?", reportID, startHeight, endHeight).
 		Error

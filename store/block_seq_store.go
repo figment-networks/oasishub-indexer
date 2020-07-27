@@ -10,38 +10,39 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewBlockSeqStore(db *gorm.DB) *BlockSeqStore {
-	return &BlockSeqStore{scoped(db, model.BlockSeq{})}
+var (
+	_ BlockSeqStore = (*blockSeqStore)(nil)
+)
+
+type BlockSeqStore interface {
+	BaseStore
+
+	FindBy(string, interface{}) (*model.BlockSeq, error)
+	FindByHeight(int64) (*model.BlockSeq, error)
+	GetAvgRecentTimes(int64) GetAvgRecentTimesResult
+	FindMostRecent() (*model.BlockSeq, error)
+	DeleteOlderThan(time.Time, []ActivityPeriodRow) (*int64, error)
+	Summarize(types.SummaryInterval, []ActivityPeriodRow) ([]BlockSeqSummary, error)
 }
 
-// BlockSeqStore handles operations on blocks
-type BlockSeqStore struct {
+func NewBlockSeqStore(db *gorm.DB) *blockSeqStore {
+	return &blockSeqStore{scoped(db, model.BlockSeq{})}
+}
+
+// blockSeqStore handles operations on blocks
+type blockSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the block if it does not exist
-func (s BlockSeqStore) CreateIfNotExists(block *model.BlockSeq) error {
-	_, err := s.FindByHeight(block.Height)
-	if isNotFound(err) {
-		return s.Create(block)
-	}
-	return nil
-}
-
 // FindBy returns a block for a matching attribute
-func (s BlockSeqStore) FindBy(key string, value interface{}) (*model.BlockSeq, error) {
+func (s blockSeqStore) FindBy(key string, value interface{}) (*model.BlockSeq, error) {
 	result := &model.BlockSeq{}
 	err := findBy(s.db, result, key, value)
 	return result, checkErr(err)
 }
 
-// FindByID returns a block with matching ID
-func (s BlockSeqStore) FindByID(id int64) (*model.BlockSeq, error) {
-	return s.FindBy("id", id)
-}
-
 // FindByHeight returns a block with the matching height
-func (s BlockSeqStore) FindByHeight(height int64) (*model.BlockSeq, error) {
+func (s blockSeqStore) FindByHeight(height int64) (*model.BlockSeq, error) {
 	return s.FindBy("height", height)
 }
 
@@ -57,7 +58,7 @@ type GetAvgRecentTimesResult struct {
 }
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
-func (s *BlockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
+func (s *blockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
 	defer logQueryDuration(time.Now(), "BlockSeqStore_GetAvgRecentTimes")
 
 	var res GetAvgRecentTimesResult
@@ -74,7 +75,7 @@ type GetAvgTimesForIntervalRow struct {
 }
 
 // FindMostRecent finds most recent block sequence
-func (s *BlockSeqStore) FindMostRecent() (*model.BlockSeq, error) {
+func (s *blockSeqStore) FindMostRecent() (*model.BlockSeq, error) {
 	blockSeq := &model.BlockSeq{}
 	if err := findMostRecent(s.db, "time", blockSeq); err != nil {
 		return nil, err
@@ -83,7 +84,7 @@ func (s *BlockSeqStore) FindMostRecent() (*model.BlockSeq, error) {
 }
 
 // DeleteOlderThan deletes block sequence older than given threshold
-func (s *BlockSeqStore) DeleteOlderThan(purgeThreshold time.Time, activityPeriods []ActivityPeriodRow) (*int64, error) {
+func (s *blockSeqStore) DeleteOlderThan(purgeThreshold time.Time, activityPeriods []ActivityPeriodRow) (*int64, error) {
 	tx := s.db.
 		Unscoped()
 
@@ -118,7 +119,7 @@ type BlockSeqSummary struct {
 }
 
 // Summarize gets the summarized version of block sequences
-func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
+func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
 	defer logQueryDuration(time.Now(), "BlockSummaryStore_Summarize")
 
 	tx := s.db.

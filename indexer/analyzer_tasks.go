@@ -29,9 +29,9 @@ var (
 )
 
 // NewSystemEventCreatorTask creates system events
-func NewSystemEventCreatorTask(vStore SystemEventCreatorStore) *systemEventCreatorTask {
+func NewSystemEventCreatorTask(s SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
-		SystemEventCreatorStore: vStore,
+		SystemEventCreatorStore: s,
 	}
 }
 

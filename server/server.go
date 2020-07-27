@@ -26,7 +26,7 @@ func New(cfg *config.Config, handlers *usecase.HttpHandlers) *Server {
 	return app.init()
 }
 
-// Start starts the server
+// Index starts the server
 func (s *Server) Start(listenAdd string) error {
 	logger.Info("starting server...", logger.Field("app", "server"))
 

@@ -14,6 +14,8 @@ var (
 )
 
 type ValidatorSeqStore interface {
+	BaseStore
+
 	FindByHeightAndEntityUID(int64, string) (*model.ValidatorSeq, error)
 	FindByHeight(int64) ([]model.ValidatorSeq, error)
 	FindLastByAddress(string, int64) ([]model.ValidatorSeq, error)

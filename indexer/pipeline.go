@@ -24,127 +24,37 @@ type indexingPipeline struct {
 	db     *store.Store
 	client *client.Client
 
-	targetsReader *targetsReader
+	targetsReader TargetsReader
 	pipeline      *pipeline.Pipeline
 }
 
-func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
-	p := pipeline.New(NewPayloadFactory())
-
-	// Setup logger
-	p.SetLogger(NewLogger())
-
-	// Setup stage
-	p.SetStage(
-		pipeline.StageSetup,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
-		),
-	)
-
-	// Syncer stage
-	p.SetStage(
-		pipeline.StageSyncer,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
-		),
-	)
-
-	// Fetcher stage
-	p.SetStage(
-		pipeline.StageFetcher,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
-		),
-	)
-
-	// Set parser stage
-	p.SetStage(
-		pipeline.StageParser,
-		pipeline.AsyncRunner(
-			NewBlockParserTask(),
-			NewValidatorsParserTask(),
-		),
-	)
-
-	// Set sequencer stage
-	p.SetStage(
-		pipeline.StageSequencer,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
-		),
-	)
-
-	// Set aggregator stage
-	p.SetStage(
-		pipeline.StageAggregator,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
-		),
-	)
-
-	// Add analyzer stage
-	p.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
-		NewSystemEventCreatorTask(db.ValidatorSeq),
-	), )
-
-	// Set persistor stage
-	p.SetStage(
-		pipeline.StagePersistor,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
-		),
-	)
-
-	// Create targets reader
-	targetsReader, err := NewTargetsReader(cfg.IndexerTargetsFile)
-	if err != nil {
-		return nil, err
-	}
-
+func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) *indexingPipeline {
 	return &indexingPipeline{
 		cfg:    cfg,
 		db:     db,
 		client: client,
-
-		pipeline:      p,
-		targetsReader: targetsReader,
-	}, nil
+	}
 }
 
-type StartConfig struct {
-	BatchSize   int64
+type IndexCfg struct {
 	StartHeight int64
+	BatchSize   int64
 }
 
-func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
-	currentIndexVersion := p.targetsReader.GetCurrentVersionID()
-
-	source, err := NewIndexSource(p.cfg, p.db, p.client, &IndexSourceConfig{
-		BatchSize:   startCfg.BatchSize,
-		StartHeight: startCfg.StartHeight,
-	})
+func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
+	currentIndexVersion, err := p.getCurrentIndexVersion()
 	if err != nil {
 		return err
 	}
 
-	sink := NewSink(p.db, currentIndexVersion)
+	source, err := NewIndexSource(p.cfg, p.db, p.client, indexCfg.StartHeight, indexCfg.BatchSize)
+	if err != nil {
+		return err
+	}
 
-	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, currentIndexVersion)
+	sink := NewSink(p.db, *currentIndexVersion)
+
+	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, *currentIndexVersion)
 	if err != nil {
 		return err
 	}
@@ -158,7 +68,7 @@ func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) erro
 
 	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
 
-	err = p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
+	err = p.getPipeline().Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
 		metric.IndexerTotalErrors.Inc()
 	}
@@ -178,16 +88,17 @@ type BackfillConfig struct {
 }
 
 func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
-	currentIndexVersion := p.targetsReader.GetCurrentVersionID()
-
-	source, err := NewBackfillSource(p.cfg, p.db, p.client, &BackfillSourceConfig{
-		indexVersion: currentIndexVersion,
-	})
+	currentIndexVersion, err := p.getCurrentIndexVersion()
 	if err != nil {
 		return err
 	}
 
-	sink := NewSink(p.db, currentIndexVersion)
+	source, err := NewBackfillSource(p.cfg, p.db, p.client, *currentIndexVersion)
+	if err != nil {
+		return err
+	}
+
+	sink := NewSink(p.db, *currentIndexVersion)
 
 	kind := model.ReportKindSequentialReindex
 	if backfillCfg.Parallel {
@@ -200,7 +111,7 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 		}
 	}
 
-	report, err := p.getReport(currentIndexVersion, source, kind)
+	report, err := p.getReport(*currentIndexVersion, source, kind)
 	if err != nil {
 		return err
 	}
@@ -212,7 +123,7 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
 	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
-		currentIndexVersion: currentIndexVersion,
+		currentIndexVersion: *currentIndexVersion,
 		versionIds:          backfillCfg.VersionIds,
 		targetIds:           backfillCfg.TargetIds,
 	})
@@ -244,9 +155,9 @@ type RunConfig struct {
 
 func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
 	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
-		dry: runCfg.Dry,
+		dry:        runCfg.Dry,
 		versionIds: []int64{runCfg.DesiredVersionID},
-		targetIds: []int64{runCfg.DesiredTargetID},
+		targetIds:  []int64{runCfg.DesiredTargetID},
 	})
 	if err != nil {
 		return nil, err
@@ -265,6 +176,114 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	payload := runPayload.(*payload)
 	return payload, nil
+}
+
+func (p *indexingPipeline) getPipeline() *pipeline.Pipeline {
+	if p.pipeline == nil {
+		defaultPipeline := pipeline.New(NewPayloadFactory())
+
+		// Setup logger
+		defaultPipeline.SetLogger(NewLogger())
+
+		// Setup stage
+		defaultPipeline.SetStage(
+			pipeline.StageSetup,
+			pipeline.SyncRunner(
+				pipeline.RetryingTask(NewHeightMetaRetrieverTask(p.client), isTransient, 3),
+			),
+		)
+
+		// Syncer stage
+		defaultPipeline.SetStage(
+			pipeline.StageSyncer,
+			pipeline.SyncRunner(
+				pipeline.RetryingTask(NewMainSyncerTask(p.db), isTransient, 3),
+			),
+		)
+
+		// Fetcher stage
+		defaultPipeline.SetStage(
+			pipeline.StageFetcher,
+			pipeline.AsyncRunner(
+				pipeline.RetryingTask(NewBlockFetcherTask(p.client), isTransient, 3),
+				pipeline.RetryingTask(NewStakingStateFetcherTask(p.client), isTransient, 3),
+				pipeline.RetryingTask(NewStateFetcherTask(p.client), isTransient, 3),
+				pipeline.RetryingTask(NewValidatorFetcherTask(p.client), isTransient, 3),
+				pipeline.RetryingTask(NewTransactionFetcherTask(p.client), isTransient, 3),
+			),
+		)
+
+		// Set parser stage
+		defaultPipeline.SetStage(
+			pipeline.StageParser,
+			pipeline.AsyncRunner(
+				NewBlockParserTask(),
+				NewValidatorsParserTask(),
+			),
+		)
+
+		// Set sequencer stage
+		defaultPipeline.SetStage(
+			pipeline.StageSequencer,
+			pipeline.AsyncRunner(
+				pipeline.RetryingTask(NewBlockSeqCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewTransactionSeqCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewStakingSeqCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewValidatorSeqCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewDelegationsSeqCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(p.db), isTransient, 3),
+			),
+		)
+
+		// Set aggregator stage
+		defaultPipeline.SetStage(
+			pipeline.StageAggregator,
+			pipeline.AsyncRunner(
+				pipeline.RetryingTask(NewAccountAggCreatorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewValidatorAggCreatorTask(p.db), isTransient, 3),
+			),
+		)
+
+		// Add analyzer stage
+		defaultPipeline.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
+			NewSystemEventCreatorTask(p.db.ValidatorSeq),
+		), )
+
+		// Set persistor stage
+		defaultPipeline.SetStage(
+			pipeline.StagePersistor,
+			pipeline.AsyncRunner(
+				pipeline.RetryingTask(NewSyncerPersistorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewBlockSeqPersistorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewValidatorSeqPersistorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewValidatorAggPersistorTask(p.db), isTransient, 3),
+				pipeline.RetryingTask(NewSystemEventPersistorTask(p.db), isTransient, 3),
+			),
+		)
+
+		p.pipeline = defaultPipeline
+	}
+	return p.pipeline
+}
+
+func (p *indexingPipeline) getTargetsReader() (TargetsReader, error) {
+	if p.targetsReader == nil {
+		tr, err := NewTargetsReader(p.cfg.IndexerTargetsFile)
+		if err != nil {
+			return nil, err
+		}
+		p.targetsReader = tr
+	}
+	return p.targetsReader, nil
+}
+
+func (p *indexingPipeline) getCurrentIndexVersion() (*int64, error) {
+	tr, err := p.getTargetsReader()
+	if err != nil {
+		return nil, err
+	}
+	currentVersionID := tr.GetCurrentVersionID()
+	return &currentVersionID, nil
 }
 
 type pipelineOptionsConfig struct {

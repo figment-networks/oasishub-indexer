@@ -42,7 +42,7 @@ func (h *BackfillCmdHandler) Handle(ctx context.Context, parallel bool, force bo
 
 func (h *BackfillCmdHandler) getUseCase() *backfillUseCase {
 	if h.useCase == nil {
-		return NewBackfillUseCase(h.cfg, h.db, h.client)
+		h.useCase = NewBackfillUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

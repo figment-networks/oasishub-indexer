@@ -14,17 +14,13 @@ var (
 	_ pipeline.Source = (*backfillSource)(nil)
 )
 
-type BackfillSourceConfig struct {
-	indexVersion int64
-}
-
-func NewBackfillSource(cfg *config.Config, db *store.Store, client *client.Client, sourceCfg *BackfillSourceConfig) (*backfillSource, error) {
+func NewBackfillSource(cfg *config.Config, db *store.Store, client *client.Client, civ int64) (*backfillSource, error) {
 	src := &backfillSource{
 		cfg:    cfg,
 		db:     db,
 		client: client,
 
-		sourceCfg: sourceCfg,
+		currentIndexVersion: civ,
 	}
 
 	if err := src.init(); err != nil {
@@ -39,10 +35,10 @@ type backfillSource struct {
 	db     *store.Store
 	client *client.Client
 
-	sourceCfg *BackfillSourceConfig
+	currentIndexVersion int64
 
-	currentHeight int64
 	startHeight   int64
+	currentHeight int64
 	endHeight     int64
 	err           error
 }
@@ -78,10 +74,10 @@ func (s *backfillSource) init() error {
 }
 
 func (s *backfillSource) setStartHeight() error {
-	syncable, err := s.db.Syncables.FindFirstByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.Syncables.FindFirstByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
+			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.currentIndexVersion))
 		}
 		return err
 	}
@@ -92,10 +88,10 @@ func (s *backfillSource) setStartHeight() error {
 }
 
 func (s *backfillSource) setEndHeight() error {
-	syncable, err := s.db.Syncables.FindMostRecentByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.Syncables.FindMostRecentByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
+			return errors.New(fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.currentIndexVersion))
 		}
 		return err
 	}

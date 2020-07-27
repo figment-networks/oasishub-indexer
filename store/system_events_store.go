@@ -11,10 +11,14 @@ var (
 )
 
 type SystemEventsStore interface {
+	BaseStore
+
 	FindByHeight(int64) ([]model.SystemEvent, error)
 	FindByActor(string, FindSystemEventByActorQuery) ([]model.SystemEvent, error)
 	FindUnique(int64, string, model.SystemEventKind) (*model.SystemEvent, error)
 	CreateOrUpdate(*model.SystemEvent) error
+	FindMostRecent() (*model.SystemEvent, error)
+	DeleteOlderThan(time.Time) (*int64, error)
 }
 
 func NewSystemEventsStore(db *gorm.DB) *systemEventsStore {

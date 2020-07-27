@@ -36,7 +36,7 @@ func (h *PurgeCmdHandler) Handle(ctx context.Context) {
 
 func (h *PurgeCmdHandler) getUseCase() *purgeUseCase {
 	if h.useCase == nil {
-		return NewPurgeUseCase(h.cfg, h.db)
+		h.useCase = NewPurgeUseCase(h.cfg, h.db)
 	}
 	return h.useCase
 }

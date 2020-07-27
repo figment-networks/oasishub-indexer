@@ -9,17 +9,33 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewValidatorSummaryStore(db *gorm.DB) *ValidatorSummaryStore {
-	return &ValidatorSummaryStore{scoped(db, model.ValidatorSummary{})}
+var (
+	_ ValidatorSummaryStore = (*validatorSummaryStore)(nil)
+)
+
+type ValidatorSummaryStore interface {
+	BaseStore
+
+	Find(*model.ValidatorSummary) (*model.ValidatorSummary, error)
+	FindActivityPeriods(types.SummaryInterval, int64) ([]ActivityPeriodRow, error)
+	FindSummary(types.SummaryInterval, string) ([]ValidatorSummaryRow, error)
+	FindSummaryByAddress(string, types.SummaryInterval, string) ([]model.ValidatorSummary, error)
+	FindMostRecent() (*model.ValidatorSummary, error)
+	FindMostRecentByInterval(types.SummaryInterval) (*model.ValidatorSummary, error)
+	DeleteOlderThan(types.SummaryInterval, time.Time) (*int64, error)
 }
 
-// ValidatorSummaryStore handles operations on validators
-type ValidatorSummaryStore struct {
+func NewValidatorSummaryStore(db *gorm.DB) *validatorSummaryStore {
+	return &validatorSummaryStore{scoped(db, model.ValidatorSummary{})}
+}
+
+// validatorSummaryStore handles operations on validators
+type validatorSummaryStore struct {
 	baseStore
 }
 
 // Find find validator summary by query
-func (s ValidatorSummaryStore) Find(query *model.ValidatorSummary) (*model.ValidatorSummary, error) {
+func (s validatorSummaryStore) Find(query *model.ValidatorSummary) (*model.ValidatorSummary, error) {
 	var result model.ValidatorSummary
 
 	err := s.db.
@@ -31,7 +47,7 @@ func (s ValidatorSummaryStore) Find(query *model.ValidatorSummary) (*model.Valid
 }
 
 // FindActivityPeriods Finds activity periods
-func (s *ValidatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
 	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
 
 	rows, err := s.db.
@@ -76,7 +92,7 @@ type ValidatorSummaryRow struct {
 }
 
 // FindSummary gets summary for validator summary
-func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
+func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
 	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummary")
 
 	rows, err := s.db.
@@ -100,7 +116,7 @@ func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 }
 
 // FindSummaryByAddress gets summary for given validator
-func (s *ValidatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
+func (s *validatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
 	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
 
 	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
@@ -121,14 +137,14 @@ func (s *ValidatorSummaryStore) FindSummaryByAddress(address string, interval ty
 }
 
 // FindMostRecent finds most recent validator summary
-func (s *ValidatorSummaryStore) FindMostRecent() (*model.ValidatorSummary, error) {
+func (s *validatorSummaryStore) FindMostRecent() (*model.ValidatorSummary, error) {
 	validatorSummary := &model.ValidatorSummary{}
 	err := findMostRecent(s.db, "time_bucket", validatorSummary)
 	return validatorSummary, checkErr(err)
 }
 
 // FindMostRecentByInterval finds most recent validator summary for interval
-func (s *ValidatorSummaryStore) FindMostRecentByInterval(interval types.SummaryInterval) (*model.ValidatorSummary, error) {
+func (s *validatorSummaryStore) FindMostRecentByInterval(interval types.SummaryInterval) (*model.ValidatorSummary, error) {
 	query := &model.ValidatorSummary{
 		Summary: &model.Summary{TimeInterval: interval},
 	}
@@ -144,7 +160,7 @@ func (s *ValidatorSummaryStore) FindMostRecentByInterval(interval types.SummaryI
 }
 
 // DeleteOlderThan deleted validator summary records older than given threshold
-func (s *ValidatorSummaryStore) DeleteOlderThan(interval types.SummaryInterval, purgeThreshold time.Time) (*int64, error) {
+func (s *validatorSummaryStore) DeleteOlderThan(interval types.SummaryInterval, purgeThreshold time.Time) (*int64, error) {
 	statement := s.db.
 		Unscoped().
 		Where("time_interval = ? AND time_bucket < ?", interval, purgeThreshold).

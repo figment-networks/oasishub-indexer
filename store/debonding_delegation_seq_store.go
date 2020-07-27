@@ -6,26 +6,29 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewDebondingDelegationSeqStore(db *gorm.DB) *DebondingDelegationSeqStore {
-	return &DebondingDelegationSeqStore{scoped(db, model.DebondingDelegationSeq{})}
+var (
+	_ DebondingDelegationSeqStore = (*debondingDelegationSeqStore)(nil)
+)
+
+type DebondingDelegationSeqStore interface {
+	BaseStore
+
+	FindByHeight(int64) ([]model.DebondingDelegationSeq, error)
+	FindRecentByValidatorUID(string, int64) ([]model.DebondingDelegationSeq, error)
+	FindRecentByDelegatorUID(string, int64) ([]model.DebondingDelegationSeq, error)
 }
 
-// DebondingDelegationSeqStore handles operations on debondingDelegations
-type DebondingDelegationSeqStore struct {
+func NewDebondingDelegationSeqStore(db *gorm.DB) *debondingDelegationSeqStore {
+	return &debondingDelegationSeqStore{scoped(db, model.DebondingDelegationSeq{})}
+}
+
+// debondingDelegationSeqStore handles operations on debondingDelegations
+type debondingDelegationSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the debondingDelegation if it does not exist
-func (s DebondingDelegationSeqStore) CreateIfNotExists(debondingDelegation *model.DebondingDelegationSeq) error {
-	_, err := s.FindByHeight(debondingDelegation.Height)
-	if isNotFound(err) {
-		return s.Create(debondingDelegation)
-	}
-	return nil
-}
-
 // FindByHeight finds debonding delegations by height
-func (s DebondingDelegationSeqStore) FindByHeight(h int64) ([]model.DebondingDelegationSeq, error) {
+func (s debondingDelegationSeqStore) FindByHeight(h int64) ([]model.DebondingDelegationSeq, error) {
 	q := model.DebondingDelegationSeq{
 		Sequence: &model.Sequence{
 			Height: h,
@@ -38,7 +41,7 @@ func (s DebondingDelegationSeqStore) FindByHeight(h int64) ([]model.DebondingDel
 }
 
 // FindRecentByValidatorUID gets recent debonding delegations for validator
-func (s *DebondingDelegationSeqStore) FindRecentByValidatorUID(key string, limit int64) ([]model.DebondingDelegationSeq, error) {
+func (s *debondingDelegationSeqStore) FindRecentByValidatorUID(key string, limit int64) ([]model.DebondingDelegationSeq, error) {
 	q := model.DebondingDelegationSeq{
 		ValidatorUID:  key,
 	}
@@ -55,7 +58,7 @@ func (s *DebondingDelegationSeqStore) FindRecentByValidatorUID(key string, limit
 }
 
 // FindRecentByDelegatorUID gets recent debonding delegations for delegator
-func (s *DebondingDelegationSeqStore) FindRecentByDelegatorUID(key string, limit int64) ([]model.DebondingDelegationSeq, error) {
+func (s *debondingDelegationSeqStore) FindRecentByDelegatorUID(key string, limit int64) ([]model.DebondingDelegationSeq, error) {
 	q := model.DebondingDelegationSeq{
 		DelegatorUID:  key,
 	}
