@@ -2,10 +2,12 @@
   "versions": [
     {
       "id": 1,
+      "parallel": false,
       "targets": [1, 2, 3]
     },
     {
       "id": 2,
+      "parallel": false,
       "targets": [2, 3, 4]
     }
   ],

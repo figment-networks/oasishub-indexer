@@ -19,6 +19,11 @@ const (
 	StageAnalyzer = "AnalyzerStage"
 )
 
+var (
+	ErrIndexCannotBeRun    = errors.New("cannot run index process")
+	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
+)
+
 type indexingPipeline struct {
 	cfg    *config.Config
 	db     *store.Store
@@ -42,11 +47,14 @@ type IndexCfg struct {
 }
 
 func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
+	if err := p.canRunIndex(); err != nil {
+		return err
+	}
+
 	currentIndexVersion, err := p.getCurrentIndexVersion()
 	if err != nil {
 		return err
 	}
-
 
 	source, err := NewIndexSource(p.cfg, p.db, p.client, indexCfg.StartHeight, indexCfg.BatchSize)
 	if err != nil {
@@ -54,7 +62,6 @@ func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
 	}
 
 	sink := NewSink(p.db, *currentIndexVersion)
-
 
 	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, *currentIndexVersion)
 	if err != nil {
@@ -85,14 +92,35 @@ func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
 	return err
 }
 
+func (p *indexingPipeline) canRunIndex() error {
+	isUpToDate, err := p.isUpToDate()
+	if err != nil {
+		return err
+	}
+
+	if !*isUpToDate {
+		missingVersionIds, err := p.getMissingVersionIds()
+		if err != nil {
+			return err
+		}
+
+		if p.targetsReader.IsAnyVersionSequential(missingVersionIds) {
+			return ErrIndexCannotBeRun
+		}
+	}
+	return nil
+}
+
 type BackfillConfig struct {
-	Parallel   bool
-	Force      bool
-	VersionIds []int64
-	TargetIds  []int64
+	Parallel bool
+	Force    bool
 }
 
 func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
+	if err := p.canRunBackfill(backfillCfg.Parallel); err != nil {
+		return err
+	}
+
 	currentIndexVersion, err := p.getCurrentIndexVersion()
 	if err != nil {
 		return err
@@ -127,20 +155,14 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	// When versionIds and targetIds are not passed we find version ids that haven't been backfilled yet
-	optsCfg := pipelineOptionsConfig{}
-	if len(backfillCfg.VersionIds) == 0 && len(backfillCfg.TargetIds) == 0 {
-		versionIds, err := p.getMissingVersionIds()
-		if err != nil {
-			return err
-		}
-		optsCfg.desiredVersionIds = versionIds
-	} else {
-		optsCfg.desiredVersionIds = backfillCfg.VersionIds
-		optsCfg.desiredTargetIds = backfillCfg.TargetIds
+	versionIds, err := p.getMissingVersionIds()
+	if err != nil {
+		return err
 	}
 
-	pipelineOptions, err := p.getPipelineOptions(optsCfg)
+	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
+		desiredVersionIds: versionIds,
+	})
 	if err != nil {
 		return err
 	}
@@ -158,6 +180,51 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	logger.Info("pipeline backfill completed")
 
 	return nil
+}
+
+func (p *indexingPipeline) canRunBackfill(isParallel bool) error {
+	isUpToDate, err := p.isUpToDate()
+	if err != nil {
+		return err
+	}
+
+	if !*isUpToDate {
+		missingVersionIds, err := p.getMissingVersionIds()
+		if err != nil {
+			return err
+		}
+
+		if isParallel && p.targetsReader.IsAnyVersionSequential(missingVersionIds) {
+			return ErrBackfillCannotBeRun
+		}
+	}
+
+	return nil
+}
+
+func (p *indexingPipeline) isUpToDate() (*bool, error) {
+	currentIndexVersion, err := p.getCurrentIndexVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	var upToDate bool
+
+	smallestIndexVersion, err := p.db.Syncables.FindSmallestIndexVersion()
+	if err != nil {
+		if err == store.ErrNotFound {
+			// no records in database, we are definitely up to date
+			upToDate = true
+		} else {
+			return nil, err
+		}
+	} else {
+		if *smallestIndexVersion == *currentIndexVersion {
+			upToDate = true
+		}
+	}
+
+	return &upToDate, nil
 }
 
 func (p *indexingPipeline) getMissingVersionIds() ([]int64, error) {
@@ -297,7 +364,7 @@ func (p *indexingPipeline) getPipeline() *pipeline.Pipeline {
 
 		// Add analyzer stage
 		defaultPipeline.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
-			NewSystemEventCreatorTask(p.db.ValidatorSeq),
+			NewSystemEventCreatorTask(p.cfg, p.db.ValidatorSeq),
 		), )
 
 		// Set persistor stage
@@ -333,14 +400,14 @@ func (p *indexingPipeline) getCurrentIndexVersion() (*int64, error) {
 	if err != nil {
 		return nil, err
 	}
-	currentVersionID := tr.GetCurrentVersionID()
+	currentVersionID := tr.GetCurrentVersionId()
 	return &currentVersionID, nil
 }
 
 type pipelineOptionsConfig struct {
-	desiredVersionIds   []int64
-	desiredTargetIds    []int64
-	dry                 bool
+	desiredVersionIds []int64
+	desiredTargetIds  []int64
+	dry               bool
 }
 
 func (p *indexingPipeline) getPipelineOptions(optionsCfg pipelineOptionsConfig) (*pipeline.Options, error) {

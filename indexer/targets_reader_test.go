@@ -336,7 +336,7 @@ func TestTargetsReader_GetCurrentVersion(t *testing.T) {
 			return
 		}
 
-		version := reader.GetCurrentVersionID()
+		version := reader.GetCurrentVersionId()
 		if version != 2 {
 			t.Errorf("unexpected current version, want: %d; got: %d", 2, version)
 		}

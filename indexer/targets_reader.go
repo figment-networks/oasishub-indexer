@@ -19,8 +19,10 @@ var (
 )
 
 type TargetsReader interface {
-	GetCurrentVersionID() int64
+	GetCurrentVersionId() int64
 	GetAllVersionedVersionIds() []int64
+	IsAnyVersionSequential(versionIds []int64) bool
+	AreAllVersionsParallel(versionIds []int64) bool
 	GetAllAvailableTasks() []pipeline.TaskName
 	GetAllVersionedTasks() ([]pipeline.TaskName, error)
 	GetTasksByVersionIds([]int64) ([]pipeline.TaskName, error)
@@ -47,15 +49,15 @@ type targetsReader struct {
 }
 
 type targetsCfg struct {
-	Version          int64               `json:"version"`
 	Versions         []version           `json:"versions"`
 	SharedTasks      []pipeline.TaskName `json:"shared_tasks"`
 	AvailableTargets []target            `json:"available_targets"`
 }
 
 type version struct {
-	ID      int64   `json:"id"`
-	Targets []int64 `json:"targets"`
+	ID       int64   `json:"id"`
+	Targets  []int64 `json:"targets"`
+	Parallel bool    `json:"parallel"`
 }
 
 type target struct {
@@ -65,8 +67,8 @@ type target struct {
 	Tasks []pipeline.TaskName `json:"tasks"`
 }
 
-//GetCurrentVersionID gets the most recent version id
-func (p *targetsReader) GetCurrentVersionID() int64 {
+//GetCurrentVersionId gets the most recent version id
+func (p *targetsReader) GetCurrentVersionId() int64 {
 	lastVersion := p.cfg.Versions[len(p.cfg.Versions)-1]
 	return lastVersion.ID
 }
@@ -86,7 +88,7 @@ func (p *targetsReader) GetAllAvailableTasks() []pipeline.TaskName {
 
 // GetAllVersionedVersionIds gets a slice with all version ids in the targets file
 func (p *targetsReader) GetAllVersionedVersionIds() []int64 {
-	currentVersionId := p.GetCurrentVersionID()
+	currentVersionId := p.GetCurrentVersionId()
 	var ids []int64
 	for i := int64(1); i <= currentVersionId; i++ {
 		ids = append(ids, i)
@@ -129,19 +131,45 @@ func (p *targetsReader) GetTasksByVersionIds(versionIds []int64) ([]pipeline.Tas
 	return getUniqueTaskNames(allTaskNames), nil
 }
 
+// AreAllVersionsParallel check if all of the given version ids are parallel
+func (p *targetsReader) AreAllVersionsParallel(versionIds []int64) bool {
+	for _, v := range p.cfg.Versions {
+		for _, needleVersionId := range versionIds {
+			if v.ID == needleVersionId && v.Parallel {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// IsAnyVersionSequential check if any version in targets file is sequential
+func (p *targetsReader) IsAnyVersionSequential(versionIds []int64) bool {
+	for _, v := range p.cfg.Versions {
+		for _, needleVersionId := range versionIds {
+			if v.ID == needleVersionId && !v.Parallel {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
 // getTasksByVersionId get lists of tasks for specific version id
-func (p *targetsReader) getTasksByVersionId(versionID int64) ([]pipeline.TaskName, error) {
+func (p *targetsReader) getTasksByVersionId(versionId int64) ([]pipeline.TaskName, error) {
 	var targetIds []int64
 	versionFound := false
 	for _, version := range p.cfg.Versions {
-		if version.ID == versionID {
+		if version.ID == versionId {
 			targetIds = version.Targets
 			versionFound = true
 		}
 	}
 
 	if !versionFound {
-		return nil, errors.New(fmt.Sprintf("version %d not found", versionID))
+		return nil, errors.New(fmt.Sprintf("version %d not found", versionId))
 	}
 
 	return p.GetTasksByTargetIds(targetIds)
@@ -208,4 +236,3 @@ func getUniqueTaskNames(slice []pipeline.TaskName) []pipeline.TaskName {
 	}
 	return list
 }
-

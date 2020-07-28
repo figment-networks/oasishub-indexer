@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -29,8 +30,10 @@ var (
 )
 
 // NewSystemEventCreatorTask creates system events
-func NewSystemEventCreatorTask(s SystemEventCreatorStore) *systemEventCreatorTask {
+func NewSystemEventCreatorTask(cfg *config.Config, s SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
+		cfg:                     cfg,
+
 		SystemEventCreatorStore: s,
 	}
 }
@@ -41,6 +44,8 @@ type SystemEventCreatorStore interface {
 }
 
 type systemEventCreatorTask struct {
+	cfg *config.Config
+
 	SystemEventCreatorStore
 }
 
@@ -58,10 +63,14 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", "Analyzer", t.GetName(), payload.CurrentHeight))
 
 	currHeightValidatorSequences := append(payload.NewValidatorSequences, payload.UpdatedValidatorSequences...)
-	prevHeightValidatorSequences, err := t.SystemEventCreatorStore.FindByHeight(payload.CurrentHeight - 1)
-	if err != nil {
-		if err != store.ErrNotFound {
-			return err
+	var prevHeightValidatorSequences []model.ValidatorSeq
+	if payload.CurrentHeight > t.cfg.FirstBlockHeight {
+		var err error
+		prevHeightValidatorSequences, err = t.SystemEventCreatorStore.FindByHeight(payload.CurrentHeight - 1)
+		if err != nil {
+			if err != store.ErrNotFound {
+				return err
+			}
 		}
 	}
 
@@ -176,6 +185,7 @@ func (t systemEventCreatorTask) isValidated(validatorSequence model.ValidatorSeq
 
 func (t *systemEventCreatorTask) getActiveSetPresenceChangeSystemEvents(currHeightValidatorSequences []model.ValidatorSeq, prevHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
 	var systemEvents []*model.SystemEvent
+
 	for _, currentValidatorSequence := range currHeightValidatorSequences {
 		joined := true
 		for _, prevValidatorSequence := range prevHeightValidatorSequences {
@@ -271,7 +281,7 @@ func (t *systemEventCreatorTask) getActiveEscrowBalanceChange(currValidatorSeq m
 
 	return t.newSystemEvent(currValidatorSeq, kind, systemEventRawData{
 		"before": prevValue,
-		"after": currValue,
+		"after":  currValue,
 		"change": roundedChangeRate,
 	})
 }

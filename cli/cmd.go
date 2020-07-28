@@ -33,7 +33,7 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	case "indexer:index":
 		cmdHandlers.IndexerIndex.Handle(ctx, flags.batchSize)
 	case "indexer:backfill":
-		cmdHandlers.IndexerBackfill.Handle(ctx, flags.parallel, flags.force, flags.versionIds, flags.targetIds)
+		cmdHandlers.IndexerBackfill.Handle(ctx, flags.parallel, flags.force)
 	case "indexer:summarize":
 		cmdHandlers.IndexerSummarize.Handle(ctx)
 	case "indexer:purge":

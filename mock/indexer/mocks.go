@@ -77,18 +77,18 @@ func (mr *MockTargetsReaderMockRecorder) GetAllVersionedVersionIds() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAllVersionedVersionIds", reflect.TypeOf((*MockTargetsReader)(nil).GetAllVersionedVersionIds))
 }
 
-// GetCurrentVersionID mocks base method
-func (m *MockTargetsReader) GetCurrentVersionID() int64 {
+// GetCurrentVersionId mocks base method
+func (m *MockTargetsReader) GetCurrentVersionId() int64 {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetCurrentVersionID")
+	ret := m.ctrl.Call(m, "GetCurrentVersionId")
 	ret0, _ := ret[0].(int64)
 	return ret0
 }
 
-// GetCurrentVersionID indicates an expected call of GetCurrentVersionID
+// GetCurrentVersionId indicates an expected call of GetCurrentVersionId
 func (mr *MockTargetsReaderMockRecorder) GetCurrentVersionID() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentVersionID", reflect.TypeOf((*MockTargetsReader)(nil).GetCurrentVersionID))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetCurrentVersionId", reflect.TypeOf((*MockTargetsReader)(nil).GetCurrentVersionId))
 }
 
 // GetTasksByTargetIds mocks base method

@@ -24,14 +24,12 @@ func NewBackfillCmdHandler(cfg *config.Config, db *store.Store, c *client.Client
 	}
 }
 
-func (h *BackfillCmdHandler) Handle(ctx context.Context, parallel bool, force bool, versionIds []int64, targetIds []int64) {
+func (h *BackfillCmdHandler) Handle(ctx context.Context, parallel bool, force bool) {
 	logger.Info("running backfill use case [handler=cmd]")
 
 	useCaseConfig := BackfillUseCaseConfig{
 		Parallel:   parallel,
 		Force:      force,
-		VersionIds: versionIds,
-		TargetIds:  targetIds,
 	}
 	err := h.getUseCase().Execute(ctx, useCaseConfig)
 	if err != nil {

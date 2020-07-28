@@ -36,7 +36,7 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	currentIndexVersion := targetsReader.GetCurrentVersionID()
+	currentIndexVersion := targetsReader.GetCurrentVersionId()
 
 	if err := uc.purgeBlocks(currentIndexVersion); err != nil {
 		return err

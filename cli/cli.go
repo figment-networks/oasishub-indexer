@@ -3,9 +3,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"strconv"
-	"strings"
-
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -23,50 +20,6 @@ type Flags struct {
 	batchSize  int64
 	parallel   bool
 	force      bool
-	versionIds versionIds
-	targetIds  targetIds
-}
-
-// versionIds holds comma-separated list of version ids
-type versionIds []int64
-
-func (i *versionIds) String() string {
-	return fmt.Sprint(*i)
-}
-
-func (i *versionIds) Set(value string) error {
-	if len(*i) > 0 {
-		return errors.New("versionIds flag already set")
-	}
-	*i = splitIds(value)
-	return nil
-}
-
-// targetIds holds comma-separated list of target ids
-type targetIds []int64
-
-func (i *targetIds) String() string {
-	return fmt.Sprint(*i)
-}
-
-func (i *targetIds) Set(value string) error {
-	if len(*i) > 0 {
-		return errors.New("targetIds flag already set")
-	}
-	*i = splitIds(value)
-	return nil
-}
-
-func splitIds(ids string) []int64 {
-	var parsedIds []int64
-	for _, rawId := range strings.Split(ids, ",") {
-		id, err := strconv.ParseInt(rawId, 10, 64)
-		if err != nil {
-			panic(err)
-		}
-		parsedIds = append(parsedIds, id)
-	}
-	return parsedIds
 }
 
 func (c *Flags) Setup() {
@@ -78,7 +31,6 @@ func (c *Flags) Setup() {
 	flag.Int64Var(&c.batchSize, "batch_size", 0, "pipeline batch size")
 	flag.BoolVar(&c.parallel, "parallel", false, "should backfill be run in parallel with indexing")
 	flag.BoolVar(&c.force, "force", false, "remove existing reindexing reports")
-	flag.Var(&c.targetIds, "target_ids", "comma separated list of integers")
 }
 
 // Run executes the command line interface

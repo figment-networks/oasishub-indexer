@@ -16,6 +16,7 @@ type ValidatorAggStore interface {
 	FindByAddress(string) (*model.ValidatorAgg, error)
 	FindByEntityUID(string) (*model.ValidatorAgg, error)
 	GetAllForHeightGreaterThan(int64) ([]model.ValidatorAgg, error)
+	CreateOrUpdate(val *model.ValidatorAgg) error
 }
 
 
@@ -55,4 +56,16 @@ func (s *validatorAggStore) GetAllForHeightGreaterThan(height int64) ([]model.Va
 		Error
 
 	return result, checkErr(err)
+}
+
+// CreateOrUpdate creates a new validator or updates an existing one
+func (s validatorAggStore) CreateOrUpdate(val *model.ValidatorAgg) error {
+	_, err := s.FindByEntityUID(val.EntityUID)
+	if err != nil {
+		if err == ErrNotFound {
+			return s.Create(val)
+		}
+		return err
+	}
+	return s.Update(val)
 }

@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"errors"
+	"github.com/figment-networks/oasishub-indexer/config"
 	mock_indexer "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -14,13 +15,17 @@ import (
 )
 
 const (
-	Height           = 17
-	ValidatorAddress = "test_address"
+	testHeight           = 17
+	testValidatorAddress = "test_address"
 )
 
 var (
 	ErrValidatorSeqFindByHeight = errors.New("could not find test")
 	ErrCouldNotFindByAddress    = errors.New("could not find test")
+
+	testCfg = &config.Config{
+		FirstBlockHeight: 1,
+	}
 )
 
 func TestSystemEventCreatorTask_Run(t *testing.T) {
@@ -37,19 +42,19 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		MissedForMaxThreshold = 5
 
 		prevHeightValidatorSequences := []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
 		}
 		lastValidatorSeqsForValidator1 := []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
 		}
 		lastValidatorSeqsForValidator2 := []model.ValidatorSeq{
 			newValidatorSeq("validator_address_1", 1000, 0, true),
@@ -59,7 +64,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		}
 		payload := testPayload()
 		payload.NewValidatorSequences = []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 100000, 0, false),
+			newValidatorSeq(testValidatorAddress, 100000, 0, false),
 		}
 		payload.UpdatedValidatorSequences = []model.ValidatorSeq{
 			newValidatorSeq("validator_address_1", 1000, 0, false),
@@ -71,7 +76,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 			validatorSeqStoreMock.EXPECT().FindLastByAddress(gomock.Any(), gomock.Any()).Return(lastValidatorSeqsForValidator2, nil),
 		)
 
-		task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+		task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 		err := task.Run(ctx, payload)
 		if err != nil {
 			t.Errorf("unexpected result, run should not return error: %v", err)
@@ -95,7 +100,7 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock.EXPECT().FindByHeight(gomock.Any()).Return(nil, ErrValidatorSeqFindByHeight).Times(1)
 
-		task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+		task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 		err := task.Run(ctx, payload)
 		if err == nil {
 			t.Errorf("unexpected result, run should return error")
@@ -111,17 +116,17 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		setup()
 
 		lastValidatorSeqsForValidator1 := []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 1000, 0, false),
+			newValidatorSeq(testValidatorAddress, 1000, 0, false),
 		}
 		payload := testPayload()
 		payload.NewValidatorSequences = []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 100000, 0, false),
+			newValidatorSeq(testValidatorAddress, 100000, 0, false),
 		}
 
 		validatorSeqStoreMock.EXPECT().FindByHeight(gomock.Any()).Return(nil, store.ErrNotFound).Times(1)
 		validatorSeqStoreMock.EXPECT().FindLastByAddress(gomock.Any(), gomock.Any()).Return(lastValidatorSeqsForValidator1, nil).Times(1)
 
-		task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+		task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 		err := task.Run(ctx, payload)
 		if err != nil {
 			t.Errorf("unexpected result, run should not return error: %v", err)
@@ -142,17 +147,17 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		setup()
 
 		prevHeightValidatorSequences := []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 1000, 0, true),
+			newValidatorSeq(testValidatorAddress, 1000, 0, true),
 		}
 		payload := testPayload()
 		payload.NewValidatorSequences = []model.ValidatorSeq{
-			newValidatorSeq(ValidatorAddress, 100000, 0, false),
+			newValidatorSeq(testValidatorAddress, 100000, 0, false),
 		}
 
 		validatorSeqStoreMock.EXPECT().FindByHeight(gomock.Any()).Return(prevHeightValidatorSequences, nil).Times(1)
 		validatorSeqStoreMock.EXPECT().FindLastByAddress(gomock.Any(), gomock.Any()).Return(nil, ErrCouldNotFindByAddress).Times(1)
 
-		task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+		task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 		err := task.Run(ctx, payload)
 		if err == nil {
 			t.Errorf("unexpected result, run should return error")
@@ -205,13 +210,13 @@ func TestSystemEventCreatorTask_getValueChangeSystemEvents(t *testing.T) {
 			commissionAfter := float64(commissionBefore) + (float64(commissionBefore) * tt.commissionChangeRate / 100)
 
 			prevHeightValidatorSequences := []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, activeEscrowBalanceBefore, commissionBefore, true),
+				newValidatorSeq(testValidatorAddress, activeEscrowBalanceBefore, commissionBefore, true),
 			}
 			currHeightValidatorSequences := []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, int64(activeEscrowBalanceAfter), int64(commissionAfter), true),
+				newValidatorSeq(testValidatorAddress, int64(activeEscrowBalanceAfter), int64(commissionAfter), true),
 			}
 
-			task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+			task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 			createdSystemEvents, _ := task.getValueChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
 
 			if len(createdSystemEvents) != tt.expectedCount {
@@ -237,10 +242,10 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		{
 			description: "returns no system events when validator is both in prev and current lists",
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			expectedCount: 0,
 		},
@@ -254,7 +259,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 			description:    "returns one joined_active_set system events when validator is not in prev and is in current lists",
 			prevHeightList: []model.ValidatorSeq{},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			expectedCount: 1,
 			expectedKinds: []model.SystemEventKind{model.SystemEventJoinedActiveSet},
@@ -262,7 +267,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		{
 			description: "returns one left_active_set system events when validator is in prev and is not in current lists",
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{},
 			expectedCount:  1,
@@ -271,10 +276,10 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		{
 			description: "returns 2 joined_active_set system events when validators are in prev and not in current lists",
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				newValidatorSeq("address1", 1000, 0, true),
 				newValidatorSeq("address2", 1000, 0, true),
 			},
@@ -292,7 +297,7 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
-			task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+			task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 			createdSystemEvents, _ := task.getActiveSetPresenceChangeSystemEvents(tt.currHeightList, tt.prevHeightList)
 
 			if len(createdSystemEvents) != tt.expectedCount {
@@ -329,10 +334,10 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  2,
 			missedForMaxThreshold: 2,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{},
@@ -345,18 +350,18 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  2,
 			missedForMaxThreshold: 2,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 0,
@@ -367,17 +372,17 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 0,
@@ -388,17 +393,17 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 1,
@@ -410,17 +415,17 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 0,
@@ -431,17 +436,17 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0,true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0,true),
 				},
 			},
 			expectedCount: 1,
@@ -453,18 +458,18 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 1,
@@ -476,18 +481,18 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
 				},
 			},
 			expectedCount: 0,
@@ -498,18 +503,18 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
 				},
 			},
 			expectedCount: 0,
@@ -520,10 +525,10 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				nil,
@@ -538,19 +543,19 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  3,
 			missedForMaxThreshold: 5,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				newValidatorSeq("address1", 1000, 0, false),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 				newValidatorSeq("address1", 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 				nil,
 			},
@@ -564,19 +569,19 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			missedInRowThreshold:  50,
 			missedForMaxThreshold: 3,
 			prevHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, true),
+				newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				newValidatorSeq("address1", 1000, 0, true),
 			},
 			currHeightList: []model.ValidatorSeq{
-				newValidatorSeq(ValidatorAddress, 1000, 0, false),
+				newValidatorSeq(testValidatorAddress, 1000, 0, false),
 				newValidatorSeq("address1", 1000, 0, false),
 			},
 			lastForValidatorList: [][]model.ValidatorSeq{
 				{
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, false),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
-					newValidatorSeq(ValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, false),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 				nil,
 			},
@@ -616,7 +621,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			}
 			gomock.InOrder(mockCalls...)
 
-			task := NewSystemEventCreatorTask(validatorSeqStoreMock)
+			task := NewSystemEventCreatorTask(testCfg, validatorSeqStoreMock)
 			createdSystemEvents, err := task.getMissedBlocksSystemEvents(tt.currHeightList)
 			if err == nil && tt.expectedErr != nil {
 				t.Errorf("should return error")
@@ -648,17 +653,17 @@ func setup() {
 func testPayload() *payload {
 	return &payload{
 		Syncable: &model.Syncable{
-			Height: Height,
+			Height: testHeight,
 			Time:   *types.NewTimeFromTime(time.Now()),
 		},
-		CurrentHeight: Height,
+		CurrentHeight: testHeight,
 	}
 }
 
 func newValidatorSeq(address string, balance int64, commission int64, validated bool) model.ValidatorSeq {
 	return model.ValidatorSeq{
 		Sequence: &model.Sequence{
-			Height: Height,
+			Height: testHeight,
 			Time:   *types.NewTimeFromTime(time.Now()),
 		},
 		Address:             address,

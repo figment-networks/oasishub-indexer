@@ -1667,6 +1667,20 @@ func (mr *MockValidatorAggStoreMockRecorder) Create(arg0 interface{}) *gomock.Ca
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockValidatorAggStore)(nil).Create), arg0)
 }
 
+// CreateOrUpdate mocks base method
+func (m *MockValidatorAggStore) CreateOrUpdate(arg0 *model.ValidatorAgg) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateOrUpdate", arg0)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// CreateOrUpdate indicates an expected call of CreateOrUpdate
+func (mr *MockValidatorAggStoreMockRecorder) CreateOrUpdate(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdate", reflect.TypeOf((*MockValidatorAggStore)(nil).CreateOrUpdate), arg0)
+}
+
 // FindBy mocks base method
 func (m *MockValidatorAggStore) FindBy(arg0 string, arg1 interface{}) (*model.ValidatorAgg, error) {
 	m.ctrl.T.Helper()
