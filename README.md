@@ -116,22 +116,27 @@ IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oas
 
 Start indexing process:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_index
+oasishub-indexer -config path/to/config.json -cmd=indexer:index
 ```
 
 Start backfill process:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_backfill
+oasishub-indexer -config path/to/config.json -cmd=indexer:backfill
 ```
 
 Create summary tables for sequences:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_summarize
+oasishub-indexer -config path/to/config.json -cmd=indexer:summarize
 ```
 
 Purge old data:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_purge
+oasishub-indexer -config path/to/config.json -cmd=indexer:purge
+```
+
+Decorate validator aggregates:
+```bash
+oasishub-indexer -config path/to/config.json -cmd=validators:decorate -file=/file/to/csv
 ```
 
 ### Running tests

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -29,17 +30,18 @@ func runCmd(cfg *config.Config, flags Flags) error {
 	switch flags.runCommand {
 	case "status":
 		cmdHandlers.GetStatus.Handle(ctx)
-	case "indexer_index":
+	case "indexer:index":
 		cmdHandlers.IndexerIndex.Handle(ctx, flags.batchSize)
-	case "indexer_backfill":
+	case "indexer:backfill":
 		cmdHandlers.IndexerBackfill.Handle(ctx, flags.parallel, flags.force, flags.versionIds, flags.targetIds)
-	case "indexer_summarize":
+	case "indexer:summarize":
 		cmdHandlers.IndexerSummarize.Handle(ctx)
-	case "indexer_purge":
+	case "indexer:purge":
 		cmdHandlers.IndexerPurge.Handle(ctx)
+	case "validators:decorate":
+		cmdHandlers.DecorateValidators.Handle(ctx, flags.filePath)
 	default:
 		return errors.New(fmt.Sprintf("command %s not found", flags.runCommand))
 	}
 	return nil
 }
-

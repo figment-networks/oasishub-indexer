@@ -20,6 +20,8 @@ type ValidatorAgg struct {
 	AccumulatedProposedCount  int64          `json:"accumulated_proposed_count"`
 	AccumulatedUptime         int64          `json:"accumulated_uptime"`
 	AccumulatedUptimeCount    int64          `json:"accumulated_uptime_count"`
+	LogoURL                   string         `json:"logo_url"`
+	EntityName                string         `json:"entity_name"`
 }
 
 func (ValidatorAgg) TableName() string {

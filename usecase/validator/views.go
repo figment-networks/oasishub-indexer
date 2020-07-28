@@ -29,6 +29,8 @@ type AggDetailsView struct {
 	RecentProposedHeight      int64          `json:"recent_proposed_height"`
 	AccumulatedProposedCount  int64          `json:"accumulated_proposed_count"`
 	Uptime                    float64        `json:"uptime"`
+	LogoURL                   string         `json:"logo_url"`
+	EntityName                string         `json:"entity_name"`
 
 	LastSequences []model.ValidatorSeq `json:"last_sequences"`
 }
@@ -48,6 +50,8 @@ func ToAggDetailsView(m *model.ValidatorAgg, sequences []model.ValidatorSeq) *Ag
 		RecentProposedHeight:      m.RecentProposedHeight,
 		AccumulatedProposedCount:  m.AccumulatedProposedCount,
 		Uptime:                    float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount),
+		LogoURL:                   m.LogoURL,
+		EntityName:                m.EntityName,
 
 		LastSequences: sequences,
 	}
