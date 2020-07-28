@@ -129,19 +129,19 @@ func (mr *MockChainClientMockRecorder) GetMetaByHeight(arg0 interface{}) *gomock
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetaByHeight", reflect.TypeOf((*MockChainClient)(nil).GetMetaByHeight), arg0)
 }
 
-// GeStatus mocks base method
-func (m *MockChainClient) GeStatus() (*chainpb.GetStatusResponse, error) {
+// GetStatus mocks base method
+func (m *MockChainClient) GetStatus() (*chainpb.GetStatusResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GeStatus")
+	ret := m.ctrl.Call(m, "GetStatus")
 	ret0, _ := ret[0].(*chainpb.GetStatusResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GeStatus indicates an expected call of GeStatus
-func (mr *MockChainClientMockRecorder) GeStatus() *gomock.Call {
+// GetStatus indicates an expected call of GetStatus
+func (mr *MockChainClientMockRecorder) GetStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeStatus", reflect.TypeOf((*MockChainClient)(nil).GeStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockChainClient)(nil).GetStatus))
 }
 
 // GetHead mocks base method
