@@ -403,6 +403,21 @@ func (mr *MockSystemEventsStoreMockRecorder) CreateOrUpdate(arg0 interface{}) *g
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateOrUpdate", reflect.TypeOf((*MockSystemEventsStore)(nil).CreateOrUpdate), arg0)
 }
 
+// DeleteOlderThan mocks base method
+func (m *MockSystemEventsStore) DeleteOlderThan(arg0 time.Time) (*int64, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "DeleteOlderThan", arg0)
+	ret0, _ := ret[0].(*int64)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// DeleteOlderThan indicates an expected call of DeleteOlderThan
+func (mr *MockSystemEventsStoreMockRecorder) DeleteOlderThan(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteOlderThan", reflect.TypeOf((*MockSystemEventsStore)(nil).DeleteOlderThan), arg0)
+}
+
 // FindByActor mocks base method
 func (m *MockSystemEventsStore) FindByActor(arg0 string, arg1 store.FindSystemEventByActorQuery) ([]model.SystemEvent, error) {
 	m.ctrl.T.Helper()
@@ -431,6 +446,21 @@ func (m *MockSystemEventsStore) FindByHeight(arg0 int64) ([]model.SystemEvent, e
 func (mr *MockSystemEventsStoreMockRecorder) FindByHeight(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindByHeight", reflect.TypeOf((*MockSystemEventsStore)(nil).FindByHeight), arg0)
+}
+
+// FindMostRecent mocks base method
+func (m *MockSystemEventsStore) FindMostRecent() (*model.SystemEvent, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "FindMostRecent")
+	ret0, _ := ret[0].(*model.SystemEvent)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindMostRecent indicates an expected call of FindMostRecent
+func (mr *MockSystemEventsStoreMockRecorder) FindMostRecent() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindMostRecent", reflect.TypeOf((*MockSystemEventsStore)(nil).FindMostRecent))
 }
 
 // FindUnique mocks base method

@@ -36,9 +36,9 @@ type BackfillUseCaseConfig struct {
 }
 
 func (uc *backfillUseCase) Execute(ctx context.Context, useCaseConfig BackfillUseCaseConfig) error {
-	if err := uc.canExecute(useCaseConfig.Force); err != nil {
-		return err
-	}
+	//if err := uc.canExecute(useCaseConfig.Force); err != nil {
+	//	return err
+	//}
 
 	indexingPipeline := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
 

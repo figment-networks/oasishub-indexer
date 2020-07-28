@@ -47,12 +47,14 @@ func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
 		return err
 	}
 
+
 	source, err := NewIndexSource(p.cfg, p.db, p.client, indexCfg.StartHeight, indexCfg.BatchSize)
 	if err != nil {
 		return err
 	}
 
 	sink := NewSink(p.db, *currentIndexVersion)
+
 
 	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, *currentIndexVersion)
 	if err != nil {
@@ -61,12 +63,15 @@ func (p *indexingPipeline) Index(ctx context.Context, indexCfg IndexCfg) error {
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{})
+	// During indexing we always want to take tasks from all available versions
+	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
+		desiredVersionIds: p.targetsReader.GetAllVersionedVersionIds(),
+	})
 	if err != nil {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d] [options=%+v]", source.startHeight, source.endHeight, pipelineOptions))
 
 	err = p.getPipeline().Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
@@ -122,18 +127,27 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 
 	ctxWithReport := context.WithValue(ctx, CtxReport, report)
 
-	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
-		currentIndexVersion: *currentIndexVersion,
-		versionIds:          backfillCfg.VersionIds,
-		targetIds:           backfillCfg.TargetIds,
-	})
+	// When versionIds and targetIds are not passed we find version ids that haven't been backfilled yet
+	optsCfg := pipelineOptionsConfig{}
+	if len(backfillCfg.VersionIds) == 0 && len(backfillCfg.TargetIds) == 0 {
+		versionIds, err := p.getMissingVersionIds()
+		if err != nil {
+			return err
+		}
+		optsCfg.desiredVersionIds = versionIds
+	} else {
+		optsCfg.desiredVersionIds = backfillCfg.VersionIds
+		optsCfg.desiredTargetIds = backfillCfg.TargetIds
+	}
+
+	pipelineOptions, err := p.getPipelineOptions(optsCfg)
 	if err != nil {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("starting pipeline backfill [start=%d] [end=%d] [kind=%s]", source.startHeight, source.endHeight, kind))
+	logger.Info(fmt.Sprintf("starting pipeline backfill [start=%d] [end=%d] [kind=%s] [options=%+v]", source.startHeight, source.endHeight, kind, pipelineOptions))
 
-	if err := p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions); err != nil {
+	if err := p.getPipeline().Start(ctxWithReport, source, sink, pipelineOptions); err != nil {
 		return err
 	}
 
@@ -146,6 +160,43 @@ func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	return nil
 }
 
+func (p *indexingPipeline) getMissingVersionIds() ([]int64, error) {
+	currentIndexVersion, err := p.getCurrentIndexVersion()
+	if err != nil {
+		return nil, err
+	}
+
+	var startIndexVersion int64
+
+	smallestIndexVersion, err := p.db.Syncables.FindSmallestIndexVersion()
+	if err != nil {
+		if err == store.ErrNotFound {
+			// When syncables not found in databases, set start version to first
+			startIndexVersion = 1
+		} else {
+			return nil, err
+		}
+	} else {
+		if *smallestIndexVersion < *currentIndexVersion {
+			// There are records with smaller index versions
+			// Include tasks from missing versions
+			startIndexVersion = *smallestIndexVersion + 1
+		} else if *smallestIndexVersion == *currentIndexVersion {
+			// When everything is up to date, set start version to first
+			startIndexVersion = 1
+		} else {
+			return nil, errors.New(fmt.Sprintf("current index version %d is too small", currentIndexVersion))
+		}
+	}
+
+	var ids []int64
+	for i := startIndexVersion; i <= *currentIndexVersion; i++ {
+		ids = append(ids, i)
+	}
+
+	return ids, nil
+}
+
 type RunConfig struct {
 	Height           int64
 	DesiredVersionID int64
@@ -155,9 +206,9 @@ type RunConfig struct {
 
 func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
 	pipelineOptions, err := p.getPipelineOptions(pipelineOptionsConfig{
-		dry:        runCfg.Dry,
-		versionIds: []int64{runCfg.DesiredVersionID},
-		targetIds:  []int64{runCfg.DesiredTargetID},
+		dry:               runCfg.Dry,
+		desiredVersionIds: []int64{runCfg.DesiredVersionID},
+		desiredTargetIds:  []int64{runCfg.DesiredTargetID},
 	})
 	if err != nil {
 		return nil, err
@@ -165,7 +216,7 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	logger.Info(fmt.Sprintf("running pipeline... [height=%d] [version=%d]", runCfg.Height, runCfg.DesiredTargetID))
 
-	runPayload, err := p.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
+	runPayload, err := p.getPipeline().Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
 		metric.IndexerTotalErrors.Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
@@ -287,14 +338,13 @@ func (p *indexingPipeline) getCurrentIndexVersion() (*int64, error) {
 }
 
 type pipelineOptionsConfig struct {
+	desiredVersionIds   []int64
+	desiredTargetIds    []int64
 	dry                 bool
-	currentIndexVersion int64
-	versionIds          []int64
-	targetIds           []int64
 }
 
 func (p *indexingPipeline) getPipelineOptions(optionsCfg pipelineOptionsConfig) (*pipeline.Options, error) {
-	taskWhitelist, err := p.getTasksWhitelist(optionsCfg.currentIndexVersion, optionsCfg.versionIds, optionsCfg.targetIds)
+	taskWhitelist, err := p.getTasksWhitelist(optionsCfg.desiredVersionIds, optionsCfg.desiredTargetIds)
 	if err != nil {
 		return nil, err
 	}
@@ -305,50 +355,23 @@ func (p *indexingPipeline) getPipelineOptions(optionsCfg pipelineOptionsConfig) 
 	}, nil
 }
 
-func (p *indexingPipeline) getTasksWhitelist(currentVersionId int64, versionIds []int64, targetIds []int64) ([]pipeline.TaskName, error) {
+func (p *indexingPipeline) getTasksWhitelist(desiredVersionIds []int64, desiredTargetIds []int64) ([]pipeline.TaskName, error) {
 	var taskWhitelist []pipeline.TaskName
 
-	if len(versionIds) == 0 && len(targetIds) == 0 {
-		smallestIndexVersion, err := p.db.Syncables.FindSmallestIndexVersion()
+	if len(desiredVersionIds) > 0 {
+		tasks, err := p.targetsReader.GetTasksByVersionIds(desiredVersionIds)
 		if err != nil {
 			return nil, err
 		}
+		taskWhitelist = append(taskWhitelist, tasks...)
+	}
 
-		if currentVersionId == 0 || *smallestIndexVersion == currentVersionId {
-			// No gaps in index versions
-			// Do normal indexing including all available tasks
-			taskWhitelist = p.targetsReader.GetAllTasks()
-		} else {
-			// There are records with smaller index versions
-			// Include tasks from missing versions
-			nextIndexVersion := *smallestIndexVersion + 1
-			var ids []int64
-			for i := nextIndexVersion; i <= currentVersionId; i++ {
-				ids = append(ids, i)
-			}
-
-			taskWhitelist, err = p.targetsReader.GetTasksByVersionIds(ids)
-			if err != nil {
-				return nil, err
-			}
+	if len(desiredTargetIds) > 0 {
+		tasks, err := p.targetsReader.GetTasksByTargetIds(desiredTargetIds)
+		if err != nil {
+			return nil, err
 		}
-
-	} else {
-		if len(versionIds) > 0 {
-			tasks, err := p.targetsReader.GetTasksByVersionIds(versionIds)
-			if err != nil {
-				return nil, err
-			}
-			taskWhitelist = append(taskWhitelist, tasks...)
-		}
-
-		if len(targetIds) > 0 {
-			tasks, err := p.targetsReader.GetTasksByTargetIds(targetIds)
-			if err != nil {
-				return nil, err
-			}
-			taskWhitelist = append(taskWhitelist, tasks...)
-		}
+		taskWhitelist = append(taskWhitelist, tasks...)
 	}
 
 	return getUniqueTaskNames(taskWhitelist), nil

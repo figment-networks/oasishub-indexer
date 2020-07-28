@@ -2,8 +2,6 @@ module github.com/figment-networks/oasishub-indexer
 
 go 1.14
 
-replace github.com/figment-networks/oasis-rpc-proxy => ../oasis-rpc-proxy
-
 require (
 	github.com/figment-networks/indexing-engine v0.1.5
 	github.com/figment-networks/oasis-rpc-proxy v0.3.10
@@ -22,7 +20,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rollbar/rollbar-go v1.2.0
 	github.com/spf13/cobra v1.0.0
-	github.com/stretchr/testify v1.5.1
+	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.15.0
 	golang.org/x/sys v0.0.0-20200523222454-059865788121 // indirect
 	google.golang.org/grpc v1.29.1

@@ -20,7 +20,9 @@ var (
 
 type TargetsReader interface {
 	GetCurrentVersionID() int64
-	GetAllTasks() []pipeline.TaskName
+	GetAllVersionedVersionIds() []int64
+	GetAllAvailableTasks() []pipeline.TaskName
+	GetAllVersionedTasks() ([]pipeline.TaskName, error)
 	GetTasksByVersionIds([]int64) ([]pipeline.TaskName, error)
 	GetTasksByTargetIds([]int64) ([]pipeline.TaskName, error)
 }
@@ -69,8 +71,8 @@ func (p *targetsReader) GetCurrentVersionID() int64 {
 	return lastVersion.ID
 }
 
-// GetAllTasks get lists of tasks for all available targets
-func (p *targetsReader) GetAllTasks() []pipeline.TaskName {
+// GetAllAvailableTasks get lists of tasks for all available targets
+func (p *targetsReader) GetAllAvailableTasks() []pipeline.TaskName {
 	var allAvailableTaskNames []pipeline.TaskName
 
 	allAvailableTaskNames = p.appendSharedTasks(allAvailableTaskNames)
@@ -80,6 +82,34 @@ func (p *targetsReader) GetAllTasks() []pipeline.TaskName {
 	}
 
 	return getUniqueTaskNames(allAvailableTaskNames)
+}
+
+// GetAllVersionedVersionIds gets a slice with all version ids in the targets file
+func (p *targetsReader) GetAllVersionedVersionIds() []int64 {
+	currentVersionId := p.GetCurrentVersionID()
+	var ids []int64
+	for i := int64(1); i <= currentVersionId; i++ {
+		ids = append(ids, i)
+	}
+	return ids
+}
+
+// GetAllVersionedTasks get lists of tasks for provided versions
+func (p *targetsReader) GetAllVersionedTasks() ([]pipeline.TaskName, error) {
+	var allAvailableTaskNames []pipeline.TaskName
+
+	allAvailableTaskNames = p.appendSharedTasks(allAvailableTaskNames)
+
+	ids := p.GetAllVersionedVersionIds()
+
+	versionedTaskNames, err := p.GetTasksByVersionIds(ids)
+	if err != nil {
+		return nil, err
+	}
+
+	allAvailableTaskNames = append(allAvailableTaskNames, versionedTaskNames...)
+
+	return getUniqueTaskNames(allAvailableTaskNames), nil
 }
 
 // GetTasksByTargetIds get lists of tasks for specific version ids
