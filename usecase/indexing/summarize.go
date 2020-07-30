@@ -29,7 +29,7 @@ func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "summarize")
 
-	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
 		return err
 	}

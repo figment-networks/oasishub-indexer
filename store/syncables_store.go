@@ -2,7 +2,6 @@ package store
 
 import (
 	"github.com/figment-networks/oasishub-indexer/model"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 )
 
@@ -19,7 +18,7 @@ type SyncablesStore interface {
 	FindFirstByDifferentIndexVersion(int64) (*model.Syncable, error)
 	FindMostRecentByDifferentIndexVersion(int64) (*model.Syncable, error)
 	CreateOrUpdate(*model.Syncable) error
-	SetProcessedAtForRange(types.ID, int64, int64) error
+	ResetProcessedAtForRange(int64, int64) error
 }
 
 func NewSyncablesStore(db *gorm.DB) *syncablesStore {
@@ -59,6 +58,7 @@ func (s syncablesStore) FindSmallestIndexVersion() (*int64, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
+		Where("processed_at IS NOT NULL").
 		Order("index_version").
 		First(result).Error
 
@@ -104,10 +104,10 @@ func (s syncablesStore) CreateOrUpdate(val *model.Syncable) error {
 	return s.Save(existing)
 }
 
-// CreateOrUpdate creates a new syncable or updates an existing one
-func (s syncablesStore) SetProcessedAtForRange(reportID types.ID, startHeight int64, endHeight int64) error {
+// ResetProcessedAtForRange sets processed at to null for given range of heights
+func (s syncablesStore) ResetProcessedAtForRange( startHeight int64, endHeight int64) error {
 	err := s.db.
-		Exec("UPDATE syncables SET report_id = ?, processed_at = NULL WHERE height >= ? AND height <= ?", reportID, startHeight, endHeight).
+		Exec("UPDATE syncables SET processed_at = NULL WHERE height >= ? AND height <= ?", startHeight, endHeight).
 		Error
 
 	return checkErr(err)

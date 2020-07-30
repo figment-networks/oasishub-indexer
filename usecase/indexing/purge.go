@@ -32,7 +32,7 @@ func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "purge")
 
-	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
 		return err
 	}

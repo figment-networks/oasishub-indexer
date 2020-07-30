@@ -33,9 +33,12 @@ func (uc *indexUseCase) Execute(ctx context.Context, batchSize int64) error {
 		return err
 	}
 
-	indexingPipeline := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+	indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+	if err != nil {
+		return err
+	}
 
-	return indexingPipeline.Index(ctx, indexer.IndexCfg{
+	return indexingPipeline.Index(ctx, indexer.IndexConfig{
 		BatchSize: batchSize,
 	})
 }

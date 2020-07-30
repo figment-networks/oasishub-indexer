@@ -74,7 +74,7 @@ func (m *MockSyncablesStore) EXPECT() *MockSyncablesStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockSyncablesStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -82,7 +82,7 @@ func (m *MockSyncablesStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockSyncablesStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSyncablesStore)(nil).Create), arg0)
@@ -177,6 +177,20 @@ func (mr *MockSyncablesStoreMockRecorder) FindSmallestIndexVersion() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindSmallestIndexVersion", reflect.TypeOf((*MockSyncablesStore)(nil).FindSmallestIndexVersion))
 }
 
+// ResetProcessedAtForRange mocks base method
+func (m *MockSyncablesStore) ResetProcessedAtForRange(arg0, arg1 int64) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ResetProcessedAtForRange", arg0, arg1)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// ResetProcessedAtForRange indicates an expected call of ResetProcessedAtForRange
+func (mr *MockSyncablesStoreMockRecorder) ResetProcessedAtForRange(arg0, arg1 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ResetProcessedAtForRange", reflect.TypeOf((*MockSyncablesStore)(nil).ResetProcessedAtForRange), arg0, arg1)
+}
+
 // Save mocks base method
 func (m *MockSyncablesStore) Save(arg0 interface{}) error {
 	m.ctrl.T.Helper()
@@ -189,20 +203,6 @@ func (m *MockSyncablesStore) Save(arg0 interface{}) error {
 func (mr *MockSyncablesStoreMockRecorder) Save(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Save", reflect.TypeOf((*MockSyncablesStore)(nil).Save), arg0)
-}
-
-// SetProcessedAtForRange mocks base method
-func (m *MockSyncablesStore) SetProcessedAtForRange(arg0 types.ID, arg1, arg2 int64) error {
-	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "SetProcessedAtForRange", arg0, arg1, arg2)
-	ret0, _ := ret[0].(error)
-	return ret0
-}
-
-// SetProcessedAtForRange indicates an expected call of SetProcessedAtForRange
-func (mr *MockSyncablesStoreMockRecorder) SetProcessedAtForRange(arg0, arg1, arg2 interface{}) *gomock.Call {
-	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "SetProcessedAtForRange", reflect.TypeOf((*MockSyncablesStore)(nil).SetProcessedAtForRange), arg0, arg1, arg2)
 }
 
 // Update mocks base method
@@ -242,7 +242,7 @@ func (m *MockReportsStore) EXPECT() *MockReportsStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockReportsStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -250,24 +250,24 @@ func (m *MockReportsStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockReportsStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockReportsStore)(nil).Create), arg0)
 }
 
-// DeleteReindexing mocks base method
-func (m *MockReportsStore) DeleteReindexing() error {
+// DeleteByKinds mocks base method
+func (m *MockReportsStore) DeleteByKinds(arg0 []model.ReportKind) error {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "DeleteReindexing")
+	ret := m.ctrl.Call(m, "DeleteByKinds", arg0)
 	ret0, _ := ret[0].(error)
 	return ret0
 }
 
-// DeleteReindexing indicates an expected call of DeleteReindexing
-func (mr *MockReportsStoreMockRecorder) DeleteReindexing() *gomock.Call {
+// DeleteByKinds indicates an expected call of DeleteByKinds
+func (mr *MockReportsStoreMockRecorder) DeleteByKinds(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteReindexing", reflect.TypeOf((*MockReportsStore)(nil).DeleteReindexing))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "DeleteByKinds", reflect.TypeOf((*MockReportsStore)(nil).DeleteByKinds), arg0)
 }
 
 // FindNotCompletedByIndexVersion mocks base method
@@ -375,7 +375,7 @@ func (m *MockSystemEventsStore) EXPECT() *MockSystemEventsStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockSystemEventsStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -383,7 +383,7 @@ func (m *MockSystemEventsStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockSystemEventsStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockSystemEventsStore)(nil).Create), arg0)
@@ -529,7 +529,7 @@ func (m *MockBlockSeqStore) EXPECT() *MockBlockSeqStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockBlockSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -537,7 +537,7 @@ func (m *MockBlockSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockBlockSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockBlockSeqStore)(nil).Create), arg0)
@@ -683,7 +683,7 @@ func (m *MockDebondingDelegationSeqStore) EXPECT() *MockDebondingDelegationSeqSt
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockDebondingDelegationSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -691,7 +691,7 @@ func (m *MockDebondingDelegationSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockDebondingDelegationSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockDebondingDelegationSeqStore)(nil).Create), arg0)
@@ -793,7 +793,7 @@ func (m *MockDelegationSeqStore) EXPECT() *MockDelegationSeqStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockDelegationSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -801,7 +801,7 @@ func (m *MockDelegationSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockDelegationSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockDelegationSeqStore)(nil).Create), arg0)
@@ -903,7 +903,7 @@ func (m *MockStakingSeqStore) EXPECT() *MockStakingSeqStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockStakingSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -911,7 +911,7 @@ func (m *MockStakingSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockStakingSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockStakingSeqStore)(nil).Create), arg0)
@@ -1013,7 +1013,7 @@ func (m *MockTransactionSeqStore) EXPECT() *MockTransactionSeqStoreMockRecorder 
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockTransactionSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1021,7 +1021,7 @@ func (m *MockTransactionSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockTransactionSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockTransactionSeqStore)(nil).Create), arg0)
@@ -1093,7 +1093,7 @@ func (m *MockValidatorSeqStore) EXPECT() *MockValidatorSeqStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockValidatorSeqStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1101,7 +1101,7 @@ func (m *MockValidatorSeqStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockValidatorSeqStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockValidatorSeqStore)(nil).Create), arg0)
@@ -1248,7 +1248,7 @@ func (m *MockBlockSummaryStore) EXPECT() *MockBlockSummaryStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockBlockSummaryStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1256,7 +1256,7 @@ func (m *MockBlockSummaryStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockBlockSummaryStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockBlockSummaryStore)(nil).Create), arg0)
@@ -1388,7 +1388,7 @@ func (m *MockValidatorSummaryStore) EXPECT() *MockValidatorSummaryStoreMockRecor
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockValidatorSummaryStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1396,7 +1396,7 @@ func (m *MockValidatorSummaryStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockValidatorSummaryStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockValidatorSummaryStore)(nil).Create), arg0)
@@ -1558,7 +1558,7 @@ func (m *MockAccountAggStore) EXPECT() *MockAccountAggStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockAccountAggStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1566,7 +1566,7 @@ func (m *MockAccountAggStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockAccountAggStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockAccountAggStore)(nil).Create), arg0)
@@ -1653,7 +1653,7 @@ func (m *MockValidatorAggStore) EXPECT() *MockValidatorAggStoreMockRecorder {
 	return m.recorder
 }
 
-// Create mocks base method
+// create mocks base method
 func (m *MockValidatorAggStore) Create(arg0 interface{}) error {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "Create", arg0)
@@ -1661,7 +1661,7 @@ func (m *MockValidatorAggStore) Create(arg0 interface{}) error {
 	return ret0
 }
 
-// Create indicates an expected call of Create
+// create indicates an expected call of create
 func (mr *MockValidatorAggStoreMockRecorder) Create(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockValidatorAggStore)(nil).Create), arg0)

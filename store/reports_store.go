@@ -15,7 +15,7 @@ type ReportsStore interface {
 	FindNotCompletedByIndexVersion(int64, ...model.ReportKind) (*model.Report, error)
 	FindNotCompletedByKind(...model.ReportKind) (*model.Report, error)
 	Last() (*model.Report, error)
-	DeleteReindexing() error
+	DeleteByKinds([]model.ReportKind) error
 }
 
 
@@ -67,11 +67,11 @@ func (s reportsStore) Last() (*model.Report, error) {
 	return result, checkErr(err)
 }
 
-// DeleteReindexing deletes reports with kind reindexing sequential or parallel
-func (s *reportsStore) DeleteReindexing() error {
+// DeleteByKinds deletes reports with kind reindexing sequential or parallel
+func (s *reportsStore) DeleteByKinds(kinds []model.ReportKind) error {
 	err := s.db.
 		Unscoped().
-		Where("kind = ? OR kind = ?", model.ReportKindParallelReindex, model.ReportKindSequentialReindex).
+		Where("kind IN(?)", kinds).
 		Delete(&model.Report{}).
 		Error
 

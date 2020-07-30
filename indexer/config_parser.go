@@ -9,46 +9,27 @@ import (
 )
 
 const (
-	TargetIndexBlockSequences = iota + 1
-	TargetIndexValidatorSequences
-	TargetIndexValidatorAggregates
+	IndexTargetBlockSequences = iota + 1
+	IndexTargetValidatorSequences
+	IndexTargetValidatorAggregates
+	IndexTargetSystemEvents
 )
 
 var (
-	_ TargetsReader = (*targetsReader)(nil)
+	_ ConfigParser = (*configParser)(nil)
 )
 
-type TargetsReader interface {
+type ConfigParser interface {
 	GetCurrentVersionId() int64
 	GetAllVersionedVersionIds() []int64
 	IsAnyVersionSequential(versionIds []int64) bool
-	AreAllVersionsParallel(versionIds []int64) bool
 	GetAllAvailableTasks() []pipeline.TaskName
 	GetAllVersionedTasks() ([]pipeline.TaskName, error)
 	GetTasksByVersionIds([]int64) ([]pipeline.TaskName, error)
 	GetTasksByTargetIds([]int64) ([]pipeline.TaskName, error)
 }
 
-// NewTargetsReader constructor for targetsReader
-func NewTargetsReader(file string) (*targetsReader, error) {
-	p := &targetsReader{}
-
-	cfg, err := p.parseFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	p.cfg = cfg
-
-	return p, nil
-}
-
-// targetsReader
-type targetsReader struct {
-	cfg *targetsCfg
-}
-
-type targetsCfg struct {
+type indexerConfig struct {
 	Versions         []version           `json:"versions"`
 	SharedTasks      []pipeline.TaskName `json:"shared_tasks"`
 	AvailableTargets []target            `json:"available_targets"`
@@ -67,19 +48,54 @@ type target struct {
 	Tasks []pipeline.TaskName `json:"tasks"`
 }
 
+func NewConfigParser(file string) (*configParser, error) {
+	o := &configParser{
+		file: file,
+	}
+
+	tr, err := o.Parse()
+	if err != nil {
+		return nil, err
+	}
+
+	o.targets = tr
+
+	return o, nil
+}
+
+type configParser struct {
+	file    string
+	targets *indexerConfig
+}
+
+func (o *configParser) Parse() (*indexerConfig, error) {
+	data, err := ioutil.ReadFile(o.file)
+	if err != nil {
+		return nil, err
+	}
+
+	var tgs indexerConfig
+	err = json.Unmarshal(data, &tgs)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tgs, nil
+}
+
 //GetCurrentVersionId gets the most recent version id
-func (p *targetsReader) GetCurrentVersionId() int64 {
-	lastVersion := p.cfg.Versions[len(p.cfg.Versions)-1]
+func (o *configParser) GetCurrentVersionId() int64 {
+	lastVersion := o.targets.Versions[len(o.targets.Versions)-1]
 	return lastVersion.ID
 }
 
 // GetAllAvailableTasks get lists of tasks for all available targets
-func (p *targetsReader) GetAllAvailableTasks() []pipeline.TaskName {
+func (o *configParser) GetAllAvailableTasks() []pipeline.TaskName {
 	var allAvailableTaskNames []pipeline.TaskName
 
-	allAvailableTaskNames = p.appendSharedTasks(allAvailableTaskNames)
+	allAvailableTaskNames = o.appendSharedTasks(allAvailableTaskNames)
 
-	for _, t := range p.cfg.AvailableTargets {
+	for _, t := range o.targets.AvailableTargets {
 		allAvailableTaskNames = append(allAvailableTaskNames, t.Tasks...)
 	}
 
@@ -87,8 +103,8 @@ func (p *targetsReader) GetAllAvailableTasks() []pipeline.TaskName {
 }
 
 // GetAllVersionedVersionIds gets a slice with all version ids in the targets file
-func (p *targetsReader) GetAllVersionedVersionIds() []int64 {
-	currentVersionId := p.GetCurrentVersionId()
+func (o *configParser) GetAllVersionedVersionIds() []int64 {
+	currentVersionId := o.GetCurrentVersionId()
 	var ids []int64
 	for i := int64(1); i <= currentVersionId; i++ {
 		ids = append(ids, i)
@@ -97,14 +113,14 @@ func (p *targetsReader) GetAllVersionedVersionIds() []int64 {
 }
 
 // GetAllVersionedTasks get lists of tasks for provided versions
-func (p *targetsReader) GetAllVersionedTasks() ([]pipeline.TaskName, error) {
+func (o *configParser) GetAllVersionedTasks() ([]pipeline.TaskName, error) {
 	var allAvailableTaskNames []pipeline.TaskName
 
-	allAvailableTaskNames = p.appendSharedTasks(allAvailableTaskNames)
+	allAvailableTaskNames = o.appendSharedTasks(allAvailableTaskNames)
 
-	ids := p.GetAllVersionedVersionIds()
+	ids := o.GetAllVersionedVersionIds()
 
-	versionedTaskNames, err := p.GetTasksByVersionIds(ids)
+	versionedTaskNames, err := o.GetTasksByVersionIds(ids)
 	if err != nil {
 		return nil, err
 	}
@@ -115,13 +131,13 @@ func (p *targetsReader) GetAllVersionedTasks() ([]pipeline.TaskName, error) {
 }
 
 // GetTasksByTargetIds get lists of tasks for specific version ids
-func (p *targetsReader) GetTasksByVersionIds(versionIds []int64) ([]pipeline.TaskName, error) {
+func (o *configParser) GetTasksByVersionIds(versionIds []int64) ([]pipeline.TaskName, error) {
 	var allTaskNames []pipeline.TaskName
 
-	allTaskNames = p.appendSharedTasks(allTaskNames)
+	allTaskNames = o.appendSharedTasks(allTaskNames)
 
 	for _, t := range versionIds {
-		tasks, err := p.getTasksByVersionId(t)
+		tasks, err := o.getTasksByVersionId(t)
 		if err != nil {
 			return nil, err
 		}
@@ -131,22 +147,9 @@ func (p *targetsReader) GetTasksByVersionIds(versionIds []int64) ([]pipeline.Tas
 	return getUniqueTaskNames(allTaskNames), nil
 }
 
-// AreAllVersionsParallel check if all of the given version ids are parallel
-func (p *targetsReader) AreAllVersionsParallel(versionIds []int64) bool {
-	for _, v := range p.cfg.Versions {
-		for _, needleVersionId := range versionIds {
-			if v.ID == needleVersionId && v.Parallel {
-				return true
-			}
-		}
-	}
-
-	return false
-}
-
 // IsAnyVersionSequential check if any version in targets file is sequential
-func (p *targetsReader) IsAnyVersionSequential(versionIds []int64) bool {
-	for _, v := range p.cfg.Versions {
+func (o *configParser) IsAnyVersionSequential(versionIds []int64) bool {
+	for _, v := range o.targets.Versions {
 		for _, needleVersionId := range versionIds {
 			if v.ID == needleVersionId && !v.Parallel {
 				return true
@@ -158,10 +161,10 @@ func (p *targetsReader) IsAnyVersionSequential(versionIds []int64) bool {
 }
 
 // getTasksByVersionId get lists of tasks for specific version id
-func (p *targetsReader) getTasksByVersionId(versionId int64) ([]pipeline.TaskName, error) {
+func (o *configParser) getTasksByVersionId(versionId int64) ([]pipeline.TaskName, error) {
 	var targetIds []int64
 	versionFound := false
-	for _, version := range p.cfg.Versions {
+	for _, version := range o.targets.Versions {
 		if version.ID == versionId {
 			targetIds = version.Targets
 			versionFound = true
@@ -172,17 +175,17 @@ func (p *targetsReader) getTasksByVersionId(versionId int64) ([]pipeline.TaskNam
 		return nil, errors.New(fmt.Sprintf("version %d not found", versionId))
 	}
 
-	return p.GetTasksByTargetIds(targetIds)
+	return o.GetTasksByTargetIds(targetIds)
 }
 
 // GetTasksByTargetIds get lists of tasks for specific target ids
-func (p *targetsReader) GetTasksByTargetIds(targetIds []int64) ([]pipeline.TaskName, error) {
+func (o *configParser) GetTasksByTargetIds(targetIds []int64) ([]pipeline.TaskName, error) {
 	var allTaskNames []pipeline.TaskName
 
-	allTaskNames = p.appendSharedTasks(allTaskNames)
+	allTaskNames = o.appendSharedTasks(allTaskNames)
 
 	for _, t := range targetIds {
-		tasks, err := p.getTasksByTargetId(t)
+		tasks, err := o.getTasksByTargetId(t)
 		if err != nil {
 			return nil, err
 		}
@@ -193,8 +196,8 @@ func (p *targetsReader) GetTasksByTargetIds(targetIds []int64) ([]pipeline.TaskN
 }
 
 // getTasksByTargetId get list of tasks for desired target id
-func (p *targetsReader) getTasksByTargetId(targetId int64) ([]pipeline.TaskName, error) {
-	for _, t := range p.cfg.AvailableTargets {
+func (o *configParser) getTasksByTargetId(targetId int64) ([]pipeline.TaskName, error) {
+	for _, t := range o.targets.AvailableTargets {
 		if t.ID == targetId {
 			return getUniqueTaskNames(t.Tasks), nil
 		}
@@ -202,25 +205,9 @@ func (p *targetsReader) getTasksByTargetId(targetId int64) ([]pipeline.TaskName,
 	return nil, errors.New(fmt.Sprintf("target id %d does not exists", targetId))
 }
 
-// parseFile gets tasks from json files from given directory
-func (p *targetsReader) parseFile(file string) (*targetsCfg, error) {
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		return nil, err
-	}
-
-	var cfg targetsCfg
-	err = json.Unmarshal(data, &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
-}
-
 // appendSharedTasks appends shared tasks
-func (p *targetsReader) appendSharedTasks(tasks []pipeline.TaskName) []pipeline.TaskName {
-	tasks = append(tasks, p.cfg.SharedTasks...)
+func (o *configParser) appendSharedTasks(tasks []pipeline.TaskName) []pipeline.TaskName {
+	tasks = append(tasks, o.targets.SharedTasks...)
 	return tasks
 }
 

@@ -77,7 +77,7 @@ func (s *backfillSource) setStartHeight() error {
 	syncable, err := s.db.Syncables.FindFirstByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [desiredIndexVersion=%d]", s.currentIndexVersion))
+			return errors.New(fmt.Sprintf("nothing to backfill because everything is up to date [currentIndexVersion=%d]", s.currentIndexVersion))
 		}
 		return err
 	}
@@ -90,9 +90,6 @@ func (s *backfillSource) setStartHeight() error {
 func (s *backfillSource) setEndHeight() error {
 	syncable, err := s.db.Syncables.FindMostRecentByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
-			return errors.New(fmt.Sprintf("nothing to backfill [desiredIndexVersion=%d]", s.currentIndexVersion))
-		}
 		return err
 	}
 

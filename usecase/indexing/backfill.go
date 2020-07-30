@@ -33,7 +33,10 @@ type BackfillUseCaseConfig struct {
 }
 
 func (uc *backfillUseCase) Execute(ctx context.Context, useCaseConfig BackfillUseCaseConfig) error {
-	indexingPipeline := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+	indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+	if err != nil {
+		return err
+	}
 
 	return indexingPipeline.Backfill(ctx, indexer.BackfillConfig{
 		Parallel:   useCaseConfig.Parallel,
