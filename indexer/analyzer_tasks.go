@@ -118,7 +118,10 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			logger.Debug(fmt.Sprintf("total missed blocks for last %d blocks for address %s: %d", MaxValidatorSequences, validatorSequence.Address, totalMissedCount))
 
 			if totalMissedCount == MissedForMaxThreshold {
-				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMofN, systemEventRawData{})
+				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMofN, systemEventRawData{
+					"threshold": MissedForMaxThreshold,
+					"max_validator_sequences": MaxValidatorSequences,
+				})
 				if err != nil {
 					return nil, err
 				}
@@ -131,7 +134,9 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			logger.Debug(fmt.Sprintf("total missed blocks in a row for address %s: %d", validatorSequence.Address, missedInRowCount))
 
 			if missedInRowCount == MissedInRowThreshold {
-				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMInRow, systemEventRawData{})
+				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMInRow, systemEventRawData{
+					"threshold": MissedInRowThreshold,
+				})
 				if err != nil {
 					return nil, err
 				}

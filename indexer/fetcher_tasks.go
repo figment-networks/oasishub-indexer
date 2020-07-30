@@ -37,6 +37,7 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 
 	payload := p.(*payload)
+
 	block, err := t.client.Block.GetByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
