@@ -30,91 +30,75 @@ type indexingPipeline struct {
 	db     *store.Store
 	client *client.Client
 
-	pipeline     *pipeline.Pipeline
+	pipeline     pipeline.DefaultPipeline
 	status       *pipelineStatus
 	configParser ConfigParser
 }
 
 func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
-	defaultPipeline := pipeline.New(NewPayloadFactory())
+	defaultPipeline := pipeline.NewDefault(NewPayloadFactory())
 
 	// Setup logger
 	defaultPipeline.SetLogger(NewLogger())
 
 	// Setup stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetTasks(
 		pipeline.StageSetup,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
 	)
 
 	// Syncer stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetTasks(
 		pipeline.StageSyncer,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
 	)
 
 	// Fetcher stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageFetcher,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
 	)
 
 	// Set parser stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageParser,
-		pipeline.AsyncRunner(
-			NewBlockParserTask(),
-			NewValidatorsParserTask(),
-		),
+		NewBlockParserTask(),
+		NewValidatorsParserTask(),
 	)
 
 	// Set sequencer stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageSequencer,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
 	)
 
 	// Set aggregator stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageAggregator,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
 	)
 
 	// Add analyzer stage
-	defaultPipeline.AddStageBefore(pipeline.StagePersistor, StageAnalyzer, pipeline.AsyncRunner(
-		NewSystemEventCreatorTask(cfg, db.ValidatorSeq),
-	), )
+	defaultPipeline.AddStageBefore(pipeline.StagePersistor, pipeline.NewStageWithTasks(StageAnalyzer, NewSystemEventCreatorTask(cfg, db.ValidatorSeq)))
 
 	// Set persistor stage
-	defaultPipeline.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StagePersistor,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
 	)
 
 	configParser, err := NewConfigParser(cfg.IndexerConfigFile)
