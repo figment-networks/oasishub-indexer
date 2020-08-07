@@ -33,7 +33,7 @@
     {
       "id": 2,
       "name": "index_validator_sequences",
-      "desc": "Creates and persists block sequences",
+      "desc": "Creates and persists validator sequences",
       "tasks": [
         "BlockFetcher",
         "StakingStateFetcher",

@@ -32,7 +32,7 @@ var (
 // NewSystemEventCreatorTask creates system events
 func NewSystemEventCreatorTask(cfg *config.Config, s SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
-		cfg:                     cfg,
+		cfg: cfg,
 
 		SystemEventCreatorStore: s,
 	}
@@ -63,15 +63,9 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", "Analyzer", t.GetName(), payload.CurrentHeight))
 
 	currHeightValidatorSequences := append(payload.NewValidatorSequences, payload.UpdatedValidatorSequences...)
-	var prevHeightValidatorSequences []model.ValidatorSeq
-	if payload.CurrentHeight > t.cfg.FirstBlockHeight {
-		var err error
-		prevHeightValidatorSequences, err = t.SystemEventCreatorStore.FindByHeight(payload.CurrentHeight - 1)
-		if err != nil {
-			if err != store.ErrNotFound {
-				return err
-			}
-		}
+	prevHeightValidatorSequences, err := t.getPrevHeightValidatorSequences(payload)
+	if err != nil {
+		return err
 	}
 
 	valueChangeSystemEvents, err := t.getValueChangeSystemEvents(currHeightValidatorSequences, prevHeightValidatorSequences)
@@ -93,6 +87,20 @@ func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) er
 	payload.SystemEvents = append(payload.SystemEvents, missedBlocksSystemEvents...)
 
 	return nil
+}
+
+func (t *systemEventCreatorTask) getPrevHeightValidatorSequences(payload *payload) ([]model.ValidatorSeq, error) {
+	var prevHeightValidatorSequences []model.ValidatorSeq
+	if payload.CurrentHeight > t.cfg.FirstBlockHeight {
+		var err error
+		prevHeightValidatorSequences, err = t.SystemEventCreatorStore.FindByHeight(payload.CurrentHeight - 1)
+		if err != nil {
+			if err != store.ErrNotFound {
+				return nil, err
+			}
+		}
+	}
+	return prevHeightValidatorSequences, nil
 }
 
 func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidatorSequences []model.ValidatorSeq) ([]*model.SystemEvent, error) {
@@ -119,7 +127,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 
 			if totalMissedCount == MissedForMaxThreshold {
 				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedMofN, systemEventRawData{
-					"threshold": MissedForMaxThreshold,
+					"threshold":               MissedForMaxThreshold,
 					"max_validator_sequences": MaxValidatorSequences,
 				})
 				if err != nil {
@@ -148,6 +156,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 	return systemEvents, nil
 }
 
+// getTotalMissed get total missed count for given slice of validator sequences
 func (t systemEventCreatorTask) getTotalMissed(validatorSequences []model.ValidatorSeq) int64 {
 	var totalMissedCount int64 = 0
 	for _, validatorSequence := range validatorSequences {
@@ -159,6 +168,7 @@ func (t systemEventCreatorTask) getTotalMissed(validatorSequences []model.Valida
 	return totalMissedCount
 }
 
+// getMissedInRow get number of validator sequences missed in the row
 func (t systemEventCreatorTask) getMissedInRow(validatorSequences []model.ValidatorSeq, limit int64) int64 {
 	if int64(len(validatorSequences)) > MissedInRowThreshold {
 		validatorSequences = validatorSequences[:limit]
@@ -180,6 +190,7 @@ func (t systemEventCreatorTask) getMissedInRow(validatorSequences []model.Valida
 	return missedInRowCount
 }
 
+// isNotValidated check if validator has validated the block at height
 func (t systemEventCreatorTask) isNotValidated(validatorSequence model.ValidatorSeq) bool {
 	return validatorSequence.PrecommitValidated != nil && !*validatorSequence.PrecommitValidated
 }

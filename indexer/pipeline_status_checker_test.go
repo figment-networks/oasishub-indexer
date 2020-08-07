@@ -14,6 +14,7 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 		setStore                  func(*mock_store.MockSyncablesStore)
 		expectError               bool
 		expectedIsUpToDate        bool
+		expectedIsPristine		  bool
 		expectedMissingVersionIds []int64
 	}{
 		{
@@ -25,6 +26,7 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 			},
 			expectError:               false,
 			expectedIsUpToDate:        true,
+			expectedIsPristine:        false,
 			expectedMissingVersionIds: []int64{1, 2},
 		},
 		{
@@ -36,6 +38,7 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 			},
 			expectError:               false,
 			expectedIsUpToDate:        false,
+			expectedIsPristine:        false,
 			expectedMissingVersionIds: []int64{3, 4},
 		},
 		{
@@ -55,6 +58,7 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 			},
 			expectError:               false,
 			expectedIsUpToDate:        false,
+			expectedIsPristine:        true,
 			expectedMissingVersionIds: []int64{1, 2},
 		},
 	}
@@ -88,6 +92,10 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 
 			if status.isUpToDate != tt.expectedIsUpToDate {
 				t.Errorf("unexpected isUpToDate, want: %v; got: %v", tt.expectedIsUpToDate, status.isUpToDate)
+			}
+
+			if status.isPristine != tt.expectedIsPristine {
+				t.Errorf("unexpected isPristine, want: %v; got: %v", tt.expectedIsPristine, status.isPristine)
 			}
 
 			if len(tt.expectedMissingVersionIds) != len(status.missingVersionIds) {

@@ -17,7 +17,6 @@ func TestPipelineOptionsCreator_parse(t *testing.T) {
 		configParserMock := mock_indexer.NewMockConfigParser(ctrl)
 
 		configParserMock.EXPECT().GetTasksByVersionIds(gomock.Any()).Return([]pipeline.TaskName{"task1", "task2"}, nil).Times(1)
-		//configParserMock.EXPECT().GetTasksByTargetIds(gomock.Any()).Return([]pipeline.TaskName{}, nil).Times(1)
 
 		creator := pipelineOptionsCreator{
 			configParser: configParserMock,
