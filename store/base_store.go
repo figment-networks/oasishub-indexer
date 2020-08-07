@@ -8,7 +8,15 @@ import (
 
 var (
 	ErrNotFound = errors.New("record not found")
+
+	_ BaseStore = (*baseStore)(nil)
 )
+
+type BaseStore interface {
+	Create(record interface{}) error
+	Update(record interface{}) error
+	Save(record interface{}) error
+}
 
 // baseStore implements generic store operations
 type baseStore struct {
@@ -31,16 +39,6 @@ func (s baseStore) Update(record interface{}) error {
 // Save saves record to database
 func (s baseStore) Save(record interface{}) error {
 	return s.db.Save(record).Error
-}
-
-// Truncate removes all records from the table
-func (s baseStore) Truncate() error {
-	return s.db.Delete(s.model).Error
-}
-
-// DeleteByHeight removes all records associated with a height
-func (s baseStore) DeleteByHeight(height int64) error {
-	return s.db.Delete(s.model, "height = ?", height).Error
 }
 
 func scoped(conn *gorm.DB, m interface{}) baseStore {

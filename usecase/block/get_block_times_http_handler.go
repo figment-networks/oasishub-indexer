@@ -47,7 +47,7 @@ func (h *getBlockTimesHttpHandler) Handle(c *gin.Context) {
 
 func (h *getBlockTimesHttpHandler) getUseCase() *getBlockTimesUseCase {
 	if h.useCase == nil {
-		return NewGetBlockTimesUseCase(h.db)
+		h.useCase = NewGetBlockTimesUseCase(h.db)
 	}
 	return h.useCase
 }

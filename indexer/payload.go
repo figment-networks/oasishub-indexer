@@ -62,6 +62,9 @@ type payload struct {
 	TransactionSequences         []model.TransactionSeq
 	DelegationSequences          []model.DelegationSeq
 	DebondingDelegationSequences []model.DebondingDelegationSeq
+
+	// Analyzer
+	SystemEvents []*model.SystemEvent
 }
 
 func (p *payload) MarkAsProcessed() {}

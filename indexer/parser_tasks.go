@@ -79,6 +79,7 @@ type parsedValidator struct {
 	PrecommitBlockIdFlag int64
 	PrecommitIndex       int64
 	TotalShares          types.Quantity
+	ActiveEscrowBalance  types.Quantity
 }
 
 func (t *validatorsParserTask) GetName() string {
@@ -95,6 +96,12 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
+
+	const (
+		NotValidated int64 = 1
+		Validated    int64 = 2
+		ValidatedNil int64 = 3
+	)
 
 	parsedData := make(ParsedValidatorsData)
 	for i, fetchedValidator := range fetchedValidators {
@@ -115,17 +122,17 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 			// It means that last x validators did not have chance to vote. In that case set validated to null.
 			if i > len(votes)-1 {
 				index = int64(i)
-				blockIdFlag = 3
+				blockIdFlag = ValidatedNil
 			} else {
 				precommit := votes[i]
-				isValidated := precommit.BlockIdFlag == 2
+				isValidated := precommit.BlockIdFlag == Validated
 				validated = &isValidated
 				index = precommit.ValidatorIndex
 				blockIdFlag = precommit.BlockIdFlag
 			}
 		} else {
 			index = int64(i)
-			blockIdFlag = 3
+			blockIdFlag = ValidatedNil
 		}
 
 		calculatedData.PrecommitValidated = validated
@@ -145,6 +152,12 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 			}
 		}
 		calculatedData.TotalShares = types.NewQuantity(totalShares)
+
+		// Get active escrow
+		account, ok := fetchedStakingState.GetLedger()[address]
+		if ok {
+			calculatedData.ActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+		}
 
 		parsedData[address] = calculatedData
 	}

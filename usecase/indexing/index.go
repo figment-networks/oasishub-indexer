@@ -14,21 +14,21 @@ var (
 	ErrRunningSequentialReindex = errors.New("indexing skipped because sequential reindex hasn't finished yet")
 )
 
-type startUseCase struct {
+type indexUseCase struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 }
 
-func NewStartUseCase(cfg *config.Config, db *store.Store, c *client.Client) *startUseCase {
-	return &startUseCase{
+func NewIndexUseCase(cfg *config.Config, db *store.Store, c *client.Client) *indexUseCase {
+	return &indexUseCase{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (uc *startUseCase) Execute(ctx context.Context, batchSize int64) error {
+func (uc *indexUseCase) Execute(ctx context.Context, batchSize int64) error {
 	if err := uc.canExecute(); err != nil {
 		return err
 	}
@@ -38,14 +38,14 @@ func (uc *startUseCase) Execute(ctx context.Context, batchSize int64) error {
 		return err
 	}
 
-	return indexingPipeline.Start(ctx, indexer.StartConfig{
+	return indexingPipeline.Index(ctx, indexer.IndexConfig{
 		BatchSize: batchSize,
 	})
 }
 
 // canExecute checks if sequential reindex is already running
 // if is it running we skip indexing
-func (uc *startUseCase) canExecute() error {
+func (uc *indexUseCase) canExecute() error {
 	if _, err := uc.db.Reports.FindNotCompletedByKind(model.ReportKindSequentialReindex); err != nil {
 		if err == store.ErrNotFound {
 			return nil

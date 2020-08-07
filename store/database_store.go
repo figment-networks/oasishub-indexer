@@ -4,14 +4,22 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewDatabaseStore(db *gorm.DB) *DatabaseStore {
-	return &DatabaseStore{
+var (
+	_ DatabaseStore = (*databaseStore)(nil)
+)
+
+type DatabaseStore interface {
+	GetTotalSize() (*GetTotalSizeResult, error)
+}
+
+func NewDatabaseStore(db *gorm.DB) *databaseStore {
+	return &databaseStore{
 		db: db,
 	}
 }
 
-// DatabaseStore handles operations on blocks
-type DatabaseStore struct {
+// databaseStore handles operations on blocks
+type databaseStore struct {
 	db *gorm.DB
 }
 
@@ -21,7 +29,7 @@ type GetTotalSizeResult struct {
 }
 
 // FindSummary Gets average block times for interval
-func (s *DatabaseStore) GetTotalSize() (*GetTotalSizeResult, error) {
+func (s *databaseStore) GetTotalSize() (*GetTotalSizeResult, error) {
 	query := "SELECT pg_database_size(current_database()) as size"
 
 	var result GetTotalSizeResult

@@ -56,7 +56,7 @@ func (h *getByHeightHttpHandler) Handle(c *gin.Context) {
 
 func (h *getByHeightHttpHandler) getUseCase() *getByHeightUseCase {
 	if h.useCase == nil {
-		return NewGetByHeightUseCase(h.cfg, h.db, h.client)
+		h.useCase = NewGetByHeightUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

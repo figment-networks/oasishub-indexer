@@ -29,11 +29,11 @@ func NewSummarizeUseCase(cfg *config.Config, db *store.Store) *summarizeUseCase 
 func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "summarize")
 
-	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
 		return err
 	}
-	currentIndexVersion := targetsReader.GetCurrentVersion()
+	currentIndexVersion := targetsReader.GetCurrentVersionId()
 
 	if err := uc.summarizeBlockSeq(types.IntervalHourly, currentIndexVersion); err != nil {
 		return err
@@ -144,17 +144,23 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 				validatorSummary := model.ValidatorSummary{
 					Summary: summary,
 
-					Address:         rawSummary.Address,
-					VotingPowerAvg:  rawSummary.VotingPowerAvg,
-					VotingPowerMax:  rawSummary.VotingPowerMax,
-					VotingPowerMin:  rawSummary.VotingPowerMin,
-					TotalSharesAvg:  rawSummary.TotalSharesAvg,
-					TotalSharesMax:  rawSummary.TotalSharesMax,
-					TotalSharesMin:  rawSummary.TotalSharesMin,
-					ValidatedSum:    rawSummary.ValidatedSum,
-					NotValidatedSum: rawSummary.NotValidatedSum,
-					ProposedSum:     rawSummary.ProposedSum,
-					UptimeAvg:       rawSummary.UptimeAvg,
+					Address:                rawSummary.Address,
+					VotingPowerAvg:         rawSummary.VotingPowerAvg,
+					VotingPowerMax:         rawSummary.VotingPowerMax,
+					VotingPowerMin:         rawSummary.VotingPowerMin,
+					TotalSharesAvg:         rawSummary.TotalSharesAvg,
+					TotalSharesMax:         rawSummary.TotalSharesMax,
+					TotalSharesMin:         rawSummary.TotalSharesMin,
+					ActiveEscrowBalanceAvg: rawSummary.ActiveEscrowBalanceAvg,
+					ActiveEscrowBalanceMax: rawSummary.ActiveEscrowBalanceMax,
+					ActiveEscrowBalanceMin: rawSummary.ActiveEscrowBalanceMin,
+					CommissionAvg:          rawSummary.CommissionAvg,
+					CommissionMax:          rawSummary.CommissionMax,
+					CommissionMin:          rawSummary.CommissionMin,
+					ValidatedSum:           rawSummary.ValidatedSum,
+					NotValidatedSum:        rawSummary.NotValidatedSum,
+					ProposedSum:            rawSummary.ProposedSum,
+					UptimeAvg:              rawSummary.UptimeAvg,
 				}
 
 				if err := uc.db.ValidatorSummary.Create(&validatorSummary); err != nil {
@@ -171,6 +177,12 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 			existingValidatorSummary.TotalSharesAvg = rawSummary.TotalSharesAvg
 			existingValidatorSummary.TotalSharesMax = rawSummary.TotalSharesMax
 			existingValidatorSummary.TotalSharesMin = rawSummary.TotalSharesMin
+			existingValidatorSummary.ActiveEscrowBalanceAvg = rawSummary.ActiveEscrowBalanceAvg
+			existingValidatorSummary.ActiveEscrowBalanceMax = rawSummary.ActiveEscrowBalanceMax
+			existingValidatorSummary.ActiveEscrowBalanceMin = rawSummary.ActiveEscrowBalanceMin
+			existingValidatorSummary.CommissionAvg = rawSummary.CommissionAvg
+			existingValidatorSummary.CommissionMax = rawSummary.CommissionMax
+			existingValidatorSummary.CommissionMin = rawSummary.CommissionMin
 			existingValidatorSummary.ValidatedSum = rawSummary.ValidatedSum
 			existingValidatorSummary.NotValidatedSum = rawSummary.NotValidatedSum
 			existingValidatorSummary.ProposedSum = rawSummary.ProposedSum

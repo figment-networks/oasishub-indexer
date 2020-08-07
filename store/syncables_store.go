@@ -2,21 +2,36 @@ package store
 
 import (
 	"github.com/figment-networks/oasishub-indexer/model"
-	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
 )
 
-func NewSyncablesStore(db *gorm.DB) *SyncablesStore {
-	return &SyncablesStore{scoped(db, model.Report{})}
+var (
+	_ SyncablesStore = (*syncablesStore)(nil)
+)
+
+type SyncablesStore interface {
+	BaseStore
+
+	FindByHeight(int64) (*model.Syncable, error)
+	FindMostRecent() (*model.Syncable, error)
+	FindSmallestIndexVersion() (*int64, error)
+	FindFirstByDifferentIndexVersion(int64) (*model.Syncable, error)
+	FindMostRecentByDifferentIndexVersion(int64) (*model.Syncable, error)
+	CreateOrUpdate(*model.Syncable) error
+	ResetProcessedAtForRange(int64, int64) error
 }
 
-// SyncablesStore handles operations on syncables
-type SyncablesStore struct {
+func NewSyncablesStore(db *gorm.DB) *syncablesStore {
+	return &syncablesStore{scoped(db, model.Report{})}
+}
+
+// syncablesStore handles operations on syncables
+type syncablesStore struct {
 	baseStore
 }
 
-// Exists returns true if a syncable exists at give height
-func (s SyncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
+// FindByHeight returns syncable by height
+func (s syncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
 	result := &model.Syncable{}
 
 	err = s.db.
@@ -28,7 +43,7 @@ func (s SyncablesStore) FindByHeight(height int64) (syncable *model.Syncable, er
 }
 
 // FindMostRecent returns the most recent syncable
-func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
+func (s syncablesStore) FindMostRecent() (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -38,8 +53,20 @@ func (s SyncablesStore) FindMostRecent() (*model.Syncable, error) {
 	return result, checkErr(err)
 }
 
+// FindSmallestIndexVersion returns smallest index version
+func (s syncablesStore) FindSmallestIndexVersion() (*int64, error) {
+	result := &model.Syncable{}
+
+	err := s.db.
+		Where("processed_at IS NOT NULL").
+		Order("index_version").
+		First(result).Error
+
+	return &result.IndexVersion, checkErr(err)
+}
+
 // FindFirstByDifferentIndexVersion returns first syncable with different index version
-func (s SyncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
+func (s syncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -51,7 +78,7 @@ func (s SyncablesStore) FindFirstByDifferentIndexVersion(indexVersion int64) (*m
 }
 
 // FindMostRecentByDifferentIndexVersion returns the most recent syncable with different index version
-func (s SyncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
+func (s syncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error) {
 	result := &model.Syncable{}
 
 	err := s.db.
@@ -63,7 +90,7 @@ func (s SyncablesStore) FindMostRecentByDifferentIndexVersion(indexVersion int64
 }
 
 // CreateOrUpdate creates a new syncable or updates an existing one
-func (s SyncablesStore) CreateOrUpdate(val *model.Syncable) error {
+func (s syncablesStore) CreateOrUpdate(val *model.Syncable) error {
 	existing, err := s.FindByHeight(val.Height)
 	if err != nil {
 		if err == ErrNotFound {
@@ -71,13 +98,16 @@ func (s SyncablesStore) CreateOrUpdate(val *model.Syncable) error {
 		}
 		return err
 	}
-	return s.Update(existing)
+
+	existing.Update(*val)
+
+	return s.Save(existing)
 }
 
-// CreateOrUpdate creates a new syncable or updates an existing one
-func (s SyncablesStore) SetProcessedAtForRange(reportID types.ID, startHeight int64, endHeight int64) error {
+// ResetProcessedAtForRange sets processed at to null for given range of heights
+func (s syncablesStore) ResetProcessedAtForRange( startHeight int64, endHeight int64) error {
 	err := s.db.
-		Exec("UPDATE syncables SET report_id = ?, processed_at = NULL WHERE height >= ? AND height <= ?", reportID, startHeight, endHeight).
+		Exec("UPDATE syncables SET processed_at = NULL WHERE height >= ? AND height <= ?", startHeight, endHeight).
 		Error
 
 	return checkErr(err)

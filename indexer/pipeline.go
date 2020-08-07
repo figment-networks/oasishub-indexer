@@ -15,6 +15,14 @@ import (
 
 const (
 	CtxReport = "context_report"
+
+	StageAnalyzer = "AnalyzerStage"
+)
+
+var (
+	ErrIsPristine          = errors.New("cannot run because database is empty")
+	ErrIndexCannotBeRun    = errors.New("cannot run index process")
+	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
 )
 
 type indexingPipeline struct {
@@ -22,88 +30,84 @@ type indexingPipeline struct {
 	db     *store.Store
 	client *client.Client
 
-	targetsReader *targetsReader
-	pipeline      *pipeline.Pipeline
+	pipeline     pipeline.DefaultPipeline
+	status       *pipelineStatus
+	configParser ConfigParser
 }
 
 func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
-	p := pipeline.New(NewPayloadFactory())
+	defaultPipeline := pipeline.NewDefault(NewPayloadFactory())
 
 	// Setup logger
-	p.SetLogger(NewLogger())
+	defaultPipeline.SetLogger(NewLogger())
 
 	// Setup stage
-	p.SetStage(
+	defaultPipeline.SetTasks(
 		pipeline.StageSetup,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
 	)
 
 	// Syncer stage
-	p.SetStage(
+	defaultPipeline.SetTasks(
 		pipeline.StageSyncer,
-		pipeline.SyncRunner(
-			pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
 	)
 
 	// Fetcher stage
-	p.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageFetcher,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
 	)
 
 	// Set parser stage
-	p.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageParser,
-		pipeline.AsyncRunner(
-			NewBlockParserTask(),
-			NewValidatorsParserTask(),
-		),
+		NewBlockParserTask(),
+		NewValidatorsParserTask(),
 	)
 
 	// Set sequencer stage
-	p.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageSequencer,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
 	)
 
 	// Set aggregator stage
-	p.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StageAggregator,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
 	)
+
+	// Add analyzer stage
+	defaultPipeline.AddStageBefore(pipeline.StagePersistor, pipeline.NewStageWithTasks(StageAnalyzer, NewSystemEventCreatorTask(cfg, db.ValidatorSeq)))
 
 	// Set persistor stage
-	p.SetStage(
+	defaultPipeline.SetAsyncTasks(
 		pipeline.StagePersistor,
-		pipeline.AsyncRunner(
-			pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
-			pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
-		),
+		pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
 	)
 
-	// Create targets reader
-	targetsReader, err := NewTargetsReader(cfg.IndexerTargetsFile)
+	configParser, err := NewConfigParser(cfg.IndexerConfigFile)
+	if err != nil {
+		return nil, err
+	}
+
+	statusChecker := pipelineStatusChecker{db.Syncables, configParser.GetCurrentVersionId()}
+	pipelineStatus, err := statusChecker.getStatus()
 	if err != nil {
 		return nil, err
 	}
@@ -113,130 +117,186 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		db:     db,
 		client: client,
 
-		pipeline:      p,
-		targetsReader: targetsReader,
+		pipeline:     defaultPipeline,
+		status:       pipelineStatus,
+		configParser: configParser,
 	}, nil
 }
 
-type StartConfig struct {
-	BatchSize       int64
-	StartHeight     int64
+type IndexConfig struct {
+	StartHeight int64
+	BatchSize   int64
 }
 
-func (p *indexingPipeline) Start(ctx context.Context, startCfg StartConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersion()
+// Index starts indexing process
+func (o *indexingPipeline) Index(ctx context.Context, indexCfg IndexConfig) error {
+	if err := o.canRunIndex(); err != nil {
+		return err
+	}
 
-	source, err := NewIndexSource(p.cfg, p.db, p.client, &IndexSourceConfig{
-		BatchSize:   startCfg.BatchSize,
-		StartHeight: startCfg.StartHeight,
-	})
+	currentIndexVersion := o.configParser.GetCurrentVersionId()
+
+	source, err := NewIndexSource(o.cfg, o.db, o.client, indexCfg.StartHeight, indexCfg.BatchSize)
 	if err != nil {
 		return err
 	}
 
-	sink := NewSink(p.db, indexVersion)
+	sink := NewSink(o.db, currentIndexVersion)
 
-	report, err := p.createReport(source.startHeight, source.endHeight, model.ReportKindIndex, indexVersion)
+	reportCreator := &reportCreator{
+		kind:         model.ReportKindIndex,
+		indexVersion: currentIndexVersion,
+		startHeight:  source.startHeight,
+		endHeight:    source.endHeight,
+		store:        o.db.Reports,
+	}
+
+	versionIds := o.configParser.GetAllVersionedVersionIds()
+	pipelineOptionsCreator := &pipelineOptionsCreator{
+		configParser: o.configParser,
+
+		desiredVersionIds: versionIds,
+	}
+	pipelineOptions, err := pipelineOptionsCreator.parse()
 	if err != nil {
 		return err
 	}
 
-	ctxWithReport := context.WithValue(ctx, CtxReport, report)
-
-	pipelineOptions, err := p.getPipelineOptions(false)
-	if err != nil {
+	if err := reportCreator.create(); err != nil {
 		return err
 	}
 
-	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d]", source.startHeight, source.endHeight))
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d] [options=%+v]", source.startHeight, source.endHeight, pipelineOptions))
 
-	err = p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
+	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
+	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
 		metric.IndexerTotalErrors.Inc()
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
 
-	err = p.completeReport(report, source.Len(), sink.successCount, err)
-
-	return err
-}
-
-type BackfillConfig struct {
-	Parallel  bool
-	Force     bool
-	TargetIds []int64
-}
-
-func (p *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
-	indexVersion := p.targetsReader.GetCurrentVersion()
-
-	source, err := NewBackfillSource(p.cfg, p.db, p.client, &BackfillSourceConfig{
-		indexVersion: indexVersion,
-	})
-	if err != nil {
-		return err
-	}
-
-	sink := NewSink(p.db, indexVersion)
-
-	kind := model.ReportKindSequentialReindex
-	if backfillCfg.Parallel {
-		kind = model.ReportKindParallelReindex
-	}
-
-	if backfillCfg.Force {
-		if err := p.db.Reports.DeleteReindexing(); err != nil {
-			return err
-		}
-	}
-
-	report, err := p.getReport(indexVersion, source, kind)
-	if err != nil {
-		return err
-	}
-
-	if err := p.db.Syncables.SetProcessedAtForRange(report.ID, source.startHeight, source.endHeight); err != nil {
-		return err
-	}
-
-	ctxWithReport := context.WithValue(ctx, CtxReport, report)
-
-	pipelineOptions, err := p.getPipelineOptions(false, backfillCfg.TargetIds...)
-	if err != nil {
-		return err
-	}
-
-	logger.Info(fmt.Sprintf("starting pipeline backfill [start=%d] [end=%d] [kind=%s]", source.startHeight, source.endHeight, kind))
-
-	if err := p.pipeline.Start(ctxWithReport, source, sink, pipelineOptions); err != nil {
-		return err
-	}
-
-	if err = p.completeReport(report, source.Len(), sink.successCount, err); err != nil {
-		return err
-	}
-
-	logger.Info("pipeline backfill completed")
+	err = reportCreator.complete(source.Len(), sink.successCount, err)
 
 	return nil
 }
 
-type RunConfig struct {
-	Height          int64
-	DesiredTargetID int64
-	Dry             bool
+func (o *indexingPipeline) canRunIndex() error {
+	if !o.status.isPristine && !o.status.isUpToDate {
+		if o.configParser.IsAnyVersionSequential(o.status.missingVersionIds) {
+			return ErrIndexCannotBeRun
+		}
+	}
+	return nil
 }
 
-func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
-	pipelineOptions, err := p.getPipelineOptions(runCfg.Dry, runCfg.DesiredTargetID)
+type BackfillConfig struct {
+	Parallel bool
+	Force    bool
+}
+
+// Backfill starts backfill process
+func (o *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillConfig) error {
+	if err := o.canRunBackfill(backfillCfg.Parallel); err != nil {
+		return err
+	}
+
+	currentIndexVersion := o.configParser.GetCurrentVersionId()
+	kind := model.ReportKindSequentialReindex
+
+	source, err := NewBackfillSource(o.cfg, o.db, o.client, currentIndexVersion)
+	if err != nil {
+		return err
+	}
+
+	sink := NewSink(o.db, currentIndexVersion)
+
+	if backfillCfg.Parallel {
+		kind = model.ReportKindParallelReindex
+	}
+	if backfillCfg.Force {
+		if err := o.db.Reports.DeleteByKinds([]model.ReportKind{model.ReportKindParallelReindex, model.ReportKindSequentialReindex}); err != nil {
+			return err
+		}
+	}
+
+	reportCreator := &reportCreator{
+		kind:         kind,
+		indexVersion: currentIndexVersion,
+		startHeight:  source.startHeight,
+		endHeight:    source.endHeight,
+		store:        o.db.Reports,
+	}
+
+	versionIds := o.status.missingVersionIds
+	pipelineOptionsCreator := &pipelineOptionsCreator{
+		configParser:      o.configParser,
+		desiredVersionIds: versionIds,
+	}
+	pipelineOptions, err := pipelineOptionsCreator.parse()
+	if err != nil {
+		return err
+	}
+
+	if err := o.db.Syncables.ResetProcessedAtForRange(source.startHeight, source.endHeight); err != nil {
+		return err
+	}
+
+	if err := reportCreator.createIfNotExists(model.ReportKindSequentialReindex, model.ReportKindParallelReindex); err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d] [options=%+v]", source.startHeight, source.endHeight, pipelineOptions))
+
+	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
+	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
+	if err != nil {
+		metric.IndexerTotalErrors.Inc()
+	}
+
+	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
+
+	err = reportCreator.complete(source.Len(), sink.successCount, err)
+
+	return nil
+}
+
+func (o *indexingPipeline) canRunBackfill(isParallel bool) error {
+	if o.status.isPristine {
+		return ErrIsPristine
+	}
+
+	if !o.status.isUpToDate {
+		if isParallel && o.configParser.IsAnyVersionSequential(o.status.missingVersionIds) {
+			return ErrBackfillCannotBeRun
+		}
+	}
+	return nil
+}
+
+type RunConfig struct {
+	Height           int64
+	DesiredVersionID int64
+	DesiredTargetID  int64
+	Dry              bool
+}
+
+// Run runs pipeline just for one height
+func (o *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
+	pipelineOptionsCreator := &pipelineOptionsCreator{
+		configParser:      o.configParser,
+		dry:               runCfg.Dry,
+		desiredVersionIds: []int64{runCfg.DesiredVersionID},
+		desiredTargetIds:  []int64{runCfg.DesiredTargetID},
+	}
+	pipelineOptions, err := pipelineOptionsCreator.parse()
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(fmt.Sprintf("running pipeline... [height=%d] [version=%d]", runCfg.Height, runCfg.DesiredTargetID))
 
-	runPayload, err := p.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
+	runPayload, err := o.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
 		metric.IndexerTotalErrors.Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
@@ -247,77 +307,6 @@ func (p *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	payload := runPayload.(*payload)
 	return payload, nil
-}
-
-func (p *indexingPipeline) getPipelineOptions(dry bool, targetIds ...int64) (*pipeline.Options, error) {
-	taskWhitelist, err := p.getTasksWhitelist(targetIds)
-	if err != nil {
-		return nil, err
-	}
-
-	return &pipeline.Options{
-		TaskWhitelist:   taskWhitelist,
-		StagesBlacklist: p.getStagesBlacklist(dry),
-	}, nil
-}
-
-func (p *indexingPipeline) getTasksWhitelist(targetIds []int64) ([]pipeline.TaskName, error) {
-	var taskWhitelist []pipeline.TaskName
-	var err error
-	if len(targetIds) == 0 {
-		taskWhitelist = p.targetsReader.GetAllTasks()
-	} else if len(targetIds) == 1 {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetId(targetIds[0])
-	} else {
-		taskWhitelist, err = p.targetsReader.GetTasksByTargetIds(targetIds)
-	}
-	return taskWhitelist, err
-}
-
-func (p *indexingPipeline) getStagesBlacklist(dry bool) []pipeline.StageName {
-	var stagesBlacklist []pipeline.StageName
-	if dry {
-		stagesBlacklist = append(stagesBlacklist, pipeline.StagePersistor)
-	}
-	return stagesBlacklist
-}
-
-func (p *indexingPipeline) getReport(indexVersion int64, source *backfillSource, kind model.ReportKind) (*model.Report, error) {
-	report, err := p.db.Reports.FindNotCompletedByIndexVersion(indexVersion, model.ReportKindSequentialReindex, model.ReportKindParallelReindex)
-	if err != nil {
-		if err == store.ErrNotFound {
-			report, err = p.createReport(source.startHeight, source.endHeight, kind, indexVersion)
-			if err != nil {
-				return nil, err
-			}
-		} else {
-			return nil, err
-		}
-	} else {
-		if report.Kind != kind {
-			return nil, errors.New(fmt.Sprintf("there is already reindexing in process [kind=%s] (use -force flag to override it)", report.Kind))
-		}
-	}
-	return report, nil
-}
-
-func (p *indexingPipeline) createReport(startHeight int64, endHeight int64, kind model.ReportKind, indexVersion int64) (*model.Report, error) {
-	report := &model.Report{
-		Kind:         kind,
-		IndexVersion: indexVersion,
-		StartHeight:  startHeight,
-		EndHeight:    endHeight,
-	}
-	if err := p.db.Reports.Create(report); err != nil {
-		return nil, err
-	}
-	return report, nil
-}
-
-func (p *indexingPipeline) completeReport(report *model.Report, totalCount int64, successCount int64, err error) error {
-	report.Complete(successCount, totalCount-successCount, err)
-
-	return p.db.Reports.Save(report)
 }
 
 func isTransient(error) bool {

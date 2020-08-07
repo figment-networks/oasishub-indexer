@@ -43,6 +43,14 @@ func (s *Syncable) SetStatus(newStatus SyncableStatus) {
 	s.Status = newStatus
 }
 
+func (s *Syncable) Update(m Syncable) {
+	s.AppVersion = m.AppVersion
+	s.BlockVersion = m.BlockVersion
+	s.IndexVersion = m.IndexVersion
+	s.ReportID = m.ReportID
+	s.StartedAt = m.StartedAt
+}
+
 func (s *Syncable) MarkProcessed(indexVersion int64) {
 	t := types.NewTimeFromTime(time.Now())
 	duration := time.Since(s.StartedAt.Time)

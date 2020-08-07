@@ -11,20 +11,20 @@ import (
 
 func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdHandlers {
 	return &CmdHandlers{
-		StartIndexer:       indexing.NewStartCmdHandler(cfg, db, c),
-		BackfillIndexer:    indexing.NewBackfillCmdHandler(cfg, db, c),
-		PurgeIndexer:       indexing.NewPurgeCmdHandler(cfg, db, c),
-		SummarizeIndexer:   indexing.NewSummarizeCmdHandler(cfg, db, c),
 		GetStatus:          chain.NewGetStatusCmdHandler(db, c),
+		IndexerIndex:       indexing.NewIndexCmdHandler(cfg, db, c),
+		IndexerBackfill:    indexing.NewBackfillCmdHandler(cfg, db, c),
+		IndexerPurge:       indexing.NewPurgeCmdHandler(cfg, db, c),
+		IndexerSummarize:   indexing.NewSummarizeCmdHandler(cfg, db, c),
 		DecorateValidators: validator.NewDecorateCmdHandler(cfg, db, c),
 	}
 }
 
 type CmdHandlers struct {
-	StartIndexer       *indexing.StartCmdHandler
-	BackfillIndexer    *indexing.BackfillCmdHandler
-	PurgeIndexer       *indexing.PurgeCmdHandler
-	SummarizeIndexer   *indexing.SummarizeCmdHandler
 	GetStatus          *chain.GetStatusCmdHandler
+	IndexerIndex       *indexing.IndexCmdHandler
+	IndexerBackfill    *indexing.BackfillCmdHandler
+	IndexerPurge       *indexing.PurgeCmdHandler
+	IndexerSummarize   *indexing.SummarizeCmdHandler
 	DecorateValidators *validator.DecorateCmdHandler
 }

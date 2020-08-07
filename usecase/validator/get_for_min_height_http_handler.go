@@ -53,7 +53,7 @@ func (h *getForMinHeightHttpHandler) Handle(c *gin.Context) {
 
 func (h *getForMinHeightHttpHandler) getUseCase() *getForMinHeightUseCase {
 	if h.useCase == nil {
-		return NewGetForMinHeightUseCase(h.db)
+		h.useCase = NewGetForMinHeightUseCase(h.db)
 	}
 	return h.useCase
 }

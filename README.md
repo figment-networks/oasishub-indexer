@@ -64,12 +64,9 @@ data to the format indexer understands.
 * `INDEXER_METRIC_ADDR` - Prometheus server address for indexer metrics 
 * `SERVER_METRIC_ADDR` - Prometheus server address for server metrics 
 * `METRIC_SERVER_URL` - Url at which metrics will be accessible (for both indexer and server)
-* `PURGE_BLOCK_INTERVAL` - Block sequence older than given interval will be purged
-* `PURGE_BLOCK_HOURLY_SUMMARY_INTERVAL` - Block hourly summary records older than given interval will be purged
-* `PURGE_BLOCK_DAILY_SUMMARY_INTERVAL` - Block daily summary records older than given interval will be purged
-* `PURGE_VALIDATOR_INTERVAL` - Validator sequence older than given interval will be purged
-* `PURGE_VALIDATOR_HOURLY_SUMMARY_INTERVAL` - Validator hourly summary records older than given interval will be purged
-* `PURGE_VALIDATOR_DAILY_SUMMARY_INTERVAL` - Validator daily summary records older than given interval will be purged
+* `PURGE_SEQUENCES_INTERVAL` - Sequence older than given interval will be purged _[DEFAULT: 24h]_
+* `PURGE_SYSTE_EVENTS_INTERVAL` - System events older than given interval will be purged _[DEFAULT: 24h]_
+* `PURGE_HOURLY_SUMMARY_INTERVAL` - Hourly summaries records older than given interval will be purged _[DEFAULT: 24h]_
 * `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
 
 ### Available endpoints:
@@ -78,18 +75,19 @@ data to the format indexer understands.
 |--------|------------------------------------|-------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | GET    | `/health`                            | health endpoint                                             | -                                                                                                                                                     |
 | GET    | `/status`                            | status of the application and chain                         | -                                                                                                                                                     |
-| GET    | `/block`                             | return block by height                                      | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/block_times/:limit`                | get last x block times                                      | limit (required) - limit of blocks                                                                                                                    |
-| GET    | `/blocks_summary`                    | get block summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]                                               |
-| GET    | `/transactions`                      | get list of transactions                                    | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/validators`                        | get list of validators                                      | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/staking`                           | get staking details                                         | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/delegations`                       | get delegations                                             | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/debonding_delegations`             | get debonding delegations                                   | height (optional) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/account/:address`                  | get account details                                         | address (required) - address of account height (optional) - height [Default: 0 = last]                                                          |
-| GET    | `/validators/for_min_height/:height` | get the list of validators for height greater than provided | height (required) - height [Default: 0 = last]                                                                                                        |
-| GET    | `/validator/:address`                | get validator by address                                 | address (required) - validator's address    sequences_limit (optional) - number of sequences to include                                                                                                      |
-| GET    | `/validators_summary`                | validator summary                                           | interval (required) - time interval [hourly or daily] period (required) - summary period [ie. 24 hours]  address (optional) - address of entity |
+| GET    | `/block`                             | return block by height                                      | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/block_times/:limit`                | get last x block times                                      | `limit (required)` - limit of blocks                                                                                                                    |
+| GET    | `/blocks_summary`                    | get block summary                                           | `interval (required)` - time interval [hourly or daily] `period (required)` - summary period [ie. 24 hours]                                               |
+| GET    | `/transactions`                      | get list of transactions                                    | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/staking`                           | get staking details                                         | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/delegations`                       | get delegations                                             | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/debonding_delegations`             | get debonding delegations                                   | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/account/:address`                  | get account details                                         | `address (required)` - address of account `height (optional)` - height [Default: 0 = last]                                                          |
+| GET    | `/validators`                        | get list of validators                                      | `height (optional)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/validators/for_min_height/:height` | get the list of validators for height greater than provided | `height (required)` - height [Default: 0 = last]                                                                                                        |
+| GET    | `/validator/:address`                | get validator by address                                    | `address (required)` - validator's address    `sequences_limit (optional)` - number of sequences to include                                                                                                      |
+| GET    | `/validators_summary`                | validator summary                                           | `interval (required)` - time interval [hourly or daily] `period (required)` - summary period [ie. 24 hours]  `address (optional)` - address of entity |
+| GET    | `/system_events/:address`            | system events for given actor                               | `address (required)` - address of account `after (optional)` - return events after with height greater than provided height  `kind (optional)` - system event kind |
 
 ### Running app
 
@@ -116,19 +114,29 @@ IMPORTANT!!! Make sure that you have oasishub-proxy running and connected to Oas
 
 ### Running one-off commands
 
-Start indexer:
+Start indexing process:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_start
+oasishub-indexer -config path/to/config.json -cmd=indexer:index
+```
+
+Start backfill process:
+```bash
+oasishub-indexer -config path/to/config.json -cmd=indexer:backfill
 ```
 
 Create summary tables for sequences:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_summarize
+oasishub-indexer -config path/to/config.json -cmd=indexer:summarize
 ```
 
 Purge old data:
 ```bash
-oasishub-indexer -config path/to/config.json -cmd=indexer_purge
+oasishub-indexer -config path/to/config.json -cmd=indexer:purge
+```
+
+Decorate validator aggregates:
+```bash
+oasishub-indexer -config path/to/config.json -cmd=validators:decorate -file=/file/to/csv
 ```
 
 ### Running tests

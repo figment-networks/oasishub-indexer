@@ -68,7 +68,7 @@ func (h *getBlockSummaryHttpHandler) validateParams(c *gin.Context) (*GetBlockTi
 
 func (h *getBlockSummaryHttpHandler) getUseCase() *getBlockSummaryUseCase {
 	if h.useCase == nil {
-		return NewGetBlockSummaryUseCase(h.db)
+		h.useCase = NewGetBlockSummaryUseCase(h.db)
 	}
 	return h.useCase
 }

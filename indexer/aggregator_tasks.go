@@ -155,12 +155,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					EntityUID:               rawValidator.GetNode().GetEntityId(),
 					RecentTendermintAddress: rawValidator.GetTendermintAddress(),
 					RecentVotingPower:       rawValidator.GetVotingPower(),
+					RecentCommission:        types.NewQuantityFromBytes(rawValidator.GetCommission()),
 					RecentAsValidatorHeight: payload.Syncable.Height,
 				}
 
 				parsedValidator, ok := payload.ParsedValidators[address]
 				if ok {
 					validator.RecentTotalShares = parsedValidator.TotalShares
+					validator.RecentActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
 
 					if parsedValidator.PrecommitBlockIdFlag == 1 {
 						// Not validated
@@ -196,12 +198,14 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 
 				RecentTendermintAddress: rawValidator.GetAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
+				RecentCommission:        types.NewQuantityFromBytes(rawValidator.GetCommission()),
 				RecentAsValidatorHeight: payload.Syncable.Height,
 			}
 
 			parsedValidator, ok := payload.ParsedValidators[address]
 			if ok {
 				validator.RecentTotalShares = parsedValidator.TotalShares
+				validator.RecentActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
 
 				if parsedValidator.PrecommitBlockIdFlag == 1 {
 					// Not validated

@@ -69,7 +69,7 @@ func (h *getSummaryHttpHandler) validateParams(c *gin.Context) (*GetSummaryReque
 
 func (h *getSummaryHttpHandler) getUseCase() *getSummaryUseCase {
 	if h.useCase == nil {
-		return NewGetSummaryUseCase(h.db)
+		h.useCase = NewGetSummaryUseCase(h.db)
 	}
 	return h.useCase
 }

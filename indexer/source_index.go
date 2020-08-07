@@ -15,18 +15,16 @@ var (
 	ErrNothingToProcess = errors.New("nothing to process")
 )
 
-type IndexSourceConfig struct {
-	BatchSize      int64
-	StartHeight    int64
-}
-
-func NewIndexSource(cfg *config.Config, db *store.Store, client *client.Client, sourceCfg *IndexSourceConfig) (*indexSource, error) {
+func NewIndexSource(cfg *config.Config, db *store.Store, client *client.Client, startHeight int64, batchSize int64) (*indexSource, error) {
 	src := &indexSource{
 		cfg:    cfg,
 		db:     db,
 		client: client,
 
-		sourceCfg: sourceCfg,
+		batchSize:     batchSize,
+
+		startHeight:   startHeight,
+		currentHeight: startHeight,
 	}
 	if err := src.init(); err != nil {
 		return nil, err
@@ -35,14 +33,14 @@ func NewIndexSource(cfg *config.Config, db *store.Store, client *client.Client, 
 }
 
 type indexSource struct {
-	cfg           *config.Config
-	db            *store.Store
-	client        *client.Client
+	cfg    *config.Config
+	db     *store.Store
+	client *client.Client
 
-	sourceCfg *IndexSourceConfig
+	batchSize int64
 
-	currentHeight int64
 	startHeight   int64
+	currentHeight int64
 	endHeight     int64
 	err           error
 }
@@ -81,11 +79,8 @@ func (s *indexSource) init() error {
 }
 
 func (s *indexSource) setStartHeight() error {
-	var startH int64
-
-	if s.sourceCfg.StartHeight > 0 {
-		startH = s.sourceCfg.StartHeight
-	} else {
+	if s.startHeight == 0 {
+		var startH int64
 		syncable, err := s.db.Syncables.FindMostRecent()
 		if err != nil {
 			if err != store.ErrNotFound {
@@ -101,11 +96,9 @@ func (s *indexSource) setStartHeight() error {
 				startH = syncable.Height + 1
 			}
 		}
+		s.currentHeight = startH
+		s.startHeight = startH
 	}
-
-	s.currentHeight = startH
-	s.startHeight = startH
-
 	return nil
 }
 
@@ -116,8 +109,8 @@ func (s *indexSource) setEndHeight() error {
 	}
 	endH := syncableFromNode.GetHeight()
 
-	if s.sourceCfg.BatchSize > 0 && endH-s.startHeight > s.sourceCfg.BatchSize {
-		endOfBatch := (s.startHeight + s.sourceCfg.BatchSize) - 1
+	if s.batchSize > 0 && endH-s.startHeight > s.batchSize {
+		endOfBatch := (s.startHeight + s.batchSize) - 1
 		endH = endOfBatch
 	}
 
@@ -127,7 +120,7 @@ func (s *indexSource) setEndHeight() error {
 
 func (s *indexSource) validate() error {
 	blocksToSyncCount := s.endHeight - s.startHeight
-	if blocksToSyncCount == 0 && s.sourceCfg.BatchSize != 1 {
+	if blocksToSyncCount == 0 && s.batchSize != 1 {
 		return ErrNothingToProcess
 	}
 	return nil

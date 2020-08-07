@@ -9,23 +9,23 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
-type StartCmdHandler struct {
+type IndexCmdHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *startUseCase
+	useCase *indexUseCase
 }
 
-func NewStartCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *StartCmdHandler {
-	return &StartCmdHandler{
+func NewIndexCmdHandler(cfg *config.Config, db *store.Store, c *client.Client) *IndexCmdHandler {
+	return &IndexCmdHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *StartCmdHandler) Handle(ctx context.Context, batchSize int64) {
+func (h *IndexCmdHandler) Handle(ctx context.Context, batchSize int64) {
 	logger.Info(fmt.Sprintf("running indexer use case [handler=cmd] [batchSize=%d]", batchSize))
 
 	err := h.getUseCase().Execute(ctx, batchSize)
@@ -35,9 +35,9 @@ func (h *StartCmdHandler) Handle(ctx context.Context, batchSize int64) {
 	}
 }
 
-func (h *StartCmdHandler) getUseCase() *startUseCase {
+func (h *IndexCmdHandler) getUseCase() *indexUseCase {
 	if h.useCase == nil {
-		return NewStartUseCase(h.cfg, h.db, h.client)
+		h.useCase = NewIndexUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

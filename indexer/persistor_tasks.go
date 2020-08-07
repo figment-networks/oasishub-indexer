@@ -15,6 +15,7 @@ const (
 	BlockSeqPersistorTaskName     = "BlockSeqPersistor"
 	ValidatorSeqPersistorTaskName = "ValidatorSeqPersistor"
 	ValidatorAggPersistorTaskName = "ValidatorAggPersistor"
+	SystemEventPersistorTaskName  = "SystemEventPersistor"
 )
 
 func NewSyncerPersistorTask(db *store.Store) pipeline.Task {
@@ -138,6 +139,36 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 
 	for _, aggregate := range payload.UpdatedAggregatedValidators {
 		if err := t.db.ValidatorAgg.Save(&aggregate); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func NewSystemEventPersistorTask(db *store.Store) pipeline.Task {
+	return &systemEventPersistorTask{
+		db: db,
+	}
+}
+
+type systemEventPersistorTask struct {
+	db *store.Store
+}
+
+func (t *systemEventPersistorTask) GetName() string {
+	return SystemEventPersistorTaskName
+}
+
+func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	for _, systemEvent := range payload.SystemEvents{
+		if err := t.db.SystemEvents.CreateOrUpdate(systemEvent); err != nil {
 			return err
 		}
 	}

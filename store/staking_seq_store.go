@@ -6,43 +6,42 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewStakingSeqStore(db *gorm.DB) *StakingSeqStore {
-	return &StakingSeqStore{scoped(db, model.StakingSeq{})}
+var (
+	_ StakingSeqStore = (*stakingSeqStore)(nil)
+)
+
+type StakingSeqStore interface {
+	BaseStore
+
+	FindBy(key string, value interface{}) (*model.StakingSeq, error)
+	FindByHeight(height int64) (*model.StakingSeq, error)
+	Recent() (*model.StakingSeq, error)
 }
 
-// StakingSeqStore handles operations on staking
-type StakingSeqStore struct {
+
+func NewStakingSeqStore(db *gorm.DB) *stakingSeqStore {
+	return &stakingSeqStore{scoped(db, model.StakingSeq{})}
+}
+
+// stakingSeqStore handles operations on staking
+type stakingSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the staking if it does not exist
-func (s StakingSeqStore) CreateIfNotExists(staking *model.StakingSeq) error {
-	_, err := s.FindByHeight(staking.Height)
-	if isNotFound(err) {
-		return s.Create(staking)
-	}
-	return nil
-}
-
 // FindBy returns a staking for a matching attribute
-func (s StakingSeqStore) FindBy(key string, value interface{}) (*model.StakingSeq, error) {
+func (s stakingSeqStore) FindBy(key string, value interface{}) (*model.StakingSeq, error) {
 	result := &model.StakingSeq{}
 	err := findBy(s.db, result, key, value)
 	return result, checkErr(err)
 }
 
-// FindByID returns a staking with matching ID
-func (s StakingSeqStore) FindByID(id int64) (*model.StakingSeq, error) {
-	return s.FindBy("id", id)
-}
-
 // FindByHeight returns a staking with the matching height
-func (s StakingSeqStore) FindByHeight(height int64) (*model.StakingSeq, error) {
+func (s stakingSeqStore) FindByHeight(height int64) (*model.StakingSeq, error) {
 	return s.FindBy("height", height)
 }
 
 // Recent returns the most recent staking
-func (s StakingSeqStore) Recent() (*model.StakingSeq, error) {
+func (s stakingSeqStore) Recent() (*model.StakingSeq, error) {
 	staking := &model.StakingSeq{}
 
 	err := s.db.
@@ -52,3 +51,4 @@ func (s StakingSeqStore) Recent() (*model.StakingSeq, error) {
 
 	return staking, checkErr(err)
 }
+
