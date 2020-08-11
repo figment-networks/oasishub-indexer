@@ -21,8 +21,6 @@ import (
 type accountLedger map[string]*accountpb.Account
 
 func TestAccountAggCreatorTask_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description string
 		new         accountLedger
@@ -85,7 +83,11 @@ func TestAccountAggCreatorTask_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // need to set this since running tests in parallel
+
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -147,7 +149,6 @@ func TestAccountAggCreatorTask_Run(t *testing.T) {
 }
 
 func TestValidatorAggCreatorTask_Run(t *testing.T) {
-	setup()
 	plTime := *types.NewTimeFromTime(time.Now())
 	const syncHeight int64 = 17
 	const currHeight int64 = 64

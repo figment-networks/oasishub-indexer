@@ -20,8 +20,6 @@ import (
 )
 
 func TestBlockSeqCreator_Run(t *testing.T) {
-	setup()
-
 	var currHeight int64 = 20
 	var pHeight int64 = 18
 	var extHeight int64 = 20
@@ -154,7 +152,6 @@ func TestBlockSeqCreator_Run(t *testing.T) {
 }
 
 func TestValidatorSeqCreator_Run(t *testing.T) {
-	setup()
 	isTrue := true
 	const currHeight int64 = 20
 	const pHeight int64 = 18
@@ -356,7 +353,6 @@ func TestValidatorSeqCreator_Run(t *testing.T) {
 }
 
 func TestStakingSeqCreator_Run(t *testing.T) {
-	setup()
 	var currHeight int64 = 20
 
 	sync := &model.Syncable{
@@ -489,7 +485,6 @@ func TestStakingSeqCreator_Run(t *testing.T) {
 }
 
 func TestTransactionSeqCreator_Run(t *testing.T) {
-	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -632,7 +627,6 @@ func TestTransactionSeqCreator_Run(t *testing.T) {
 }
 
 func TestDelegationSeqCreator_Run(t *testing.T) {
-	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -793,7 +787,6 @@ func TestDelegationSeqCreator_Run(t *testing.T) {
 }
 
 func TestDebondingDelegationSeqCreator_Run(t *testing.T) {
-	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -885,7 +878,9 @@ func TestDebondingDelegationSeqCreator_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // need to set this since running tests in parallel
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 			mockDb := mock.NewMockDebondingDelegationSeqCreatorTaskStore(ctrl)

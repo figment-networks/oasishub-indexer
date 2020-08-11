@@ -15,8 +15,6 @@ import (
 )
 
 func TestBlockFetcher_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description   string
 		expectedBlock *blockpb.Block
@@ -57,8 +55,6 @@ func TestBlockFetcher_Run(t *testing.T) {
 }
 
 func TestStateFetcher_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description   string
 		expectedState *statepb.State
@@ -99,8 +95,6 @@ func TestStateFetcher_Run(t *testing.T) {
 }
 
 func TestStakingStateFetcher_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description     string
 		expectedStaking *statepb.Staking
@@ -141,8 +135,6 @@ func TestStakingStateFetcher_Run(t *testing.T) {
 }
 
 func TestValidatorFetcher_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description        string
 		expectedValidators []*validatorpb.Validator
@@ -193,8 +185,6 @@ func TestValidatorFetcher_Run(t *testing.T) {
 }
 
 func TestTransactionFetcher_Run(t *testing.T) {
-	setup()
-
 	tests := []struct {
 		description          string
 		expectedTransactions []*transactionpb.Transaction

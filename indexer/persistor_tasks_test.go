@@ -13,8 +13,6 @@ import (
 )
 
 func TestSyncerPersistor_Run(t *testing.T) {
-	setup()
-
 	sync := &model.Syncable{
 		Height: 20,
 		Time:   *types.NewTimeFromTime(time.Now()),
@@ -52,8 +50,6 @@ func TestSyncerPersistor_Run(t *testing.T) {
 }
 
 func TestBlockSeqPersistor_Run(t *testing.T) {
-	setup()
-
 	seq := &model.BlockSeq{
 		Sequence: &model.Sequence{
 			Height: 20,
@@ -114,8 +110,6 @@ func TestBlockSeqPersistor_Run(t *testing.T) {
 }
 
 func TestValidatorSeqPersistor_Run(t *testing.T) {
-	setup()
-
 	newValidatorSeq := func() model.ValidatorSeq {
 		return model.ValidatorSeq{
 			Sequence: &model.Sequence{
@@ -193,8 +187,6 @@ func TestValidatorSeqPersistor_Run(t *testing.T) {
 }
 
 func TestValidatorAggPersistor_Run(t *testing.T) {
-	setup()
-
 	newValidatorAgg := func() model.ValidatorAgg {
 		return model.ValidatorAgg{
 			Aggregate: &model.Aggregate{

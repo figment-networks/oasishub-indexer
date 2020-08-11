@@ -18,8 +18,6 @@ func TestSource_NewBackfillSource(t *testing.T) {
 	const startH int64 = 0
 	const endH int64 = startH + 5
 
-	setup()
-
 	tests := []struct {
 		description string
 		dbErr       error

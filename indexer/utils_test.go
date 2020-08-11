@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"math/rand"
 	"testing"
-	"time"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/debondingdelegation/debondingdelegationpb"
@@ -15,7 +14,6 @@ import (
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	"github.com/golang/protobuf/ptypes"
 
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
 )
 
@@ -27,11 +25,6 @@ var (
 
 	letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
-
-func setup() {
-	rand.Seed(time.Now().UnixNano())
-	logger.InitTest()
-}
 
 func randString(n int) string {
 	b := make([]rune, n)

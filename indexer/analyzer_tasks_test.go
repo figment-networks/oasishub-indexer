@@ -35,8 +35,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
-		setup()
-
 		MaxValidatorSequences = 10
 		MissedInRowThreshold = 5
 		MissedForMaxThreshold = 5
@@ -94,8 +92,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
-		setup()
-
 		payload := testPayload()
 
 		validatorSeqStoreMock.EXPECT().FindByHeight(gomock.Any()).Return(nil, ErrValidatorSeqFindByHeight).Times(1)
@@ -112,8 +108,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		defer ctrl.Finish()
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
-
-		setup()
 
 		lastValidatorSeqsForValidator1 := []model.ValidatorSeq{
 			newValidatorSeq(testValidatorAddress, 1000, 0, false),
@@ -143,8 +137,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		defer ctrl.Finish()
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
-
-		setup()
 
 		prevHeightValidatorSequences := []model.ValidatorSeq{
 			newValidatorSeq(testValidatorAddress, 1000, 0, true),
@@ -198,8 +190,6 @@ func TestSystemEventCreatorTask_getValueChangeSystemEvents(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
-			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
@@ -292,8 +282,6 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
-			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
@@ -595,8 +583,6 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
-			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 

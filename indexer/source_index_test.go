@@ -23,8 +23,6 @@ func TestSource_NewIndexSource(t *testing.T) {
 	const zerostartH int64 = 0
 	const endH int64 = zerostartH + 5
 
-	setup()
-
 	tests := []struct {
 		description string
 		startHeight int64
@@ -114,7 +112,9 @@ func TestSource_NewIndexSource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // need to set this since running tests in parallel
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 
 			clientMock := mock_client.NewMockChainClient(ctrl)

@@ -16,7 +16,6 @@ import (
 )
 
 func TestSyncer_Run(t *testing.T) {
-	setup()
 	const testReportID types.ID = 64
 	dbErr := errors.New("dberr")
 

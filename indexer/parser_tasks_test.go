@@ -13,7 +13,6 @@ import (
 )
 
 func TestBlockParserTask_Run(t *testing.T) {
-	setup()
 	proposerAddr := "proposerAddr"
 	proposerKey := "proposerKey"
 
@@ -67,7 +66,9 @@ func TestBlockParserTask_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt // need to set this since running tests in parallel
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 
 			task := NewBlockParserTask()
@@ -97,7 +98,6 @@ func TestBlockParserTask_Run(t *testing.T) {
 }
 
 func TestValidatorParserTask_Run(t *testing.T) {
-	setup()
 	proposerAddr := "proposerAddr"
 	isFalse := false
 	isTrue := true
