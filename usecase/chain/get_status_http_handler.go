@@ -40,7 +40,7 @@ func (h *getStatusHttpHandler) Handle(c *gin.Context) {
 
 func (h *getStatusHttpHandler) getUseCase() *getStatusUseCase {
 	if h.useCase == nil {
-		return NewGetStatusUseCase(h.db, h.client)
+		h.useCase = NewGetStatusUseCase(h.db, h.client)
 	}
 	return h.useCase
 }

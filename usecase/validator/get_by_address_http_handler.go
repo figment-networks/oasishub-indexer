@@ -60,7 +60,7 @@ func (h *getByAddressHttpHandler) Handle(c *gin.Context) {
 
 func (h *getByAddressHttpHandler) getUseCase() *getByAddressUseCase {
 	if h.useCase == nil {
-		return NewGetByAddressUseCase(h.db)
+		h.useCase = NewGetByAddressUseCase(h.db)
 	}
 	return h.useCase
 }

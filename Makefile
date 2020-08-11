@@ -1,9 +1,16 @@
-.PHONY: build test docker docker-build docker-push
+.PHONY: mockgen build test docker docker-build docker-push
 
 GIT_COMMIT   ?= $(shell git rev-parse HEAD)
 GO_VERSION   ?= $(shell go version | awk {'print $$3'})
 DOCKER_IMAGE ?= figmentnetworks/oasishub-indexer
 DOCKER_TAG   ?= latest
+
+# Generate mocks
+mockgen:
+	@echo "[mockgen] generating mocks"
+	@mockgen -destination mock/store/mocks.go github.com/figment-networks/oasishub-indexer/store DatabaseStore,SyncablesStore,ReportsStore,SystemEventsStore,BlockSeqStore,DebondingDelegationSeqStore,DelegationSeqStore,StakingSeqStore,TransactionSeqStore,ValidatorSeqStore,BlockSummaryStore,ValidatorSummaryStore,AccountAggStore,ValidatorAggStore
+	@mockgen -destination mock/indexer/mocks.go github.com/figment-networks/oasishub-indexer/indexer ConfigParser,SystemEventCreatorStore
+	@mockgen -destination mock/client/mocks.go github.com/figment-networks/oasishub-indexer/client AccountClient,BlockClient,ChainClient,StateClient,TransactionClient,ValidatorClient
 
 # Build the binary
 build:

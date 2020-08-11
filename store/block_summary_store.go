@@ -8,17 +8,31 @@ import (
 	"time"
 )
 
-func NewBlockSummaryStore(db *gorm.DB) *BlockSummaryStore {
-	return &BlockSummaryStore{scoped(db, model.BlockSummary{})}
+var (
+	_ BlockSummaryStore = (*blockSummaryStore)(nil)
+)
+
+type BlockSummaryStore interface {
+	BaseStore
+
+	Find(*model.BlockSummary) (*model.BlockSummary, error)
+	FindMostRecentByInterval(types.SummaryInterval) (*model.BlockSummary, error)
+	FindActivityPeriods(types.SummaryInterval, int64) ([]ActivityPeriodRow, error)
+	FindSummary(types.SummaryInterval,string) ([]model.BlockSummary, error)
+	DeleteOlderThan(types.SummaryInterval, time.Time) (*int64, error)
 }
 
-// BlockSummaryStore handles operations on block summary
-type BlockSummaryStore struct {
+func NewBlockSummaryStore(db *gorm.DB) *blockSummaryStore {
+	return &blockSummaryStore{scoped(db, model.BlockSummary{})}
+}
+
+// blockSummaryStore handles operations on block summary
+type blockSummaryStore struct {
 	baseStore
 }
 
 // Find find block summary by query
-func (s BlockSummaryStore) Find(query *model.BlockSummary) (*model.BlockSummary, error) {
+func (s blockSummaryStore) Find(query *model.BlockSummary) (*model.BlockSummary, error) {
 	var result model.BlockSummary
 
 	err := s.db.
@@ -29,15 +43,8 @@ func (s BlockSummaryStore) Find(query *model.BlockSummary) (*model.BlockSummary,
 	return &result, checkErr(err)
 }
 
-// FindMostRecent finds most recent block summary
-func (s *BlockSummaryStore) FindMostRecent() (*model.BlockSummary, error) {
-	blockSummary := &model.BlockSummary{}
-	err := findMostRecent(s.db, "time_bucket", blockSummary)
-	return blockSummary, checkErr(err)
-}
-
 // FindMostRecentByInterval finds most recent block summary for given time interval
-func (s *BlockSummaryStore) FindMostRecentByInterval(interval types.SummaryInterval) (*model.BlockSummary, error) {
+func (s *blockSummaryStore) FindMostRecentByInterval(interval types.SummaryInterval) (*model.BlockSummary, error) {
 	query := &model.BlockSummary{
 		Summary: &model.Summary{TimeInterval: interval},
 	}
@@ -59,7 +66,7 @@ type ActivityPeriodRow struct {
 }
 
 // FindActivityPeriods Finds activity periods
-func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+func (s *blockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
 	defer logQueryDuration(time.Now(), "BlockSummaryStore_FindActivityPeriods")
 
 	rows, err := s.db.
@@ -83,7 +90,7 @@ func (s *BlockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, 
 }
 
 // FindSummary Gets summary of block sequences
-func (s *BlockSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
+func (s *blockSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]model.BlockSummary, error) {
 	defer logQueryDuration(time.Now(), "BlockSummaryStore_FindSummary")
 
 	rows, err := s.db.
@@ -107,7 +114,7 @@ func (s *BlockSummaryStore) FindSummary(interval types.SummaryInterval, period s
 }
 
 // DeleteOlderThan deletes block summary records older than given threshold
-func (s *BlockSummaryStore) DeleteOlderThan(interval types.SummaryInterval, purgeThreshold time.Time) (*int64, error) {
+func (s *blockSummaryStore) DeleteOlderThan(interval types.SummaryInterval, purgeThreshold time.Time) (*int64, error) {
 	res := s.db.
 		Unscoped().
 		Where("time_interval = ? AND time_bucket < ?", interval, purgeThreshold).

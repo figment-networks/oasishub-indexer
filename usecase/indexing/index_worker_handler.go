@@ -11,26 +11,26 @@ import (
 )
 
 var (
-	_ types.WorkerHandler = (*runWorkerHandler)(nil)
+	_ types.WorkerHandler = (*indexWorkerHandler)(nil)
 )
 
-type runWorkerHandler struct {
+type indexWorkerHandler struct {
 	cfg    *config.Config
 	db     *store.Store
 	client *client.Client
 
-	useCase *startUseCase
+	useCase *indexUseCase
 }
 
-func NewRunWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *runWorkerHandler {
-	return &runWorkerHandler{
+func NewIndexWorkerHandler(cfg *config.Config, db *store.Store, c *client.Client) *indexWorkerHandler {
+	return &indexWorkerHandler{
 		cfg:    cfg,
 		db:     db,
 		client: c,
 	}
 }
 
-func (h *runWorkerHandler) Handle() {
+func (h *indexWorkerHandler) Handle() {
 	batchSize := h.cfg.DefaultBatchSize
 	ctx := context.Background()
 
@@ -43,9 +43,9 @@ func (h *runWorkerHandler) Handle() {
 	}
 }
 
-func (h *runWorkerHandler) getUseCase() *startUseCase {
+func (h *indexWorkerHandler) getUseCase() *indexUseCase {
 	if h.useCase == nil {
-		return NewStartUseCase(h.cfg, h.db, h.client)
+		h.useCase = NewIndexUseCase(h.cfg, h.db, h.client)
 	}
 	return h.useCase
 }

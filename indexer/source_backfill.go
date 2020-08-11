@@ -17,21 +17,17 @@ var (
 	ErrNothingToBackfill = errors.New("nothing to backfill")
 )
 
-type BackfillSourceConfig struct {
-	indexVersion int64
-}
-
 type BackfillSourceStore interface {
 	FindFirstByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error)
 	FindMostRecentByDifferentIndexVersion(indexVersion int64) (*model.Syncable, error)
 }
 
-func NewBackfillSource(cfg *config.Config, db BackfillSourceStore, sourceCfg *BackfillSourceConfig) (*backfillSource, error) {
+func NewBackfillSource(cfg *config.Config, db BackfillSourceStore, civ int64) (*backfillSource, error) {
 	src := &backfillSource{
 		cfg: cfg,
 		db:  db,
 
-		sourceCfg: sourceCfg,
+		currentIndexVersion: civ,
 	}
 
 	if err := src.init(); err != nil {
@@ -45,10 +41,10 @@ type backfillSource struct {
 	cfg *config.Config
 	db  BackfillSourceStore
 
-	sourceCfg *BackfillSourceConfig
+	currentIndexVersion int64
 
-	currentHeight int64
 	startHeight   int64
+	currentHeight int64
 	endHeight     int64
 	err           error
 }
@@ -84,10 +80,10 @@ func (s *backfillSource) init() error {
 }
 
 func (s *backfillSource) setStartHeight() error {
-	syncable, err := s.db.FindFirstByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.FindFirstByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
 		if err == store.ErrNotFound {
-			return errors.Wrap(ErrNothingToBackfill, fmt.Sprintf("[currentIndexVersion=%d]", s.sourceCfg.indexVersion))
+			return errors.Wrap(ErrNothingToBackfill, fmt.Sprintf("[currentIndexVersion=%d] Reason: everything is up to date", s.sourceCfg.indexVersion))
 		}
 		return err
 	}
@@ -98,11 +94,8 @@ func (s *backfillSource) setStartHeight() error {
 }
 
 func (s *backfillSource) setEndHeight() error {
-	syncable, err := s.db.FindMostRecentByDifferentIndexVersion(s.sourceCfg.indexVersion)
+	syncable, err := s.db.FindMostRecentByDifferentIndexVersion(s.currentIndexVersion)
 	if err != nil {
-		if err == store.ErrNotFound {
-			return errors.Wrap(ErrNothingToBackfill, fmt.Sprintf("nothing to backfill [currentIndexVersion=%d]", s.sourceCfg.indexVersion))
-		}
 		return err
 	}
 

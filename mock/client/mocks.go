@@ -5,6 +5,8 @@
 package mock_client
 
 import (
+	reflect "reflect"
+
 	accountpb "github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	blockpb "github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	chainpb "github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
@@ -12,7 +14,6 @@ import (
 	transactionpb "github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	validatorpb "github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockAccountClient is a mock of AccountClient interface

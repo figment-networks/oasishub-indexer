@@ -37,7 +37,7 @@ func (h *SummarizeCmdHandler) Handle(ctx context.Context) {
 
 func (h *SummarizeCmdHandler) getUseCase() *summarizeUseCase {
 	if h.useCase == nil {
-		return NewSummarizeUseCase(h.cfg, h.db)
+		h.useCase = NewSummarizeUseCase(h.cfg, h.db)
 	}
 	return h.useCase
 }

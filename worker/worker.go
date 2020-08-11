@@ -41,17 +41,17 @@ func New(cfg *config.Config, handlers *usecase.WorkerHandlers) (*Worker, error) 
 }
 
 func (w *Worker) init() (*Worker, error) {
-	_, err := w.addRunIndexerJob()
+	_, err := w.addIndexerIndexJob()
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = w.addSummarizeIndexerJob()
+	_, err = w.addIndexerSummarizeJob()
 	if err != nil {
 		return nil, err
 	}
 
-	_, err = w.addPurgeIndexerJob()
+	_, err = w.addIndexerPurgeJob()
 	if err != nil {
 		return nil, err
 	}

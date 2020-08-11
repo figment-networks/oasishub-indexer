@@ -42,6 +42,7 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			EntityUID:   rawValidator.GetNode().GetEntityId(),
 			Address:     rawValidator.GetAddress(),
 			VotingPower: rawValidator.GetVotingPower(),
+			Commission:  types.NewQuantityFromBytes(rawValidator.GetCommission()),
 		}
 
 		address := rawValidator.GetAddress()
@@ -50,6 +51,7 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			e.PrecommitValidated = parsedValidator.PrecommitValidated
 			e.Proposed = parsedValidator.Proposed
 			e.TotalShares = parsedValidator.TotalShares
+			e.ActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
 		}
 
 		if !e.Valid() {

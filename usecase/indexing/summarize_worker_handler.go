@@ -43,7 +43,7 @@ func (h *summarizeWorkerHandler) Handle() {
 
 func (h *summarizeWorkerHandler) getUseCase() *summarizeUseCase {
 	if h.useCase == nil {
-		return NewSummarizeUseCase(h.cfg, h.db)
+		h.useCase = NewSummarizeUseCase(h.cfg, h.db)
 	}
 	return h.useCase
 }

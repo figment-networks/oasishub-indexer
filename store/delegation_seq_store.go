@@ -5,26 +5,29 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewDelegationSeqStore(db *gorm.DB) *DelegationSeqStore {
-	return &DelegationSeqStore{scoped(db, model.DelegationSeq{})}
+var (
+	_ DelegationSeqStore = (*delegationSeqStore)(nil)
+)
+
+type DelegationSeqStore interface {
+	BaseStore
+
+	FindByHeight(int64) ([]model.DelegationSeq, error)
+	FindLastByValidatorUID(string) ([]model.DelegationSeq, error)
+	FindCurrentByDelegatorUID(string) ([]model.DelegationSeq, error)
 }
 
-// DelegationSeqStore handles operations on delegations
-type DelegationSeqStore struct {
+func NewDelegationSeqStore(db *gorm.DB) *delegationSeqStore {
+	return &delegationSeqStore{scoped(db, model.DelegationSeq{})}
+}
+
+// delegationSeqStore handles operations on delegations
+type delegationSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the delegation if it does not exist
-func (s DelegationSeqStore) CreateIfNotExists(delegation *model.DelegationSeq) error {
-	_, err := s.FindByHeight(delegation.Height)
-	if isNotFound(err) {
-		return s.Create(delegation)
-	}
-	return nil
-}
-
 // FindByHeight finds delegation by height
-func (s DelegationSeqStore) FindByHeight(h int64) ([]model.DelegationSeq, error) {
+func (s delegationSeqStore) FindByHeight(h int64) ([]model.DelegationSeq, error) {
 	q := model.DelegationSeq{
 		Sequence: &model.Sequence{
 			Height: h,
@@ -37,7 +40,7 @@ func (s DelegationSeqStore) FindByHeight(h int64) ([]model.DelegationSeq, error)
 }
 
 // GetLastByValidatorUID finds last delegations for validator
-func (s *DelegationSeqStore) FindLastByValidatorUID(key string) ([]model.DelegationSeq, error) {
+func (s *delegationSeqStore) FindLastByValidatorUID(key string) ([]model.DelegationSeq, error) {
 	q := model.DelegationSeq{
 		ValidatorUID:  key,
 	}
@@ -54,7 +57,7 @@ func (s *DelegationSeqStore) FindLastByValidatorUID(key string) ([]model.Delegat
 }
 
 // GetCurrentByDelegatorUID gets current delegations for delegator
-func (s *DelegationSeqStore) FindCurrentByDelegatorUID(key string) ([]model.DelegationSeq, error) {
+func (s *delegationSeqStore) FindCurrentByDelegatorUID(key string) ([]model.DelegationSeq, error) {
 	q := model.DelegationSeq{
 		DelegatorUID:  key,
 	}

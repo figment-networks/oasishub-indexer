@@ -43,7 +43,7 @@ func (h *purgeWorkerHandler) Handle() {
 
 func (h *purgeWorkerHandler) getUseCase() *purgeUseCase {
 	if h.useCase == nil {
-		return NewPurgeUseCase(h.cfg, h.db)
+		h.useCase = NewPurgeUseCase(h.cfg, h.db)
 	}
 	return h.useCase
 }

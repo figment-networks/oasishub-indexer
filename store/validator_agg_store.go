@@ -5,51 +5,49 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-func NewValidatorAggStore(db *gorm.DB) *ValidatorAggStore {
-	return &ValidatorAggStore{scoped(db, model.ValidatorAgg{})}
+var (
+	_ ValidatorAggStore = (*validatorAggStore)(nil)
+)
+
+type ValidatorAggStore interface {
+	BaseStore
+
+	FindBy(string, interface{}) (*model.ValidatorAgg, error)
+	FindByAddress(string) (*model.ValidatorAgg, error)
+	FindByEntityUID(string) (*model.ValidatorAgg, error)
+	GetAllForHeightGreaterThan(int64) ([]model.ValidatorAgg, error)
+	CreateOrUpdate(val *model.ValidatorAgg) error
 }
 
-// ValidatorAggStore handles operations on validators
-type ValidatorAggStore struct {
+
+func NewValidatorAggStore(db *gorm.DB) *validatorAggStore {
+	return &validatorAggStore{scoped(db, model.ValidatorAgg{})}
+}
+
+// validatorAggStore handles operations on validators
+type validatorAggStore struct {
 	baseStore
 }
 
-// CreateOrUpdate creates a new validator or updates an existing one
-func (s ValidatorAggStore) CreateOrUpdate(val *model.ValidatorAgg) error {
-	existing, err := s.FindByEntityUID(val.EntityUID)
-	if err != nil {
-		if err == ErrNotFound {
-			return s.Create(val)
-		}
-		return err
-	}
-	return s.Update(existing)
-}
-
 // FindBy returns an validator for a matching attribute
-func (s ValidatorAggStore) FindBy(key string, value interface{}) (*model.ValidatorAgg, error) {
+func (s validatorAggStore) FindBy(key string, value interface{}) (*model.ValidatorAgg, error) {
 	result := &model.ValidatorAgg{}
 	err := findBy(s.db, result, key, value)
 	return result, checkErr(err)
 }
 
-// FindByID returns an validator for the ID
-func (s ValidatorAggStore) FindByID(id int64) (*model.ValidatorAgg, error) {
-	return s.FindBy("id", id)
-}
-
 // FindByAddress return validator by entity UID
-func (s *ValidatorAggStore) FindByAddress(address string) (*model.ValidatorAgg, error) {
+func (s *validatorAggStore) FindByAddress(address string) (*model.ValidatorAgg, error) {
 	return s.FindBy("address", address)
 }
 
 // FindByEntityUID return validator by entity UID
-func (s *ValidatorAggStore) FindByEntityUID(key string) (*model.ValidatorAgg, error) {
+func (s *validatorAggStore) FindByEntityUID(key string) (*model.ValidatorAgg, error) {
 	return s.FindBy("entity_uid", key)
 }
 
 // GetAllForHeightGreaterThan returns validators who have been validating since given height
-func (s *ValidatorAggStore) GetAllForHeightGreaterThan(height int64) ([]model.ValidatorAgg, error) {
+func (s *validatorAggStore) GetAllForHeightGreaterThan(height int64) ([]model.ValidatorAgg, error) {
 	var result []model.ValidatorAgg
 
 	err := s.baseStore.db.
@@ -60,14 +58,14 @@ func (s *ValidatorAggStore) GetAllForHeightGreaterThan(height int64) ([]model.Va
 	return result, checkErr(err)
 }
 
-// All returns all validators
-func (s ValidatorAggStore) All() ([]model.ValidatorAgg, error) {
-	var result []model.ValidatorAgg
-
-	err := s.db.
-		Order("id ASC").
-		Find(&result).
-		Error
-
-	return result, checkErr(err)
+// CreateOrUpdate creates a new validator or updates an existing one
+func (s validatorAggStore) CreateOrUpdate(val *model.ValidatorAgg) error {
+	_, err := s.FindByEntityUID(val.EntityUID)
+	if err != nil {
+		if err == ErrNotFound {
+			return s.Create(val)
+		}
+		return err
+	}
+	return s.Update(val)
 }

@@ -32,17 +32,21 @@ func NewPurgeUseCase(cfg *config.Config, db *store.Store) *purgeUseCase {
 func (uc *purgeUseCase) Execute(ctx context.Context) error {
 	defer metric.LogUseCaseDuration(time.Now(), "purge")
 
-	targetsReader, err := indexer.NewTargetsReader(uc.cfg.IndexerTargetsFile)
+	targetsReader, err := indexer.NewConfigParser(uc.cfg.IndexerConfigFile)
 	if err != nil {
 		return err
 	}
-	currentIndexVersion := targetsReader.GetCurrentVersion()
+	currentIndexVersion := targetsReader.GetCurrentVersionId()
 
 	if err := uc.purgeBlocks(currentIndexVersion); err != nil {
 		return err
 	}
 
 	if err := uc.purgeValidators(currentIndexVersion); err != nil {
+		return err
+	}
+
+	if err := uc.purgeSystemEvents(); err != nil {
 		return err
 	}
 
@@ -67,6 +71,35 @@ func (uc *purgeUseCase) purgeValidators(currentIndexVersion int64) error {
 	if err := uc.purgeValidatorSummaries(types.IntervalHourly, uc.cfg.PurgeHourlySummariesInterval); uc.checkErr(err) {
 		return err
 	}
+	return nil
+}
+
+func (uc *purgeUseCase) purgeSystemEvents() error {
+	systemEvent, err := uc.db.SystemEvents.FindMostRecent()
+	if err != nil {
+		return err
+	}
+	lastRecordTime := systemEvent.Time.Time
+
+	duration, err := uc.parseDuration(uc.cfg.PurgeSystemEventsInterval)
+	if err != nil {
+		if err == ErrPurgingDisabled {
+			logger.Info("purging system events disabled. Purge interval set to 0.")
+		}
+		return err
+	}
+
+	purgeThresholdFromLastRecord := lastRecordTime.Add(- *duration)
+
+	logger.Info(fmt.Sprintf("purging system events... [older than=%s]", purgeThresholdFromLastRecord))
+
+	deletedCount, err := uc.db.SystemEvents.DeleteOlderThan(purgeThresholdFromLastRecord)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("%d system events purged", *deletedCount))
+
 	return nil
 }
 

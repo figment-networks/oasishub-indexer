@@ -6,25 +6,26 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 )
 
-func NewTransactionSeqStore(db *gorm.DB) *TransactionSeqStore {
-	return &TransactionSeqStore{scoped(db, model.TransactionSeq{})}
+var (
+	_ TransactionSeqStore = (*transactionSeqStore)(nil)
+)
+
+type TransactionSeqStore interface {
+	BaseStore
+
+	FindByHeight(h int64) ([]model.TransactionSeq, error)
 }
 
-// TransactionSeqStore handles operations on transactions
-type TransactionSeqStore struct {
+func NewTransactionSeqStore(db *gorm.DB) *transactionSeqStore {
+	return &transactionSeqStore{scoped(db, model.TransactionSeq{})}
+}
+
+// transactionSeqStore handles operations on transactions
+type transactionSeqStore struct {
 	baseStore
 }
 
-// CreateIfNotExists creates the transaction if it does not exist
-func (s TransactionSeqStore) CreateIfNotExists(transaction *model.TransactionSeq) error {
-	_, err := s.FindByHeight(transaction.Height)
-	if isNotFound(err) {
-		return s.Create(transaction)
-	}
-	return nil
-}
-
-func (s TransactionSeqStore) FindByHeight(h int64) ([]model.TransactionSeq, error) {
+func (s transactionSeqStore) FindByHeight(h int64) ([]model.TransactionSeq, error) {
 	q := model.TransactionSeq{
 		Sequence: &model.Sequence{
 			Height: h,

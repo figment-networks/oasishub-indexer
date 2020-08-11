@@ -10,14 +10,14 @@ import (
 
 func NewWorkerHandlers(cfg *config.Config, db *store.Store, c *client.Client) *WorkerHandlers {
 	return &WorkerHandlers{
-		RunIndexer:       indexing.NewRunWorkerHandler(cfg, db, c),
-		SummarizeIndexer: indexing.NewSummarizeWorkerHandler(cfg, db, c),
-		PurgeIndexer:     indexing.NewPurgeWorkerHandler(cfg, db, c),
+		IndexerIndex:     indexing.NewIndexWorkerHandler(cfg, db, c),
+		IndexerSummarize: indexing.NewSummarizeWorkerHandler(cfg, db, c),
+		IndexerPurge:     indexing.NewPurgeWorkerHandler(cfg, db, c),
 	}
 }
 
 type WorkerHandlers struct {
-	RunIndexer       types.WorkerHandler
-	SummarizeIndexer types.WorkerHandler
-	PurgeIndexer     types.WorkerHandler
+	IndexerIndex     types.WorkerHandler
+	IndexerSummarize types.WorkerHandler
+	IndexerPurge     types.WorkerHandler
 }

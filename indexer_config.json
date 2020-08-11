@@ -1,13 +1,26 @@
 {
-  "version": 1,
-  "targets": [
+  "versions": [
+    {
+      "id": 1,
+      "parallel": false,
+      "targets": [1, 2, 3]
+    },
+    {
+      "id": 2,
+      "parallel": false,
+      "targets": [2, 3, 4]
+    }
+  ],
+  "shared_tasks": [
+    "HeightMetaRetriever",
+    "MainSyncer"
+  ],
+  "available_targets": [
     {
       "id": 1,
       "name": "index_block_sequences",
       "desc": "Creates and persists block sequences",
       "tasks": [
-        "HeightMetaRetriever",
-        "MainSyncer",
         "BlockFetcher",
         "ValidatorFetcher",
         "TransactionFetcher",
@@ -20,10 +33,8 @@
     {
       "id": 2,
       "name": "index_validator_sequences",
-      "desc": "Creates and persists block sequences",
+      "desc": "Creates and persists validator sequences",
       "tasks": [
-        "HeightMetaRetriever",
-        "MainSyncer",
         "BlockFetcher",
         "StakingStateFetcher",
         "ValidatorFetcher",
@@ -38,8 +49,6 @@
       "name": "index_validator_aggregates",
       "desc": "Creates and persists validator aggregates",
       "tasks": [
-        "HeightMetaRetriever",
-        "MainSyncer",
         "BlockFetcher",
         "StakingStateFetcher",
         "ValidatorFetcher",
@@ -47,6 +56,22 @@
         "ValidatorAggCreator",
         "SyncerPersistor",
         "ValidatorAggPersistor"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "index_system_events",
+      "desc": "Creates and persists system events",
+      "tasks": [
+        "BlockFetcher",
+        "StakingStateFetcher",
+        "ValidatorFetcher",
+        "ValidatorsParser",
+        "ValidatorSeqCreator",
+        "SystemEventCreator",
+        "SyncerPersistor",
+        "ValidatorSeqPersistor",
+        "SystemEventPersistor"
       ]
     }
   ]

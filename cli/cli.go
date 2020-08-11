@@ -9,50 +9,28 @@ import (
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
 	"github.com/pkg/errors"
-	"strconv"
-	"strings"
 )
 
 type Flags struct {
-	configPath string
-	runCommand string
+	configPath  string
+	filePath    string
+	runCommand  string
 	showVersion bool
 
-	batchSize int64
-	parallel  bool
-	force     bool
-	targetIds targetIds
-}
-
-type targetIds []int64
-
-func (i *targetIds) String() string {
-	return fmt.Sprint(*i)
-}
-
-func (i *targetIds) Set(value string) error {
-	if len(*i) > 0 {
-		return errors.New("targetIds flag already set")
-	}
-	for _, rawTargetId := range strings.Split(value, ",") {
-		targetId, err := strconv.ParseInt(rawTargetId, 10, 64)
-		if err != nil {
-			return err
-		}
-		*i = append(*i, targetId)
-	}
-	return nil
+	batchSize  int64
+	parallel   bool
+	force      bool
 }
 
 func (c *Flags) Setup() {
 	flag.BoolVar(&c.showVersion, "v", false, "Show application version")
 	flag.StringVar(&c.configPath, "config", "", "Path to config")
+	flag.StringVar(&c.filePath, "file", "", "Complete file path")
 	flag.StringVar(&c.runCommand, "cmd", "", "Command to run")
 
 	flag.Int64Var(&c.batchSize, "batch_size", 0, "pipeline batch size")
 	flag.BoolVar(&c.parallel, "parallel", false, "should backfill be run in parallel with indexing")
 	flag.BoolVar(&c.force, "force", false, "remove existing reindexing reports")
-	flag.Var(&c.targetIds, "target_ids", "comma separated list of integers")
 }
 
 // Run executes the command line interface
@@ -129,8 +107,7 @@ func initConfig(path string) (*config.Config, error) {
 }
 
 func initLogger(cfg *config.Config) error {
-	_, err := logger.Init(cfg)
-	return err
+	return logger.Init(cfg)
 }
 
 func initClient(cfg *config.Config) (*client.Client, error) {

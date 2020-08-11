@@ -8,16 +8,20 @@ type ValidatorAgg struct {
 	*Model
 	*Aggregate
 
-	Address                  string         `json:"address"`
-	EntityUID                string         `json:"entity_uid"`
-	RecentTendermintAddress  string         `json:"recent_tendermint_address"`
-	RecentVotingPower        int64          `json:"recent_voting_power"`
-	RecentTotalShares        types.Quantity `json:"recent_total_shares"`
-	RecentAsValidatorHeight  int64          `json:"recent_as_validator_height"`
-	RecentProposedHeight     int64          `json:"recent_proposed_height"`
-	AccumulatedProposedCount int64          `json:"accumulated_proposed_count"`
-	AccumulatedUptime        int64          `json:"accumulated_uptime"`
-	AccumulatedUptimeCount   int64          `json:"accumulated_uptime_count"`
+	Address                   string         `json:"address"`
+	EntityUID                 string         `json:"entity_uid"`
+	RecentTendermintAddress   string         `json:"recent_tendermint_address"`
+	RecentVotingPower         int64          `json:"recent_voting_power"`
+	RecentTotalShares         types.Quantity `json:"recent_total_shares"`
+	RecentActiveEscrowBalance types.Quantity `json:"recent_active_escrow_balance"`
+	RecentCommission          types.Quantity `json:"recent_commission"`
+	RecentAsValidatorHeight   int64          `json:"recent_as_validator_height"`
+	RecentProposedHeight      int64          `json:"recent_proposed_height"`
+	AccumulatedProposedCount  int64          `json:"accumulated_proposed_count"`
+	AccumulatedUptime         int64          `json:"accumulated_uptime"`
+	AccumulatedUptimeCount    int64          `json:"accumulated_uptime_count"`
+	LogoURL                   string         `json:"logo_url"`
+	EntityName                string         `json:"entity_name"`
 }
 
 func (ValidatorAgg) TableName() string {
@@ -41,6 +45,8 @@ func (aa *ValidatorAgg) Update(entity ValidatorAgg) {
 	aa.RecentTendermintAddress = entity.RecentTendermintAddress // TODO should we add this?
 	aa.RecentVotingPower = entity.RecentVotingPower
 	aa.RecentTotalShares = entity.RecentTotalShares
+	aa.RecentActiveEscrowBalance = entity.RecentActiveEscrowBalance
+	aa.RecentCommission = entity.RecentCommission
 	aa.RecentAsValidatorHeight = entity.RecentAsValidatorHeight
 	aa.RecentProposedHeight = entity.RecentProposedHeight
 	aa.AccumulatedProposedCount = entity.AccumulatedProposedCount
