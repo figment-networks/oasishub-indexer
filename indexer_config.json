@@ -9,6 +9,11 @@
       "id": 2,
       "parallel": false,
       "targets": [2, 3, 4]
+    },
+    {
+      "id": 3,
+      "parallel": false,
+      "targets": [3,4,5]
     }
   ],
   "shared_tasks": [
@@ -72,6 +77,21 @@
         "SyncerPersistor",
         "ValidatorSeqPersistor",
         "SystemEventPersistor"
+      ]
+    },
+    {
+      "id": 5,
+      "name": "index_validator_rewards",
+      "desc": "Adds rewards to validator sequences",
+      "tasks": [
+        "BlockFetcher",
+        "StakingStateFetcher",
+        "EventsFetcher",
+        "ValidatorFetcher",
+        "ValidatorsParser",
+        "ValidatorSeqCreator",
+        "SyncerPersistor",
+        "ValidatorSeqPersistor"
       ]
     }
   ]
