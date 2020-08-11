@@ -3,13 +3,14 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/metric"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"math/big"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
 const (
@@ -80,6 +81,7 @@ type parsedValidator struct {
 	PrecommitIndex       int64
 	TotalShares          types.Quantity
 	ActiveEscrowBalance  types.Quantity
+	Rewards              types.Quantity
 }
 
 func (t *validatorsParserTask) GetName() string {
@@ -96,6 +98,12 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
+
+	rewardsData := make(map[string]*eventpb.AddEscrowEvent)
+	for _, event := range payload.RawRewardEvents {
+		rewardEvent := event.GetEscrow().GetAdd()
+		rewardsData[rewardEvent.GetEscrow()] = rewardEvent
+	}
 
 	const (
 		NotValidated int64 = 1
@@ -157,6 +165,11 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 		account, ok := fetchedStakingState.GetLedger()[address]
 		if ok {
 			calculatedData.ActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+		}
+
+		// Get rewards
+		if rewardEvent, ok := rewardsData[address]; ok {
+			calculatedData.Rewards = types.NewQuantityFromBytes(rewardEvent.Amount)
 		}
 
 		parsedData[address] = calculatedData

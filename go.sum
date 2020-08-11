@@ -208,6 +208,7 @@ github.com/figment-networks/indexing-engine v0.1.9 h1:NkIHP8EHQu/GannBWx8/pvev0c
 github.com/figment-networks/indexing-engine v0.1.9/go.mod h1:XJB7fw5aBp2SEbKvWahullz3I+D7IL77OhkhTtVYky4=
 github.com/figment-networks/oasis-rpc-proxy v0.3.11 h1:DrAN68qXZssH5aylJvlrrhiOOZ/mquFB3fl+vaCkO0o=
 github.com/figment-networks/oasis-rpc-proxy v0.3.11/go.mod h1:OnyZ2nekWW3isFMTjnr3lT5cb6irkSTt3QoGwmZsBJA=
+github.com/figment-networks/oasis-rpc-proxy v0.3.12 h1:LYLOdlQD2JT212nJO1AqZE/WGqQ9YUFDEGLrQTuXn4A=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=
 github.com/fortytw2/leaktest v1.3.0/go.mod h1:jDsjWgpAGjm2CA7WthBh/CdZYEPF31XHquHwclZch5g=
 github.com/franela/goblin v0.0.0-20200105215937-c9ffbefa60db/go.mod h1:7dvUGVsVBjqR7JHJk0brhHOZYGmfBYOrK0ZhYMEtBr4=
