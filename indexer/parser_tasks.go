@@ -98,12 +98,7 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
-
-	rewardsData := make(map[string]*eventpb.AddEscrowEvent)
-	for _, event := range payload.RawRewardEvents {
-		rewardEvent := event.GetEscrow().GetAdd()
-		rewardsData[rewardEvent.GetEscrow()] = rewardEvent
-	}
+	rewards := getRewardsFromEscrowEvents(payload.RawEscrowEvents, payload.CommonPoolAddress)
 
 	const (
 		NotValidated int64 = 1
@@ -168,12 +163,34 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 		}
 
 		// Get rewards
-		if rewardEvent, ok := rewardsData[address]; ok {
-			calculatedData.Rewards = types.NewQuantityFromBytes(rewardEvent.Amount)
+		if reward, ok := rewards[address]; ok {
+			calculatedData.Rewards = reward
 		}
 
 		parsedData[address] = calculatedData
 	}
 	payload.ParsedValidators = parsedData
 	return nil
+}
+
+func getRewardsFromEscrowEvents(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) map[string]types.Quantity {
+	rewards := make(map[string]types.Quantity)
+	for _, rawEvent := range rawEvents {
+		if rawEvent.GetOwner() != commonPoolAddr {
+			// rewards only come from commonpool, so skip
+			continue
+		}
+		newAmt := types.NewQuantityFromBytes(rawEvent.GetAmount())
+		existingAmt, ok := rewards[rawEvent.GetEscrow()]
+		if ok {
+			// if there's a duplicate, then the event with the higher amount is the reward (other is commission)
+			if existingAmt.Cmp(newAmt) < 0 {
+				rewards[rawEvent.GetEscrow()] = newAmt
+			}
+
+		} else {
+			rewards[rawEvent.GetEscrow()] = newAmt
+		}
+	}
+	return rewards
 }

@@ -36,10 +36,10 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 				Time:   syncable.Time,
 			},
 
-			EntityUID:    rawValidator.GetNode().GetEntityId(),
-			Address:      rawValidator.GetAddress(),
-			VotingPower:  rawValidator.GetVotingPower(),
-			Commission:   types.NewQuantityFromBytes(rawValidator.GetCommission()),
+			EntityUID:   rawValidator.GetNode().GetEntityId(),
+			Address:     rawValidator.GetAddress(),
+			VotingPower: rawValidator.GetVotingPower(),
+			Commission:  types.NewQuantityFromBytes(rawValidator.GetCommission()),
 		}
 
 		address := rawValidator.GetAddress()

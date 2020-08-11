@@ -37,12 +37,13 @@ type payload struct {
 	Syncable *model.Syncable
 
 	// Fetcher stage
-	RawBlock        *blockpb.Block
-	RawRewardEvents []*eventpb.Event
-	RawStakingState *statepb.Staking
-	RawState        *statepb.State
-	RawTransactions []*transactionpb.Transaction
-	RawValidators   []*validatorpb.Validator
+	RawBlock          *blockpb.Block
+	RawEscrowEvents   []*eventpb.AddEscrowEvent
+	RawStakingState   *statepb.Staking
+	RawState          *statepb.State
+	RawTransactions   []*transactionpb.Transaction
+	RawValidators     []*validatorpb.Validator
+	CommonPoolAddress string
 
 	// Parser stage
 	ParsedBlock      ParsedBlockData
