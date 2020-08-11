@@ -13,7 +13,7 @@ import (
 
 const (
 	BlockFetcherTaskName        = "BlockFetcher"
-	RewardFetcherTaskName       = "RewardFetcher"
+	EventFetcherTaskName        = "EventsFetcher"
 	StateFetcherTaskName        = "StateFetcher"
 	StakingStateFetcherTaskName = "StakingStateFetcher"
 	ValidatorFetcherTaskName    = "ValidatorFetcher"
@@ -55,23 +55,22 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewRewardFetcherTask(client *client.Client) pipeline.Task {
-	return &RewardFetcherTask{
+func NewEventsFetcherTask(client *client.Client) pipeline.Task {
+	return &EventsFetcherTask{
 		client: client,
 	}
 }
 
-type RewardFetcherTask struct {
+type EventsFetcherTask struct {
 	client *client.Client
 }
 
-func (t *RewardFetcherTask) GetName() string {
-	return RewardFetcherTaskName
+func (t *EventsFetcherTask) GetName() string {
+	return EventFetcherTaskName
 }
 
-func (t *RewardFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
-
 	payload := p.(*payload)
 
 	events, err := t.client.Event.GetAddEscrowEventsByHeight(payload.CurrentHeight)
