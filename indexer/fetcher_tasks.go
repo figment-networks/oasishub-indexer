@@ -68,7 +68,7 @@ func (t *RewardFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 	payload := p.(*payload)
 
-	events, err := t.client.Event.GetRewardsByHeight(payload.CurrentHeight)
+	events, err := t.client.Event.GetAddEscrowEventsByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
@@ -81,7 +81,8 @@ func (t *RewardFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 		logger.Field("height", payload.CurrentHeight),
 	)
 
-	payload.RawRewardEvents = events.GetEvents()
+	payload.RawEscrowEvents = events.GetEvents()
+	payload.CommonPoolAddress = events.GetCommonPoolAddress()
 	return nil
 }
 

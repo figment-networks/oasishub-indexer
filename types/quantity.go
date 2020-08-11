@@ -31,6 +31,11 @@ func (b *Quantity) Equals(o Quantity) bool {
 	return b.Int.String() == o.Int.String()
 }
 
+func (b *Quantity) Cmp(o Quantity) int {
+	cmpTo := &o.Int
+	return b.Int.Cmp(cmpTo)
+}
+
 // Value implement sql.Scanner
 func (b *Quantity) Value() (driver.Value, error) {
 	if b != nil {
