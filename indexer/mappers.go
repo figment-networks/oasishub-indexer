@@ -149,7 +149,7 @@ func DebondingDelegationToSequence(syncable *model.Syncable, rawState *statepb.S
 					ValidatorUID: validatorUID,
 					DelegatorUID: delegatorUID,
 					Shares:       types.NewQuantityFromBytes(delegation.GetShares()),
-					DebondEnd:    delegation.GetDebondEndTime(), // TODO should this be types.time?
+					DebondEnd:    delegation.GetDebondEndTime(),
 				}
 
 				if !acc.Valid() {

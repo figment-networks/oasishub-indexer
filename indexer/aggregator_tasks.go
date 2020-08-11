@@ -205,9 +205,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 					RecentAtHeight: payload.Syncable.Height,
 					RecentAt:       payload.Syncable.Time,
 				},
-
-				// TODO should we update address to rawValidator.GetAddress()?
-				RecentTendermintAddress: rawValidator.GetAddress(), // TODO should this be tendermint address?
+				RecentTendermintAddress: rawValidator.GetTendermintAddress(),
 				RecentVotingPower:       rawValidator.GetVotingPower(),
 				RecentCommission:        types.NewQuantityFromBytes(rawValidator.GetCommission()),
 				RecentAsValidatorHeight: payload.Syncable.Height,
