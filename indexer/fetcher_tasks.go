@@ -55,6 +55,12 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
+func NewRewardFetcherTask(client *client.Client) pipeline.Task {
+	return &RewardFetcherTask{
+		client: client,
+	}
+}
+
 type RewardFetcherTask struct {
 	client *client.Client
 }
