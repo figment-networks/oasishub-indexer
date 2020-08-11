@@ -20,7 +20,7 @@ import (
 )
 
 func TestBlockSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	var currHeight int64 = 20
 	var pHeight int64 = 18
@@ -154,7 +154,7 @@ func TestBlockSeqCreator_Run(t *testing.T) {
 }
 
 func TestValidatorSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 	isTrue := true
 	const currHeight int64 = 20
 	const pHeight int64 = 18
@@ -162,6 +162,18 @@ func TestValidatorSeqCreator_Run(t *testing.T) {
 
 	pTime := *types.NewTimeFromTime(time.Date(2020, 11, 10, 23, 0, 0, 0, time.UTC))
 	extTime := *types.NewTimeFromTime(time.Date(2018, 10, 10, 10, 0, 0, 0, time.UTC))
+
+	newValidatorSeq := func(key string, addr string, power int64, height int64, _time types.Time) *model.ValidatorSeq {
+		return &model.ValidatorSeq{
+			Sequence: &model.Sequence{
+				Height: height,
+				Time:   _time,
+			},
+			EntityUID:   key,
+			Address:     addr,
+			VotingPower: power,
+		}
+	}
 
 	tests := []struct {
 		description string
@@ -344,7 +356,7 @@ func TestValidatorSeqCreator_Run(t *testing.T) {
 }
 
 func TestStakingSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 	var currHeight int64 = 20
 
 	sync := &model.Syncable{
@@ -477,7 +489,7 @@ func TestStakingSeqCreator_Run(t *testing.T) {
 }
 
 func TestTransactionSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -620,7 +632,7 @@ func TestTransactionSeqCreator_Run(t *testing.T) {
 }
 
 func TestDelegationSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -781,7 +793,7 @@ func TestDelegationSeqCreator_Run(t *testing.T) {
 }
 
 func TestDebondingDelegationSeqCreator_Run(t *testing.T) {
-	setup(t)
+	setup()
 	var currHeight int64 = 18
 
 	sync := &model.Syncable{
@@ -939,18 +951,6 @@ func TestDebondingDelegationSeqCreator_Run(t *testing.T) {
 				}
 			}
 		})
-	}
-}
-
-func newValidatorSeq(key string, addr string, power int64, height int64, _time types.Time) *model.ValidatorSeq {
-	return &model.ValidatorSeq{
-		Sequence: &model.Sequence{
-			Height: height,
-			Time:   _time,
-		},
-		EntityUID:   key,
-		Address:     addr,
-		VotingPower: power,
 	}
 }
 

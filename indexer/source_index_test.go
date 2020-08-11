@@ -19,16 +19,15 @@ func TestSource_NewIndexSource(t *testing.T) {
 	const versionNum int64 = 1
 	const batchSize int64 = 10
 	const configStartH int64 = 3
-	const srcConfigStartH int64 = 1
 
-	const startH int64 = 0
-	const endH int64 = startH + 5
+	const zerostartH int64 = 0
+	const endH int64 = zerostartH + 5
 
-	setup(t)
+	setup()
 
 	tests := []struct {
 		description string
-		srcConfig   *IndexSourceConfig
+		startHeight int64
 
 		dbResp *model.Syncable
 		dbErr  error
@@ -41,43 +40,43 @@ func TestSource_NewIndexSource(t *testing.T) {
 		expectErr         error
 	}{
 		{description: "should start from last unprocessed block",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
-			dbResp:            testSyncable(startH, false),
+			startHeight:       zerostartH,
+			dbResp:            testSyncable(zerostartH, false),
 			dbErr:             nil,
 			clientResp:        testpbChainResp(endH),
 			clientErr:         nil,
-			expectStartHeight: startH,
+			expectStartHeight: zerostartH,
 			expectEndHeight:   endH,
 			expectErr:         nil},
 		{description: "should start from next block if last block is already processed",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
-			dbResp:            testSyncable(startH, true),
+			startHeight:       zerostartH,
+			dbResp:            testSyncable(zerostartH, true),
 			dbErr:             nil,
 			clientResp:        testpbChainResp(endH),
 			clientErr:         nil,
-			expectStartHeight: (startH + 1),
+			expectStartHeight: (zerostartH + 1),
 			expectEndHeight:   endH,
 			expectErr:         nil},
 		{description: "handle client errors",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
-			dbResp:            testSyncable(startH, false),
+			startHeight:       zerostartH,
+			dbResp:            testSyncable(zerostartH, false),
 			dbErr:             nil,
 			clientResp:        nil,
 			clientErr:         errTestClient,
 			expectStartHeight: 0,
 			expectEndHeight:   0,
 			expectErr:         errTestClient},
-		{description: "should start from source config startheight if config start height > 0",
-			srcConfig:         &IndexSourceConfig{batchSize, srcConfigStartH},
+		{description: "should start from startheight param if > 0",
+			startHeight:       3,
 			dbResp:            nil,
 			dbErr:             store.ErrNotFound,
 			clientResp:        testpbChainResp(endH),
 			clientErr:         nil,
-			expectStartHeight: srcConfigStartH,
+			expectStartHeight: 3,
 			expectEndHeight:   endH,
 			expectErr:         nil},
 		{description: "should start from config startheight if last block doesnt exist in store",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
+			startHeight:       zerostartH,
 			dbResp:            nil,
 			dbErr:             store.ErrNotFound,
 			clientResp:        testpbChainResp(endH),
@@ -86,7 +85,7 @@ func TestSource_NewIndexSource(t *testing.T) {
 			expectEndHeight:   endH,
 			expectErr:         nil},
 		{description: "handle unexpected db error",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
+			startHeight:       zerostartH,
 			dbResp:            nil,
 			dbErr:             errTestDbFind,
 			clientResp:        testpbChainResp(endH),
@@ -95,16 +94,16 @@ func TestSource_NewIndexSource(t *testing.T) {
 			expectEndHeight:   0,
 			expectErr:         errTestDbFind},
 		{description: "len should not exceed batch size",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
-			dbResp:            testSyncable(startH, false),
+			startHeight:       zerostartH,
+			dbResp:            testSyncable(zerostartH, false),
 			dbErr:             nil,
 			clientResp:        testpbChainResp(batchSize + endH),
 			clientErr:         nil,
-			expectStartHeight: startH,
+			expectStartHeight: zerostartH,
 			expectEndHeight:   (batchSize - 1),
 			expectErr:         nil},
 		{description: "error when nothing to process",
-			srcConfig:         &IndexSourceConfig{batchSize, startH},
+			startHeight:       zerostartH,
 			dbResp:            testSyncable(endH, false),
 			dbErr:             nil,
 			clientResp:        testpbChainResp(endH),
@@ -125,7 +124,7 @@ func TestSource_NewIndexSource(t *testing.T) {
 			dbMock.EXPECT().FindMostRecent().Return(tt.dbResp, tt.dbErr)
 
 			cfg := &config.Config{FirstBlockHeight: configStartH}
-			source, err := NewIndexSource(cfg, dbMock, clientMock, tt.srcConfig)
+			source, err := NewIndexSource(cfg, dbMock, clientMock, tt.startHeight, batchSize)
 
 			if err != tt.expectErr {
 				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)

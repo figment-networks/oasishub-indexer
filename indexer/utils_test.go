@@ -28,13 +28,9 @@ var (
 	letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 )
 
-func setup(t *testing.T) {
+func setup() {
 	rand.Seed(time.Now().UnixNano())
-
-	err := logger.InitTestLogger()
-	if err != nil {
-		t.Fatal(err)
-	}
+	logger.InitTest()
 }
 
 func randString(n int) string {

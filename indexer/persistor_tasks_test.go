@@ -13,7 +13,7 @@ import (
 )
 
 func TestSyncerPersistor_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	sync := &model.Syncable{
 		Height: 20,
@@ -52,7 +52,7 @@ func TestSyncerPersistor_Run(t *testing.T) {
 }
 
 func TestBlockSeqPersistor_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	seq := &model.BlockSeq{
 		Sequence: &model.Sequence{
@@ -114,7 +114,7 @@ func TestBlockSeqPersistor_Run(t *testing.T) {
 }
 
 func TestValidatorSeqPersistor_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	newValidatorSeq := func() model.ValidatorSeq {
 		return model.ValidatorSeq{
@@ -193,7 +193,7 @@ func TestValidatorSeqPersistor_Run(t *testing.T) {
 }
 
 func TestValidatorAggPersistor_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	newValidatorAgg := func() model.ValidatorAgg {
 		return model.ValidatorAgg{

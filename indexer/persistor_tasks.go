@@ -166,14 +166,18 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 	return nil
 }
 
-func NewSystemEventPersistorTask(db *store.Store) pipeline.Task {
+func NewSystemEventPersistorTask(db SystemEventPersistorTaskStore) pipeline.Task {
 	return &systemEventPersistorTask{
 		db: db,
 	}
 }
 
+type SystemEventPersistorTaskStore interface {
+	CreateOrUpdate(*model.SystemEvent) error
+}
+
 type systemEventPersistorTask struct {
-	db *store.Store
+	db SystemEventPersistorTaskStore
 }
 
 func (t *systemEventPersistorTask) GetName() string {
@@ -187,8 +191,8 @@ func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
 
-	for _, systemEvent := range payload.SystemEvents{
-		if err := t.db.SystemEvents.CreateOrUpdate(systemEvent); err != nil {
+	for _, systemEvent := range payload.SystemEvents {
+		if err := t.db.CreateOrUpdate(systemEvent); err != nil {
 			return err
 		}
 	}

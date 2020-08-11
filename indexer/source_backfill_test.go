@@ -18,7 +18,7 @@ func TestSource_NewBackfillSource(t *testing.T) {
 	const startH int64 = 0
 	const endH int64 = startH + 5
 
-	setup(t)
+	setup()
 
 	tests := []struct {
 		description string
@@ -39,7 +39,7 @@ func TestSource_NewBackfillSource(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%v when fetching start", tt.description), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%v when fetching first", tt.description), func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 
 			dbMock := mock.NewMockBackfillSourceStore(ctrl)
@@ -56,8 +56,7 @@ func TestSource_NewBackfillSource(t *testing.T) {
 			}, nil)
 
 			cfg := &config.Config{}
-			srcCgf := &BackfillSourceConfig{indexVersion}
-			source, err := NewBackfillSource(cfg, dbMock, srcCgf)
+			source, err := NewBackfillSource(cfg, dbMock, indexVersion)
 
 			if !errors.Is(err, tt.expectErr) {
 				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)
@@ -115,11 +114,10 @@ func TestSource_NewBackfillSource(t *testing.T) {
 			}
 
 			cfg := &config.Config{}
-			srcCgf := &BackfillSourceConfig{indexVersion}
-			_, err := NewBackfillSource(cfg, dbMock, srcCgf)
+			_, err := NewBackfillSource(cfg, dbMock, indexVersion)
 
-			if !errors.Is(err, tt.expectErr) {
-				t.Errorf("unexpected error, want %v; got %v", tt.expectErr, err)
+			if err != tt.dbErr {
+				t.Errorf("unexpected error, got %v", err)
 			}
 		})
 	}

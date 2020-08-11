@@ -21,7 +21,7 @@ import (
 type accountLedger map[string]*accountpb.Account
 
 func TestAccountAggCreatorTask_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	tests := []struct {
 		description string
@@ -147,7 +147,7 @@ func TestAccountAggCreatorTask_Run(t *testing.T) {
 }
 
 func TestValidatorAggCreatorTask_Run(t *testing.T) {
-	setup(t)
+	setup()
 	plTime := *types.NewTimeFromTime(time.Now())
 	const syncHeight int64 = 17
 	const currHeight int64 = 64

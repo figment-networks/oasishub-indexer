@@ -13,7 +13,7 @@ import (
 )
 
 func TestBlockParserTask_Run(t *testing.T) {
-	setup(t)
+	setup()
 	proposerAddr := "proposerAddr"
 	proposerKey := "proposerKey"
 
@@ -97,7 +97,7 @@ func TestBlockParserTask_Run(t *testing.T) {
 }
 
 func TestValidatorParserTask_Run(t *testing.T) {
-	setup(t)
+	setup()
 	proposerAddr := "proposerAddr"
 	isFalse := false
 	isTrue := true

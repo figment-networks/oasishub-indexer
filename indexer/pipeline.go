@@ -102,7 +102,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		pipeline.RetryingTask(NewBlockSeqPersistorTask(db.BlockSeq), isTransient, 3),
 		pipeline.RetryingTask(NewValidatorSeqPersistorTask(db.ValidatorSeq), isTransient, 3),
 		pipeline.RetryingTask(NewValidatorAggPersistorTask(db.ValidatorAgg), isTransient, 3),
-		pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewSystemEventPersistorTask(db.SystemEvents), isTransient, 3),
 	)
 
 	configParser, err := NewConfigParser(cfg.IndexerConfigFile)

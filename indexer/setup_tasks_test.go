@@ -15,7 +15,7 @@ import (
 )
 
 func TestSetup_Run(t *testing.T) {
-	setup(t)
+	setup()
 
 	t.Run("returns error when client returns error", func(t *testing.T) {
 		ctrl := gomock.NewController(t)
