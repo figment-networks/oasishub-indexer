@@ -49,6 +49,7 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 			e.Proposed = parsedValidator.Proposed
 			e.TotalShares = parsedValidator.TotalShares
 			e.ActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
+			e.Rewards = parsedValidator.Rewards
 		}
 
 		if !e.Valid() {

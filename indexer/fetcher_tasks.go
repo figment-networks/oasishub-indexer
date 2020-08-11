@@ -13,6 +13,7 @@ import (
 
 const (
 	BlockFetcherTaskName        = "BlockFetcher"
+	RewardFetcherTaskName       = "RewardFetcher"
 	StateFetcherTaskName        = "StateFetcher"
 	StakingStateFetcherTaskName = "StakingStateFetcher"
 	ValidatorFetcherTaskName    = "ValidatorFetcher"
@@ -52,6 +53,36 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	)
 
 	payload.RawBlock = block.GetBlock()
+	return nil
+}
+
+type RewardFetcherTask struct {
+	client *client.Client
+}
+
+func (t *RewardFetcherTask) GetName() string {
+	return RewardFetcherTaskName
+}
+
+func (t *RewardFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	events, err := t.client.Event.GetRewardsByHeight(payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.DebugJSON(events.GetEvents(),
+		logger.Field("process", "pipeline"),
+		logger.Field("stage", "fetcher"),
+		logger.Field("request", "events"),
+		logger.Field("height", payload.CurrentHeight),
+	)
+
+	payload.RawRewardEvents = events.GetEvents()
 	return nil
 }
 
