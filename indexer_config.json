@@ -13,12 +13,13 @@
     {
       "id": 3,
       "parallel": false,
-      "targets": [3,4,5]
+      "targets": [4,5]
     }
   ],
   "shared_tasks": [
     "HeightMetaRetriever",
-    "MainSyncer"
+    "MainSyncer",
+    "SyncerPersistor"
   ],
   "available_targets": [
     {
@@ -31,7 +32,6 @@
         "TransactionFetcher",
         "BlockParser",
         "BlockSeqCreator",
-        "SyncerPersistor",
         "BlockSeqPersistor"
       ]
     },
@@ -45,7 +45,6 @@
         "ValidatorFetcher",
         "ValidatorsParser",
         "ValidatorSeqCreator",
-        "SyncerPersistor",
         "ValidatorSeqPersistor"
       ]
     },
@@ -59,7 +58,6 @@
         "ValidatorFetcher",
         "ValidatorsParser",
         "ValidatorAggCreator",
-        "SyncerPersistor",
         "ValidatorAggPersistor"
       ]
     },
@@ -74,7 +72,6 @@
         "ValidatorsParser",
         "ValidatorSeqCreator",
         "SystemEventCreator",
-        "SyncerPersistor",
         "ValidatorSeqPersistor",
         "SystemEventPersistor"
       ]
@@ -82,7 +79,7 @@
     {
       "id": 5,
       "name": "index_validator_rewards",
-      "desc": "Adds rewards to validator sequences",
+      "desc": "Creates and persists validator sequences and aggregates with rewards",
       "tasks": [
         "BlockFetcher",
         "StakingStateFetcher",
@@ -90,8 +87,9 @@
         "ValidatorFetcher",
         "ValidatorsParser",
         "ValidatorSeqCreator",
-        "SyncerPersistor",
-        "ValidatorSeqPersistor"
+        "ValidatorSeqPersistor",
+        "ValidatorAggCreator",
+        "ValidatorAggPersistor"
       ]
     }
   ]
