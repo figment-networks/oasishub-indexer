@@ -55,14 +55,14 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func NewEventsFetcherTask(client *client.Client) pipeline.Task {
+func NewEventsFetcherTask(client client.EventClient) pipeline.Task {
 	return &EventsFetcherTask{
 		client: client,
 	}
 }
 
 type EventsFetcherTask struct {
-	client *client.Client
+	client client.EventClient
 }
 
 func (t *EventsFetcherTask) GetName() string {
@@ -73,7 +73,7 @@ func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
 	payload := p.(*payload)
 
-	events, err := t.client.Event.GetAddEscrowEventsByHeight(payload.CurrentHeight)
+	events, err := t.client.GetAddEscrowEventsByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}

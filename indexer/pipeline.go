@@ -65,7 +65,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		pipeline.RetryingTask(NewStateFetcherTask(client.State), isTransient, 3),
 		pipeline.RetryingTask(NewValidatorFetcherTask(client.Validator), isTransient, 3),
 		pipeline.RetryingTask(NewTransactionFetcherTask(client.Transaction), isTransient, 3),
-		pipeline.RetryingTask(NewEventsFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewEventsFetcherTask(client.Event), isTransient, 3),
 	)
 
 	// Set parser stage
