@@ -3,10 +3,11 @@ package logger
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"strings"
 )
 
 var (

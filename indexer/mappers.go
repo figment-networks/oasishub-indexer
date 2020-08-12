@@ -1,7 +1,6 @@
 package indexer
 
 import (
-	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
@@ -10,7 +9,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-func BlockToSequence(syncable *model.Syncable, rawBlock *blockpb.Block, blockParsedData ParsedBlockData) (*model.BlockSeq, error) {
+var (
+	errInvalidBlockSeq = errors.New("block sequence not valid")
+)
+
+func BlockToSequence(syncable *model.Syncable, blockParsedData ParsedBlockData) (*model.BlockSeq, error) {
 	e := &model.BlockSeq{
 		Sequence: &model.Sequence{
 			Height: syncable.Height,
@@ -21,7 +24,7 @@ func BlockToSequence(syncable *model.Syncable, rawBlock *blockpb.Block, blockPar
 	}
 
 	if !e.Valid() {
-		return nil, errors.New("block sequence not valid")
+		return nil, errInvalidBlockSeq
 	}
 
 	return e, nil
@@ -36,10 +39,10 @@ func ValidatorToSequence(syncable *model.Syncable, rawValidators []*validatorpb.
 				Time:   syncable.Time,
 			},
 
-			EntityUID:    rawValidator.GetNode().GetEntityId(),
-			Address:      rawValidator.GetAddress(),
-			VotingPower:  rawValidator.GetVotingPower(),
-			Commission:   types.NewQuantityFromBytes(rawValidator.GetCommission()),
+			EntityUID:   rawValidator.GetNode().GetEntityId(),
+			Address:     rawValidator.GetAddress(),
+			VotingPower: rawValidator.GetVotingPower(),
+			Commission:  types.NewQuantityFromBytes(rawValidator.GetCommission()),
 		}
 
 		address := rawValidator.GetAddress()
@@ -87,17 +90,17 @@ func TransactionToSequence(syncable *model.Syncable, rawTransactions []*transact
 	return transactions, nil
 }
 
-func StakingToSequence(syncable *model.Syncable, rawState *statepb.State) (*model.StakingSeq, error) {
+func StakingToSequence(syncable *model.Syncable, rawStaking *statepb.Staking) (*model.StakingSeq, error) {
 	e := &model.StakingSeq{
 		Sequence: &model.Sequence{
 			Height: syncable.Height,
 			Time:   syncable.Time,
 		},
 
-		TotalSupply:         types.NewQuantityFromBytes(rawState.GetStaking().GetTotalSupply()),
-		CommonPool:          types.NewQuantityFromBytes(rawState.GetStaking().GetCommonPool()),
-		DebondingInterval:   rawState.GetStaking().GetParameters().GetDebondingInterval(),
-		MinDelegationAmount: types.NewQuantityFromBytes(rawState.GetStaking().GetParameters().GetMinDelegationAmount()),
+		TotalSupply:         types.NewQuantityFromBytes(rawStaking.GetTotalSupply()),
+		CommonPool:          types.NewQuantityFromBytes(rawStaking.GetCommonPool()),
+		DebondingInterval:   rawStaking.GetParameters().GetDebondingInterval(),
+		MinDelegationAmount: types.NewQuantityFromBytes(rawStaking.GetParameters().GetMinDelegationAmount()),
 	}
 
 	if !e.Valid() {

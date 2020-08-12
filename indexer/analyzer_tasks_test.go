@@ -3,15 +3,15 @@ package indexer
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/figment-networks/oasishub-indexer/config"
 	mock_indexer "github.com/figment-networks/oasishub-indexer/mock/indexer"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/golang/mock/gomock"
-	"testing"
-	"time"
 )
 
 const (
@@ -34,8 +34,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		defer ctrl.Finish()
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
-
-		setup()
 
 		MaxValidatorSequences = 10
 		MissedInRowThreshold = 5
@@ -94,8 +92,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
-		setup()
-
 		payload := testPayload()
 
 		validatorSeqStoreMock.EXPECT().FindByHeight(gomock.Any()).Return(nil, ErrValidatorSeqFindByHeight).Times(1)
@@ -112,8 +108,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		defer ctrl.Finish()
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
-
-		setup()
 
 		lastValidatorSeqsForValidator1 := []model.ValidatorSeq{
 			newValidatorSeq(testValidatorAddress, 1000, 0, false),
@@ -143,8 +137,6 @@ func TestSystemEventCreatorTask_Run(t *testing.T) {
 		defer ctrl.Finish()
 
 		validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
-
-		setup()
 
 		prevHeightValidatorSequences := []model.ValidatorSeq{
 			newValidatorSeq(testValidatorAddress, 1000, 0, true),
@@ -198,8 +190,6 @@ func TestSystemEventCreatorTask_getValueChangeSystemEvents(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
-			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
@@ -292,8 +282,6 @@ func TestSystemEventCreatorTask_getActiveSetPresenceChangeSystemEvents(t *testin
 		t.Run(tt.description, func(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
-
-			setup()
 
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
@@ -446,7 +434,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 					newValidatorSeq(testValidatorAddress, 1000, 0, false),
 					newValidatorSeq(testValidatorAddress, 1000, 0, false),
 					newValidatorSeq(testValidatorAddress, 1000, 0, true),
-					newValidatorSeq(testValidatorAddress, 1000, 0,true),
+					newValidatorSeq(testValidatorAddress, 1000, 0, true),
 				},
 			},
 			expectedCount: 1,
@@ -596,8 +584,6 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			setup()
-
 			validatorSeqStoreMock := mock_indexer.NewMockSystemEventCreatorStore(ctrl)
 
 			MaxValidatorSequences = tt.maxValidatorSequences
@@ -646,10 +632,6 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 	}
 }
 
-func setup() {
-	logger.InitTest()
-}
-
 func testPayload() *payload {
 	return &payload{
 		Syncable: &model.Syncable{
@@ -668,7 +650,7 @@ func newValidatorSeq(address string, balance int64, commission int64, validated 
 		},
 		Address:             address,
 		ActiveEscrowBalance: types.NewQuantityFromInt64(balance),
-		Commission: types.NewQuantityFromInt64(commission),
+		Commission:          types.NewQuantityFromInt64(commission),
 		PrecommitValidated:  &validated,
 	}
 }

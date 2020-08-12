@@ -5,6 +5,8 @@
 package mock_client
 
 import (
+	reflect "reflect"
+
 	accountpb "github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	blockpb "github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
 	chainpb "github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
@@ -12,7 +14,6 @@ import (
 	transactionpb "github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	validatorpb "github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
 	gomock "github.com/golang/mock/gomock"
-	reflect "reflect"
 )
 
 // MockAccountClient is a mock of AccountClient interface
@@ -114,34 +115,34 @@ func (m *MockChainClient) EXPECT() *MockChainClientMockRecorder {
 	return m.recorder
 }
 
-// GeMetaByHeight mocks base method
-func (m *MockChainClient) GeMetaByHeight(arg0 int64) (*chainpb.GetMetaByHeightResponse, error) {
+// GetMetaByHeight mocks base method
+func (m *MockChainClient) GetMetaByHeight(arg0 int64) (*chainpb.GetMetaByHeightResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GeMetaByHeight", arg0)
+	ret := m.ctrl.Call(m, "GetMetaByHeight", arg0)
 	ret0, _ := ret[0].(*chainpb.GetMetaByHeightResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GeMetaByHeight indicates an expected call of GeMetaByHeight
-func (mr *MockChainClientMockRecorder) GeMetaByHeight(arg0 interface{}) *gomock.Call {
+// GetMetaByHeight indicates an expected call of GetMetaByHeight
+func (mr *MockChainClientMockRecorder) GetMetaByHeight(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeMetaByHeight", reflect.TypeOf((*MockChainClient)(nil).GeMetaByHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetMetaByHeight", reflect.TypeOf((*MockChainClient)(nil).GetMetaByHeight), arg0)
 }
 
-// GeStatus mocks base method
-func (m *MockChainClient) GeStatus() (*chainpb.GetStatusResponse, error) {
+// GetStatus mocks base method
+func (m *MockChainClient) GetStatus() (*chainpb.GetStatusResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GeStatus")
+	ret := m.ctrl.Call(m, "GetStatus")
 	ret0, _ := ret[0].(*chainpb.GetStatusResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GeStatus indicates an expected call of GeStatus
-func (mr *MockChainClientMockRecorder) GeStatus() *gomock.Call {
+// GetStatus indicates an expected call of GetStatus
+func (mr *MockChainClientMockRecorder) GetStatus() *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GeStatus", reflect.TypeOf((*MockChainClient)(nil).GeStatus))
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetStatus", reflect.TypeOf((*MockChainClient)(nil).GetStatus))
 }
 
 // GetHead mocks base method
