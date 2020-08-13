@@ -395,7 +395,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				},
 			},
 			expectedCount: 1,
-			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMInRow},
+			expectedKinds: []model.SystemEventKind{model.SystemEventMissedNInRow},
 		},
 		{
 			description:           "returns no missed_m_in_row system events when validator missed >= 3 blocks in a row in the past but current is validated",
@@ -438,7 +438,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				},
 			},
 			expectedCount: 1,
-			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
+			expectedKinds: []model.SystemEventKind{model.SystemEventMissedNofM},
 		},
 		{
 			description:           "returns one missed_m_of_n system events when validator missed 3 blocks and max < last list",
@@ -461,7 +461,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 				},
 			},
 			expectedCount: 1,
-			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
+			expectedKinds: []model.SystemEventKind{model.SystemEventMissedNofM},
 		},
 		{
 			description:           "returns no missed_m_of_n system events when count of recent not validated > maxValidatorSequences",
@@ -575,7 +575,7 @@ func TestSystemEventCreatorTask_getMissedBlocksSystemEvents(t *testing.T) {
 			},
 			errs:          []error{nil, store.ErrNotFound},
 			expectedCount: 1,
-			expectedKinds: []model.SystemEventKind{model.SystemEventMissedMofN},
+			expectedKinds: []model.SystemEventKind{model.SystemEventMissedNofM},
 		},
 	}
 
