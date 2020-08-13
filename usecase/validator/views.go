@@ -69,15 +69,22 @@ type SeqListItem struct {
 	AsValidatorHeight   int64          `json:"as_validator_height"`
 	ProposedHeight      int64          `json:"proposed_height"`
 	PrecommitValidated  *bool          `json:"precommit_validated"`
+	EntityName          string         `json:"entity_name"`
 }
 
 type SeqListView struct {
 	Items []SeqListItem `json:"items"`
 }
 
-func ToSeqListView(validatorSeqs []model.ValidatorSeq) *SeqListView {
+func ToSeqListView(validatorSeqs []model.ValidatorSeq, validatorAggs []model.ValidatorAgg) *SeqListView {
+	nameLookup := make(map[string]string)
+	for _, agg := range validatorAggs {
+		nameLookup[agg.Address] = agg.EntityName
+	}
+
 	var items []SeqListItem
 	for _, m := range validatorSeqs {
+
 		item := SeqListItem{
 			Sequence: m.Sequence,
 
@@ -87,6 +94,10 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq) *SeqListView {
 			TotalShares:         m.TotalShares,
 			ActiveEscrowBalance: m.ActiveEscrowBalance,
 			PrecommitValidated:  m.PrecommitValidated,
+		}
+
+		if val, ok := nameLookup[m.Address]; ok {
+			item.EntityName = val
 		}
 
 		items = append(items, item)

@@ -41,8 +41,10 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 		return nil, errors.New("height is not indexed yet")
 	}
 
-	models, err := uc.db.ValidatorSeq.FindByHeight(*height)
-	if len(models) == 0 || err != nil {
+	seqs, err := uc.db.ValidatorSeq.FindByHeight(*height)
+	aggs, aggErr := uc.db.ValidatorAgg.GetAllForHeightGreaterThan(*height)
+
+	if len(seqs) == 0 || err != nil {
 		indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
 		if err != nil {
 			return nil, err
@@ -58,8 +60,12 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 			return nil, err
 		}
 
-		models = payload.NewValidatorSequences
+		seqs = payload.NewValidatorSequences
+		if len(aggs) == 0 || aggErr != nil {
+			aggs = payload.NewAggregatedValidators
+
+		}
 	}
 
-	return ToSeqListView(models), nil
+	return ToSeqListView(seqs, aggs), nil
 }
