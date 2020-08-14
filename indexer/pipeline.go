@@ -280,19 +280,26 @@ func (o *indexingPipeline) canRunBackfill(isParallel bool) error {
 
 type RunConfig struct {
 	Height           int64
-	DesiredVersionID int64
-	DesiredTargetID  int64
+	DesiredVersionID *int64
+	DesiredTargetID  *int64
 	Dry              bool
 }
 
 // Run runs pipeline just for one height
 func (o *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload, error) {
 	pipelineOptionsCreator := &pipelineOptionsCreator{
-		configParser:      o.configParser,
-		dry:               runCfg.Dry,
-		desiredVersionIds: []int64{runCfg.DesiredVersionID},
-		desiredTargetIds:  []int64{runCfg.DesiredTargetID},
+		configParser: o.configParser,
+		dry:          runCfg.Dry,
 	}
+
+	if runCfg.DesiredVersionID != nil {
+		pipelineOptionsCreator.desiredVersionIds = []int64{*runCfg.DesiredVersionID}
+	}
+
+	if runCfg.DesiredTargetID != nil {
+		pipelineOptionsCreator.desiredTargetIds = []int64{*runCfg.DesiredTargetID}
+	}
+
 	pipelineOptions, err := pipelineOptionsCreator.parse()
 	if err != nil {
 		return nil, err

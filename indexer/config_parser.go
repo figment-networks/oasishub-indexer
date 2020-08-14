@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/figment-networks/indexing-engine/pipeline"
 	"io/ioutil"
+
+	"github.com/figment-networks/indexing-engine/pipeline"
 )
 
 const (
-	IndexTargetBlockSequences = iota + 1
+	IndexTargetBlockSequences = iota + int64(1)
 	IndexTargetValidatorSequences
 	IndexTargetValidatorAggregates
 	IndexTargetSystemEvents
