@@ -389,7 +389,7 @@ func TestValidatorAggCreatorTask_Run(t *testing.T) {
 				dbMock.EXPECT().FindByEntityUID(key).Return(returnVal, nil).Times(1)
 
 				validator := updateValidatorAgg(returnVal, raw, payload)
-				validator.RecentTendermintAddress = raw.GetAddress()
+				validator.RecentTendermintAddress = raw.GetTendermintAddress()
 
 				if parsed, ok := tt.parsed[raw.Address]; ok {
 					updateParsedValidatorAgg(validator, parsed, payload, false)
