@@ -3,9 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
@@ -17,14 +17,18 @@ const (
 	MainSyncerTaskName = "MainSyncer"
 )
 
-func NewMainSyncerTask(db *store.Store) pipeline.Task {
+type SyncerTaskStore interface {
+	FindByHeight(height int64) (*model.Syncable, error)
+}
+
+func NewMainSyncerTask(db SyncerTaskStore) pipeline.Task {
 	return &mainSyncerTask{
 		db: db,
 	}
 }
 
 type mainSyncerTask struct {
-	db *store.Store
+	db SyncerTaskStore
 }
 
 func (t *mainSyncerTask) GetName() string {
@@ -32,13 +36,13 @@ func (t *mainSyncerTask) GetName() string {
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	defer metric.LogIndexerTaskDuration(Now(), t.GetName())
 
 	payload := p.(*payload)
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageSyncer, t.GetName(), payload.CurrentHeight))
 
-	syncable, err := t.db.Syncables.FindByHeight(payload.CurrentHeight)
+	syncable, err := t.db.FindByHeight(payload.CurrentHeight)
 	if err != nil {
 		if err == store.ErrNotFound {
 			syncable = &model.Syncable{
@@ -53,7 +57,7 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 		}
 	}
 
-	syncable.StartedAt = *types.NewTimeFromTime(time.Now())
+	syncable.StartedAt = *types.NewTimeFromTime(Now())
 
 	report, ok := ctx.Value(CtxReport).(*model.Report)
 	if ok {

@@ -42,6 +42,7 @@ func (aa *ValidatorAgg) Update(entity ValidatorAgg) {
 	aa.Aggregate.RecentAtHeight = entity.Aggregate.RecentAtHeight
 	aa.Aggregate.RecentAt = entity.Aggregate.RecentAt
 
+	aa.RecentTendermintAddress = entity.RecentTendermintAddress
 	aa.RecentVotingPower = entity.RecentVotingPower
 	aa.RecentTotalShares = entity.RecentTotalShares
 	aa.RecentActiveEscrowBalance = entity.RecentActiveEscrowBalance

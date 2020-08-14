@@ -3,6 +3,8 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
@@ -25,6 +27,8 @@ var (
 	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
 )
 
+var Now = time.Now
+
 type indexingPipeline struct {
 	cfg    *config.Config
 	db     *store.Store
@@ -44,23 +48,23 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Setup stage
 	defaultPipeline.SetTasks(
 		pipeline.StageSetup,
-		pipeline.RetryingTask(NewHeightMetaRetrieverTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewHeightMetaRetrieverTask(client.Chain), isTransient, 3),
 	)
 
 	// Syncer stage
 	defaultPipeline.SetTasks(
 		pipeline.StageSyncer,
-		pipeline.RetryingTask(NewMainSyncerTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewMainSyncerTask(db.Syncables), isTransient, 3),
 	)
 
 	// Fetcher stage
 	defaultPipeline.SetAsyncTasks(
 		pipeline.StageFetcher,
-		pipeline.RetryingTask(NewBlockFetcherTask(client), isTransient, 3),
-		pipeline.RetryingTask(NewStakingStateFetcherTask(client), isTransient, 3),
-		pipeline.RetryingTask(NewStateFetcherTask(client), isTransient, 3),
-		pipeline.RetryingTask(NewValidatorFetcherTask(client), isTransient, 3),
-		pipeline.RetryingTask(NewTransactionFetcherTask(client), isTransient, 3),
+		pipeline.RetryingTask(NewBlockFetcherTask(client.Block), isTransient, 3),
+		pipeline.RetryingTask(NewStakingStateFetcherTask(client.State), isTransient, 3),
+		pipeline.RetryingTask(NewStateFetcherTask(client.State), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorFetcherTask(client.Validator), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionFetcherTask(client.Transaction), isTransient, 3),
 	)
 
 	// Set parser stage
@@ -73,19 +77,19 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Set sequencer stage
 	defaultPipeline.SetAsyncTasks(
 		pipeline.StageSequencer,
-		pipeline.RetryingTask(NewBlockSeqCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewTransactionSeqCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewStakingSeqCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewValidatorSeqCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewBlockSeqCreatorTask(db.BlockSeq), isTransient, 3),
+		pipeline.RetryingTask(NewTransactionSeqCreatorTask(db.TransactionSeq), isTransient, 3),
+		pipeline.RetryingTask(NewStakingSeqCreatorTask(db.StakingSeq), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqCreatorTask(db.ValidatorSeq), isTransient, 3),
+		pipeline.RetryingTask(NewDelegationsSeqCreatorTask(db.DelegationSeq), isTransient, 3),
+		pipeline.RetryingTask(NewDebondingDelegationsSeqCreatorTask(db.DebondingDelegationSeq), isTransient, 3),
 	)
 
 	// Set aggregator stage
 	defaultPipeline.SetAsyncTasks(
 		pipeline.StageAggregator,
-		pipeline.RetryingTask(NewAccountAggCreatorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewValidatorAggCreatorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewAccountAggCreatorTask(db.AccountAgg), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggCreatorTask(db.ValidatorAgg), isTransient, 3),
 	)
 
 	// Add analyzer stage
@@ -94,11 +98,11 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 	// Set persistor stage
 	defaultPipeline.SetAsyncTasks(
 		pipeline.StagePersistor,
-		pipeline.RetryingTask(NewSyncerPersistorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewBlockSeqPersistorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewValidatorSeqPersistorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewValidatorAggPersistorTask(db), isTransient, 3),
-		pipeline.RetryingTask(NewSystemEventPersistorTask(db), isTransient, 3),
+		pipeline.RetryingTask(NewSyncerPersistorTask(db.Syncables), isTransient, 3),
+		pipeline.RetryingTask(NewBlockSeqPersistorTask(db.BlockSeq), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorSeqPersistorTask(db.ValidatorSeq), isTransient, 3),
+		pipeline.RetryingTask(NewValidatorAggPersistorTask(db.ValidatorAgg), isTransient, 3),
+		pipeline.RetryingTask(NewSystemEventPersistorTask(db.SystemEvents), isTransient, 3),
 	)
 
 	configParser, err := NewConfigParser(cfg.IndexerConfigFile)
@@ -136,7 +140,7 @@ func (o *indexingPipeline) Index(ctx context.Context, indexCfg IndexConfig) erro
 
 	currentIndexVersion := o.configParser.GetCurrentVersionId()
 
-	source, err := NewIndexSource(o.cfg, o.db, o.client, indexCfg.StartHeight, indexCfg.BatchSize)
+	source, err := NewIndexSource(o.cfg, o.db.Syncables, o.client.Chain, indexCfg.StartHeight, indexCfg.BatchSize)
 	if err != nil {
 		return err
 	}
@@ -204,7 +208,7 @@ func (o *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	currentIndexVersion := o.configParser.GetCurrentVersionId()
 	kind := model.ReportKindSequentialReindex
 
-	source, err := NewBackfillSource(o.cfg, o.db, o.client, currentIndexVersion)
+	source, err := NewBackfillSource(o.cfg, o.db.Syncables, currentIndexVersion)
 	if err != nil {
 		return err
 	}

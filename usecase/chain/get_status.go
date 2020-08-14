@@ -29,7 +29,7 @@ func (uc *getStatusUseCase) Execute(ctx  context.Context) (*DetailsView, error) 
 		return nil, err
 	}
 
-	getStatusRes, err := uc.client.Chain.GeStatus()
+	getStatusRes, err := uc.client.Chain.GetStatus()
 	if err != nil {
 		return nil, err
 	}
