@@ -67,7 +67,7 @@ data to the format indexer understands.
 * `PURGE_SEQUENCES_INTERVAL` - Sequence older than given interval will be purged _[DEFAULT: 24h]_
 * `PURGE_SYSTE_EVENTS_INTERVAL` - System events older than given interval will be purged _[DEFAULT: 24h]_
 * `PURGE_HOURLY_SUMMARY_INTERVAL` - Hourly summaries records older than given interval will be purged _[DEFAULT: 24h]_
-* `INDEXER_TARGETS_FILE` - JSON file with targets and its task names 
+* `INDEXER_CONFIG_FILE` - JSON file with indexer configuration 
 
 ### Available endpoints:
 
@@ -156,6 +156,84 @@ We currently expose below metrics:
 * `figment_indexer_height_task_duration` (gauge) - total time required to process indexing task 
 * `figment_indexer_use_case_duration` (gauge) - total time required to execute use case 
 * `figment_database_query_duration` (gauge) - total time required to execute database query 
-* `figment_server_request_duration` (gauge) - total time required to executre http request 
+* `figment_server_request_duration` (gauge) - total time required to execute http request 
 
 
+### Using indexer configuration file
+Indexing process is configured using JSON file. A typical indexer config file looks similar to:
+```json
+{
+  "versions": [
+    {
+      "id": 1,
+      "parallel": false,
+      "targets": [1, 2]
+    },
+    {
+      "id": 2,
+      "parallel": false,
+      "targets": [3]
+    }
+  ],
+  "shared_tasks": [
+    "HeightMetaRetriever",
+    "MainSyncer"
+  ],
+  "available_targets": [
+    {
+      "id": 1,
+      "name": "index_block_sequences",
+      "desc": "Creates and persists block sequences",
+      "tasks": [
+        "BlockFetcher",
+        "ValidatorFetcher",
+        "TransactionFetcher",
+        "BlockParser",
+        "BlockSeqCreator",
+        "SyncerPersistor",
+        "BlockSeqPersistor"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "index_validator_sequences",
+      "desc": "Creates and persists validator sequences",
+      "tasks": [
+        "BlockFetcher",
+        "StakingStateFetcher",
+        "ValidatorFetcher",
+        "ValidatorsParser",
+        "ValidatorSeqCreator",
+        "SyncerPersistor",
+        "ValidatorSeqPersistor"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "index_validator_aggregates",
+      "desc": "Creates and persists validator aggregates",
+      "tasks": [
+        "BlockFetcher",
+        "StakingStateFetcher",
+        "ValidatorFetcher",
+        "ValidatorsParser",
+        "ValidatorAggCreator",
+        "SyncerPersistor",
+        "ValidatorAggPersistor"
+      ]
+    }
+  ]
+}
+```
+
+In this file we have 3 main sections:
+* **versions** - describes available index versions and what targets to run for every version. `parallel` option specifies if the new index version can be run in parallel.
+* **shared_tasks** - tasks that are shared between targets. These tasks will be run for every target in `targets` section.
+* **targets** - array of available targets along with their tasks. Target represents some specific outcome of indexing process (ie. index validators) and it tells the system what tasks have to be run to satisfy this outcome.
+
+### Updating indexer version flow
+
+- Add task to a stage in the `indexer` package
+- If necessary, create `migration` file(s)
+- Create a new target in the targets section of the `indexer_config.json`
+- Add a new version in `versions` section. Inside of it, specify targets that need to be run to satisfy this version. If you provide `parallel=true` option it will mean that backfill and indexing can be run in parallel.
