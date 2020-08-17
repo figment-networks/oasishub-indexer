@@ -27,6 +27,7 @@ func ToListView(validators []model.SystemEvent) *ListView {
 			Height: m.Height,
 			Time:   m.Time,
 			Kind:   m.Kind.String(),
+			Data:   m.Data,
 		}
 
 		items = append(items, item)
