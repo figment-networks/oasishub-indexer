@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
 	"google.golang.org/grpc"
 )
@@ -15,6 +16,7 @@ type ChainClient interface {
 	GetHead() (*chainpb.GetHeadResponse, error)
 	GetStatus() (*chainpb.GetStatusResponse, error)
 	GetMetaByHeight(int64) (*chainpb.GetMetaByHeightResponse, error)
+	GetConstants() (*chainpb.GetConstantsResponse, error)
 }
 
 func NewChainClient(conn *grpc.ClientConn) *chainClient {
@@ -43,4 +45,10 @@ func (r *chainClient) GetMetaByHeight(h int64) (*chainpb.GetMetaByHeightResponse
 	ctx := context.Background()
 
 	return r.client.GetMetaByHeight(ctx, &chainpb.GetMetaByHeightRequest{Height: h})
+}
+
+func (r *chainClient) GetConstants() (*chainpb.GetConstantsResponse, error) {
+	ctx := context.Background()
+
+	return r.client.GetConstants(ctx, &chainpb.GetConstantsRequest{})
 }

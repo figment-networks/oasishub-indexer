@@ -40,7 +40,12 @@ type indexingPipeline struct {
 }
 
 func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
-	defaultPipeline := pipeline.NewDefault(NewPayloadFactory())
+	constants, err := client.Chain.GetConstants()
+	if err != nil {
+		return nil, err
+	}
+
+	defaultPipeline := pipeline.NewDefault(NewPayloadFactory(constants))
 
 	// Setup logger
 	defaultPipeline.SetLogger(NewLogger())

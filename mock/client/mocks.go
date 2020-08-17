@@ -115,6 +115,21 @@ func (m *MockChainClient) EXPECT() *MockChainClientMockRecorder {
 	return m.recorder
 }
 
+// GetConstants mocks base method
+func (m *MockChainClient) GetConstants() (*chainpb.GetConstantsResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetConstants")
+	ret0, _ := ret[0].(*chainpb.GetConstantsResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetConstants indicates an expected call of GetConstants
+func (mr *MockChainClientMockRecorder) GetConstants() *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetConstants", reflect.TypeOf((*MockChainClient)(nil).GetConstants))
+}
+
 // GetHead mocks base method
 func (m *MockChainClient) GetHead() (*chainpb.GetHeadResponse, error) {
 	m.ctrl.T.Helper()

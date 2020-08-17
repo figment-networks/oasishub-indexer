@@ -87,7 +87,6 @@ func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	)
 
 	payload.RawEscrowEvents = events.GetEvents()
-	payload.CommonPoolAddress = events.GetCommonPoolAddress()
 	return nil
 }
 

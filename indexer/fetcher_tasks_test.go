@@ -237,17 +237,16 @@ func TestTransactionFetcher_Run(t *testing.T) {
 
 func TestEventFetcher_Run(t *testing.T) {
 	tests := []struct {
-		description        string
-		expectedEvents     []*eventpb.AddEscrowEvent
-		expectedCommonPool string
-		result             error
+		description    string
+		expectedEvents []*eventpb.AddEscrowEvent
+		result         error
 	}{
-		{"returns error if client errors", nil, "", errTestClient},
+		{"returns error if client errors", nil, errTestClient},
 		{"updates payload", []*eventpb.AddEscrowEvent{&eventpb.AddEscrowEvent{
 			Owner:  "ownerAddr",
 			Escrow: "escrowAddr",
 			Amount: randBytes(5),
-		}}, "ownerAddr", nil},
+		}}, nil},
 	}
 
 	for _, tt := range tests {
@@ -261,7 +260,7 @@ func TestEventFetcher_Run(t *testing.T) {
 			pl := &payload{CurrentHeight: 20}
 
 			mockClient.EXPECT().GetAddEscrowEventsByHeight(pl.CurrentHeight).Return(
-				&eventpb.GetAddEscrowEventsByHeightResponse{Events: tt.expectedEvents, CommonPoolAddress: tt.expectedCommonPool}, tt.result,
+				&eventpb.GetAddEscrowEventsByHeightResponse{Events: tt.expectedEvents}, tt.result,
 			).Times(1)
 
 			if result := task.Run(ctx, pl); result != tt.result {
@@ -276,11 +275,6 @@ func TestEventFetcher_Run(t *testing.T) {
 
 			if !reflect.DeepEqual(pl.RawEscrowEvents, tt.expectedEvents) {
 				t.Errorf("want: %+v, got: %+v", tt.expectedEvents, pl.RawEscrowEvents)
-				return
-			}
-
-			if !reflect.DeepEqual(pl.CommonPoolAddress, tt.expectedCommonPool) {
-				t.Errorf("want: %+v, got: %+v", tt.expectedCommonPool, pl.CommonPoolAddress)
 				return
 			}
 		})
