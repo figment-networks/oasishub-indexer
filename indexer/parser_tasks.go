@@ -174,22 +174,24 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 }
 
 func getRewardsFromEscrowEvents(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) map[string]types.Quantity {
+	var escrowAcnt string
 	rewards := make(map[string]types.Quantity)
 	for _, rawEvent := range rawEvents {
+		escrowAcnt = rawEvent.GetEscrow()
 		if rawEvent.GetOwner() != commonPoolAddr {
 			// rewards only come from commonpool, so skip
 			continue
 		}
 		newAmt := types.NewQuantityFromBytes(rawEvent.GetAmount())
-		existingAmt, ok := rewards[rawEvent.GetEscrow()]
+		existingAmt, ok := rewards[escrowAcnt]
 		if ok {
 			// if there's a duplicate, then the event with the higher amount is the reward (other is commission)
 			if existingAmt.Cmp(newAmt) < 0 {
-				rewards[rawEvent.GetEscrow()] = newAmt
+				rewards[escrowAcnt] = newAmt
 			}
 
 		} else {
-			rewards[rawEvent.GetEscrow()] = newAmt
+			rewards[escrowAcnt] = newAmt
 		}
 	}
 	return rewards
