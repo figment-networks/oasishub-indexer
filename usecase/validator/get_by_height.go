@@ -48,12 +48,11 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 			return nil, err
 		}
 
-		targetId := indexer.IndexTargetValidatorSequences
 		ctx := context.Background()
 		payload, err := indexingPipeline.Run(ctx, indexer.RunConfig{
-			Height:          *height,
-			DesiredTargetID: &targetId,
-			Dry:             true,
+			Height:           *height,
+			DesiredTargetIDs: []int64{indexer.IndexTargetValidatorSequences},
+			Dry:              true,
 		})
 		if err != nil {
 			return nil, err

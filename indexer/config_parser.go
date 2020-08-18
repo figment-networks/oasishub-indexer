@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	IndexTargetBlockSequences = iota + int64(1)
+	IndexTargetBlockSequences = iota + 1
 	IndexTargetValidatorSequences
 	IndexTargetValidatorAggregates
 	IndexTargetSystemEvents
