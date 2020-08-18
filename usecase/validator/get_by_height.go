@@ -24,11 +24,11 @@ func NewGetByHeightUseCase(cfg *config.Config, db *store.Store, client *client.C
 	}
 }
 
-func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
+func (uc *getByHeightUseCase) Execute(height *int64) (SeqListView, error) {
 	// Get last indexed height
 	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
 	if err != nil {
-		return nil, err
+		return SeqListView{}, err
 	}
 	lastH := mostRecentSynced.Height
 
@@ -38,7 +38,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 	}
 
 	if *height > lastH {
-		return nil, errors.New("height is not indexed yet")
+		return SeqListView{}, errors.New("height is not indexed yet")
 	}
 
 	aggs, err := uc.db.ValidatorAgg.GetAllForHeightGreaterThan(*height)
@@ -50,7 +50,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 	if len(seqs) == 0 || err != nil {
 		indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
 		if err != nil {
-			return nil, err
+			return SeqListView{}, err
 		}
 
 		ctx := context.Background()
@@ -60,7 +60,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 			Dry:              true,
 		})
 		if err != nil {
-			return nil, err
+			return SeqListView{}, err
 		}
 
 		seqs = payload.NewValidatorSequences

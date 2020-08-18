@@ -76,7 +76,7 @@ type SeqListView struct {
 	Items []SeqListItem `json:"items"`
 }
 
-func ToSeqListView(validatorSeqs []model.ValidatorSeq, validatorAggs []model.ValidatorAgg) *SeqListView {
+func ToSeqListView(validatorSeqs []model.ValidatorSeq, validatorAggs []model.ValidatorAgg) SeqListView {
 	nameLookup := make(map[string]string)
 	for _, agg := range validatorAggs {
 		nameLookup[agg.Address] = agg.EntityName
@@ -103,7 +103,7 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq, validatorAggs []model.Val
 		items = append(items, item)
 	}
 
-	return &SeqListView{
+	return SeqListView{
 		Items: items,
 	}
 }
