@@ -142,7 +142,7 @@ func (t *systemEventCreatorTask) getMissedBlocksSystemEvents(currHeightValidator
 			logger.Debug(fmt.Sprintf("total missed blocks in a row for address %s: %d", validatorSequence.Address, missedInRowCount))
 
 			if missedInRowCount == MissedInRowThreshold {
-				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedNInRow, systemEventRawData{
+				newSystemEvent, err := t.newSystemEvent(validatorSequence, model.SystemEventMissedNConsecutive, systemEventRawData{
 					"threshold": MissedInRowThreshold,
 				})
 				if err != nil {

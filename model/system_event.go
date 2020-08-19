@@ -11,8 +11,8 @@ const (
 	SystemEventCommissionChange3          SystemEventKind = "commission_change_3"
 	SystemEventJoinedActiveSet            SystemEventKind = "joined_active_set"
 	SystemEventLeftActiveSet              SystemEventKind = "left_active_set"
-	SystemEventMissedNInRow               SystemEventKind = "n_consecutive"
-	SystemEventMissedNofM                 SystemEventKind = "n_of_m"
+	SystemEventMissedNConsecutive         SystemEventKind = "missed_n_consecutive"
+	SystemEventMissedNofM                 SystemEventKind = "missed_n_of_m"
 )
 
 type SystemEventKind string
