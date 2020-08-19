@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
@@ -99,30 +100,33 @@ func TestBlockParserTask_Run(t *testing.T) {
 
 func TestValidatorParserTask_Run(t *testing.T) {
 	proposerAddr := "proposerAddr"
+	commonPoolAddr := "commonPoolAddr"
 	isFalse := false
 	isTrue := true
 	hundredInBytes := uintToBytes(100, t)
+	twentyInBytes := uintToBytes(20, t)
 
 	tests := []struct {
 		description                  string
 		rawBlock                     *blockpb.Block
 		rawStakingState              *statepb.Staking
 		rawValidators                []*validatorpb.Validator
+		rawEscrowEvents              []*eventpb.AddEscrowEvent
 		expectedParsedValidatorsData ParsedValidatorsData
 	}{
-		{"update validator with no block votes",
-			testpbBlock(
+		{description: "update validator with no block votes",
+			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(),
 				setBlockProposerAddress(proposerAddr),
 			),
-			nil,
-			[]*validatorpb.Validator{
+			rawStakingState: nil,
+			rawValidators: []*validatorpb.Validator{
 				testpbValidator(
 					setValidatorAddress("t0"),
 					setTendermintAddress(proposerAddr),
 				),
 			},
-			ParsedValidatorsData{
+			expectedParsedValidatorsData: ParsedValidatorsData{
 				"t0": parsedValidator{
 					Proposed:             true,
 					PrecommitValidated:   nil,
@@ -132,17 +136,17 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
-		{"updates total shares",
-			testpbBlock(
+		{description: "updates total shares",
+			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(),
 				setBlockProposerAddress(proposerAddr),
 			),
-			testpbStaking(
+			rawStakingState: testpbStaking(
 				setStakingDelegationEntry("t0", "entry1", hundredInBytes),
 				setStakingDelegationEntry("t0", "entry2", hundredInBytes),
 				setStakingDelegationEntry("t1", "entry1", hundredInBytes),
 			),
-			[]*validatorpb.Validator{
+			rawValidators: []*validatorpb.Validator{
 				testpbValidator(
 					setValidatorAddress("t0"),
 					setTendermintAddress(proposerAddr),
@@ -151,7 +155,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			ParsedValidatorsData{
+			expectedParsedValidatorsData: ParsedValidatorsData{
 				"t0": parsedValidator{
 					Proposed:             true,
 					PrecommitValidated:   nil,
@@ -168,8 +172,8 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
-		{"updates PrecommitBlockIdFlag and PrecommitValidated",
-			testpbBlock(
+		{description: "updates PrecommitBlockIdFlag and PrecommitValidated",
+			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(
 					testpbVote(0, 2), // validatorindex=0, blockIDFlag=2
 					testpbVote(1, 2),
@@ -177,8 +181,8 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				),
 				setBlockProposerAddress(proposerAddr),
 			),
-			nil,
-			[]*validatorpb.Validator{
+			rawStakingState: nil,
+			rawValidators: []*validatorpb.Validator{
 				testpbValidator(
 					setValidatorAddress("t0"),
 				),
@@ -190,7 +194,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t2"),
 				),
 			},
-			ParsedValidatorsData{
+			expectedParsedValidatorsData: ParsedValidatorsData{
 				"t0": parsedValidator{
 					Proposed:             false,
 					PrecommitValidated:   &isTrue,
@@ -214,15 +218,15 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
-		{"update validators when there's less votes than validators",
-			testpbBlock(
+		{description: "update validators when there's less votes than validators",
+			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(
 					testpbVote(0, 2),
 				),
 				setBlockProposerAddress(proposerAddr),
 			),
-			nil,
-			[]*validatorpb.Validator{
+			rawStakingState: nil,
+			rawValidators: []*validatorpb.Validator{
 				testpbValidator(
 					setValidatorAddress("t0"),
 					setTendermintAddress(proposerAddr),
@@ -231,7 +235,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			ParsedValidatorsData{
+			expectedParsedValidatorsData: ParsedValidatorsData{
 				"t0": parsedValidator{
 					Proposed:             true,
 					PrecommitValidated:   &isTrue,
@@ -248,6 +252,103 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
+		{description: "updates validator rewards based on AddEscrowEvents with commonpool owner",
+			rawBlock: testpbBlock(
+				setBlockLastCommitVotes(),
+			),
+			rawStakingState: nil,
+			rawValidators: []*validatorpb.Validator{
+				testpbValidator(
+					setValidatorAddress("t0"),
+				),
+				testpbValidator(
+					setValidatorAddress("t1"),
+				),
+			},
+			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+				&eventpb.AddEscrowEvent{
+					Owner:  "not common pool addr",
+					Escrow: "t0",
+					Amount: hundredInBytes,
+				},
+				&eventpb.AddEscrowEvent{
+					Owner:  commonPoolAddr,
+					Escrow: "t1",
+					Amount: hundredInBytes,
+				},
+			},
+			expectedParsedValidatorsData: ParsedValidatorsData{
+				"t0": parsedValidator{
+					Proposed:             false,
+					PrecommitValidated:   nil,
+					PrecommitBlockIdFlag: 3,
+					PrecommitIndex:       0,
+					TotalShares:          types.NewQuantityFromInt64(0),
+				},
+				"t1": parsedValidator{
+					Proposed:             false,
+					PrecommitValidated:   nil,
+					PrecommitBlockIdFlag: 3,
+					PrecommitIndex:       1,
+					TotalShares:          types.NewQuantityFromInt64(0),
+					Rewards:              types.NewQuantityFromInt64(100),
+				},
+			},
+		},
+		{description: "updates validator rewards based on addescrowevent with the higher amount",
+			rawBlock: testpbBlock(
+				setBlockLastCommitVotes(),
+			),
+			rawStakingState: nil,
+			rawValidators: []*validatorpb.Validator{
+				testpbValidator(
+					setValidatorAddress("t0"),
+				),
+				testpbValidator(
+					setValidatorAddress("t1"),
+				),
+			},
+			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+				&eventpb.AddEscrowEvent{
+					Owner:  commonPoolAddr,
+					Escrow: "t0",
+					Amount: twentyInBytes,
+				},
+				&eventpb.AddEscrowEvent{
+					Owner:  commonPoolAddr,
+					Escrow: "t0",
+					Amount: hundredInBytes,
+				},
+				&eventpb.AddEscrowEvent{
+					Owner:  commonPoolAddr,
+					Escrow: "t1",
+					Amount: hundredInBytes,
+				},
+				&eventpb.AddEscrowEvent{
+					Owner:  commonPoolAddr,
+					Escrow: "t1",
+					Amount: twentyInBytes,
+				},
+			},
+			expectedParsedValidatorsData: ParsedValidatorsData{
+				"t0": parsedValidator{
+					Proposed:             false,
+					PrecommitValidated:   nil,
+					PrecommitBlockIdFlag: 3,
+					PrecommitIndex:       0,
+					TotalShares:          types.NewQuantityFromInt64(0),
+					Rewards:              types.NewQuantityFromInt64(100),
+				},
+				"t1": parsedValidator{
+					Proposed:             false,
+					PrecommitValidated:   nil,
+					PrecommitBlockIdFlag: 3,
+					PrecommitIndex:       1,
+					TotalShares:          types.NewQuantityFromInt64(0),
+					Rewards:              types.NewQuantityFromInt64(100),
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -257,9 +358,11 @@ func TestValidatorParserTask_Run(t *testing.T) {
 			task := NewValidatorsParserTask()
 
 			pl := &payload{
-				RawBlock:        tt.rawBlock,
-				RawValidators:   tt.rawValidators,
-				RawStakingState: tt.rawStakingState,
+				RawBlock:          tt.rawBlock,
+				RawValidators:     tt.rawValidators,
+				RawStakingState:   tt.rawStakingState,
+				RawEscrowEvents:   tt.rawEscrowEvents,
+				CommonPoolAddress: commonPoolAddr,
 			}
 
 			if err := task.Run(ctx, pl); err != nil {

@@ -173,6 +173,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 				if ok {
 					validator.RecentTotalShares = parsedValidator.TotalShares
 					validator.RecentActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
+					validator.RecentRewards = parsedValidator.Rewards
 
 					if parsedValidator.PrecommitBlockIdFlag == 1 {
 						// Not validated
@@ -215,6 +216,7 @@ func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) e
 			if ok {
 				validator.RecentTotalShares = parsedValidator.TotalShares
 				validator.RecentActiveEscrowBalance = parsedValidator.ActiveEscrowBalance
+				validator.RecentRewards = parsedValidator.Rewards
 
 				if parsedValidator.PrecommitBlockIdFlag == 1 {
 					// Not validated

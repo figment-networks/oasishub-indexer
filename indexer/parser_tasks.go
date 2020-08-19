@@ -3,13 +3,14 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/metric"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"math/big"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
+	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
 const (
@@ -80,6 +81,7 @@ type parsedValidator struct {
 	PrecommitIndex       int64
 	TotalShares          types.Quantity
 	ActiveEscrowBalance  types.Quantity
+	Rewards              types.Quantity
 }
 
 func (t *validatorsParserTask) GetName() string {
@@ -96,6 +98,7 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
+	rewards := getRewardsFromEscrowEvents(payload.RawEscrowEvents, payload.CommonPoolAddress)
 
 	const (
 		NotValidated int64 = 1
@@ -159,8 +162,37 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 			calculatedData.ActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
 		}
 
+		// Get rewards
+		if reward, ok := rewards[address]; ok {
+			calculatedData.Rewards = reward
+		}
+
 		parsedData[address] = calculatedData
 	}
 	payload.ParsedValidators = parsedData
 	return nil
+}
+
+func getRewardsFromEscrowEvents(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) map[string]types.Quantity {
+	var escrowAcnt string
+	rewards := make(map[string]types.Quantity)
+	for _, rawEvent := range rawEvents {
+		escrowAcnt = rawEvent.GetEscrow()
+		if rawEvent.GetOwner() != commonPoolAddr {
+			// rewards only come from commonpool, so skip
+			continue
+		}
+		newAmt := types.NewQuantityFromBytes(rawEvent.GetAmount())
+		existingAmt, ok := rewards[escrowAcnt]
+		if ok {
+			// if there's a duplicate, then the event with the higher amount is the reward (other is commission)
+			if existingAmt.Cmp(newAmt) < 0 {
+				rewards[escrowAcnt] = newAmt
+			}
+
+		} else {
+			rewards[escrowAcnt] = newAmt
+		}
+	}
+	return rewards
 }

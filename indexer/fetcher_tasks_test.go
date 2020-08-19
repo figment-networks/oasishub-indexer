@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
@@ -229,6 +230,52 @@ func TestTransactionFetcher_Run(t *testing.T) {
 						t.Errorf("transactions don't match; want: %+v, got: %+v", expected, transaction)
 					}
 				}
+			}
+		})
+	}
+}
+
+func TestEventFetcher_Run(t *testing.T) {
+	tests := []struct {
+		description    string
+		expectedEvents []*eventpb.AddEscrowEvent
+		result         error
+	}{
+		{"returns error if client errors", nil, errTestClient},
+		{"updates payload", []*eventpb.AddEscrowEvent{&eventpb.AddEscrowEvent{
+			Owner:  "ownerAddr",
+			Escrow: "escrowAddr",
+			Amount: randBytes(5),
+		}}, nil},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			mockClient := mock.NewMockEventClient(ctrl)
+			task := NewEventsFetcherTask(mockClient)
+
+			pl := &payload{CurrentHeight: 20}
+
+			mockClient.EXPECT().GetAddEscrowEventsByHeight(pl.CurrentHeight).Return(
+				&eventpb.GetAddEscrowEventsByHeightResponse{Events: tt.expectedEvents}, tt.result,
+			).Times(1)
+
+			if result := task.Run(ctx, pl); result != tt.result {
+				t.Errorf("want %v; got %v", tt.result, result)
+				return
+			}
+
+			// skip payload check if there's an error
+			if tt.result != nil {
+				return
+			}
+
+			if !reflect.DeepEqual(pl.RawEscrowEvents, tt.expectedEvents) {
+				t.Errorf("want: %+v, got: %+v", tt.expectedEvents, pl.RawEscrowEvents)
+				return
 			}
 		})
 	}

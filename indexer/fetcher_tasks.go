@@ -13,6 +13,7 @@ import (
 
 const (
 	BlockFetcherTaskName        = "BlockFetcher"
+	EventFetcherTaskName        = "EventsFetcher"
 	StateFetcherTaskName        = "StateFetcher"
 	StakingStateFetcherTaskName = "StakingStateFetcher"
 	ValidatorFetcherTaskName    = "ValidatorFetcher"
@@ -51,6 +52,41 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 	)
 
 	payload.RawBlock = block.GetBlock()
+	return nil
+}
+
+func NewEventsFetcherTask(client client.EventClient) pipeline.Task {
+	return &EventsFetcherTask{
+		client: client,
+	}
+}
+
+type EventsFetcherTask struct {
+	client client.EventClient
+}
+
+func (t *EventsFetcherTask) GetName() string {
+	return EventFetcherTaskName
+}
+
+func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	payload := p.(*payload)
+
+	events, err := t.client.GetAddEscrowEventsByHeight(payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
+	logger.DebugJSON(events.GetEvents(),
+		logger.Field("process", "pipeline"),
+		logger.Field("stage", "fetcher"),
+		logger.Field("request", "events"),
+		logger.Field("height", payload.CurrentHeight),
+	)
+
+	payload.RawEscrowEvents = events.GetEvents()
 	return nil
 }
 

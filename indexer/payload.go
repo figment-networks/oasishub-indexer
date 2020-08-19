@@ -3,6 +3,8 @@ package indexer
 import (
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/chain/chainpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
@@ -14,20 +16,26 @@ var (
 	_ pipeline.Payload        = (*payload)(nil)
 )
 
-func NewPayloadFactory() *payloadFactory {
-	return &payloadFactory{}
+func NewPayloadFactory(constants *chainpb.GetConstantsResponse) *payloadFactory {
+	return &payloadFactory{
+		CommonPoolAddress: constants.GetCommonPoolAddress(),
+	}
 }
 
-type payloadFactory struct{}
+type payloadFactory struct {
+	CommonPoolAddress string
+}
 
 func (pf *payloadFactory) GetPayload(currentHeight int64) pipeline.Payload {
 	return &payload{
-		CurrentHeight: currentHeight,
+		CurrentHeight:     currentHeight,
+		CommonPoolAddress: pf.CommonPoolAddress,
 	}
 }
 
 type payload struct {
-	CurrentHeight int64
+	CurrentHeight     int64
+	CommonPoolAddress string
 
 	// Setup stage
 	HeightMeta HeightMeta
@@ -37,6 +45,7 @@ type payload struct {
 
 	// Fetcher stage
 	RawBlock        *blockpb.Block
+	RawEscrowEvents []*eventpb.AddEscrowEvent
 	RawStakingState *statepb.Staking
 	RawState        *statepb.State
 	RawTransactions []*transactionpb.Transaction

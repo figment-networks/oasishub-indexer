@@ -40,7 +40,12 @@ type indexingPipeline struct {
 }
 
 func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*indexingPipeline, error) {
-	defaultPipeline := pipeline.NewDefault(NewPayloadFactory())
+	constants, err := client.Chain.GetConstants()
+	if err != nil {
+		return nil, err
+	}
+
+	defaultPipeline := pipeline.NewDefault(NewPayloadFactory(constants))
 
 	// Setup logger
 	defaultPipeline.SetLogger(NewLogger())
@@ -65,6 +70,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		pipeline.RetryingTask(NewStateFetcherTask(client.State), isTransient, 3),
 		pipeline.RetryingTask(NewValidatorFetcherTask(client.Validator), isTransient, 3),
 		pipeline.RetryingTask(NewTransactionFetcherTask(client.Transaction), isTransient, 3),
+		pipeline.RetryingTask(NewEventsFetcherTask(client.Event), isTransient, 3),
 	)
 
 	// Set parser stage
