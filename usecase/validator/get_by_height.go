@@ -43,7 +43,7 @@ func (uc *getByHeightUseCase) Execute(height *int64) (SeqListView, error) {
 
 	aggs, err := uc.db.ValidatorAgg.GetAllForHeightGreaterThan(*height)
 	if err != nil {
-		return nil, err
+		return SeqListView{}, err
 	}
 
 	seqs, err := uc.db.ValidatorSeq.FindByHeight(*height)
