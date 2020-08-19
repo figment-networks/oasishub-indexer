@@ -2,6 +2,7 @@ package validator
 
 import (
 	"context"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/indexer"
@@ -42,16 +43,16 @@ func (uc *getByHeightUseCase) Execute(height *int64) (*SeqListView, error) {
 
 	models, err := uc.db.ValidatorSeq.FindByHeight(*height)
 	if len(models) == 0 || err != nil {
-		indexingPipeline , err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
+		indexingPipeline, err := indexer.NewPipeline(uc.cfg, uc.db, uc.client)
 		if err != nil {
 			return nil, err
 		}
 
 		ctx := context.Background()
 		payload, err := indexingPipeline.Run(ctx, indexer.RunConfig{
-			Height:          *height,
-			DesiredTargetID: indexer.IndexTargetValidatorSequences,
-			Dry:             true,
+			Height:           *height,
+			DesiredTargetIDs: []int64{indexer.IndexTargetValidatorSequences},
+			Dry:              true,
 		})
 		if err != nil {
 			return nil, err
