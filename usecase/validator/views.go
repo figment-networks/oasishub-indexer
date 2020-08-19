@@ -67,7 +67,6 @@ type SeqListItem struct {
 	VotingPower         int64          `json:"voting_power"`
 	TotalShares         types.Quantity `json:"total_shares"`
 	ActiveEscrowBalance types.Quantity `json:"active_escrow_balance"`
-	AsValidatorHeight   int64          `json:"as_validator_height"`
 	Commission          types.Quantity `json:"commission"`
 	Rewards             types.Quantity `json:"rewards"`
 	PrecommitValidated  *bool          `json:"precommit_validated"`
