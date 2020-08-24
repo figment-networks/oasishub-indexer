@@ -27,6 +27,7 @@ func TestBlockFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -67,6 +68,7 @@ func TestStateFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -107,6 +109,7 @@ func TestStakingStateFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -148,6 +151,7 @@ func TestValidatorFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -198,6 +202,7 @@ func TestTransactionFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 
@@ -242,7 +247,7 @@ func TestEventFetcher_Run(t *testing.T) {
 		result         error
 	}{
 		{"returns error if client errors", nil, errTestClient},
-		{"updates payload", []*eventpb.AddEscrowEvent{&eventpb.AddEscrowEvent{
+		{"updates payload", []*eventpb.AddEscrowEvent{{
 			Owner:  "ownerAddr",
 			Escrow: "escrowAddr",
 			Amount: randBytes(5),
@@ -251,6 +256,7 @@ func TestEventFetcher_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctrl := gomock.NewController(t)
 			ctx := context.Background()
 

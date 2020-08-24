@@ -1,20 +1,22 @@
 package indexer
 
 import (
+	"testing"
+
 	mock_store "github.com/figment-networks/oasishub-indexer/mock/store"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/golang/mock/gomock"
-	"testing"
 )
 
 func TestPipelineStatusChecker_getStatus(t *testing.T) {
+
 	tests := []struct {
 		description               string
 		currentIndexVersion       int64
 		setStore                  func(*mock_store.MockSyncablesStore)
 		expectError               bool
 		expectedIsUpToDate        bool
-		expectedIsPristine		  bool
+		expectedIsPristine        bool
 		expectedMissingVersionIds []int64
 	}{
 		{
@@ -65,6 +67,8 @@ func TestPipelineStatusChecker_getStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
+
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
