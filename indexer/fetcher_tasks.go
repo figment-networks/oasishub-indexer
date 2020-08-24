@@ -3,12 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
@@ -19,7 +17,6 @@ const (
 	TaskNameStateFetcher        = "StateFetcher"
 	TaskNameStakingStateFetcher = "StakingStateFetcher"
 	TaskNameValidatorFetcher    = "ValidatorFetcher"
-	TaskNameTransactionFetcher  = "TransactionFetcher"
 )
 
 func NewBlockFetcherTask(client client.BlockClient) pipeline.Task {
@@ -62,20 +59,24 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 func NewEventsFetcherTask(client client.EventClient) pipeline.Task {
 	return &EventsFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameEventFetcher),
 	}
 }
 
 type EventsFetcherTask struct {
-	client client.EventClient
+	client         client.EventClient
+	metricObserver metrics.Observer
 }
 
 func (t *EventsFetcherTask) GetName() string {
-	return EventFetcherTaskName
+	return TaskNameEventFetcher
 }
 
 func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
+
 	payload := p.(*payload)
 
 	events, err := t.client.GetAddEscrowEventsByHeight(payload.CurrentHeight)

@@ -49,7 +49,7 @@ func (s validatorSummaryStore) Find(query *model.ValidatorSummary) (*model.Valid
 }
 
 // FindActivityPeriods Finds activity periods
-func (s *ValidatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
+func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindActivityPeriods"))
 	defer t.ObserveDuration()
 
@@ -95,7 +95,7 @@ type ValidatorSummaryRow struct {
 }
 
 // FindSummary gets summary for validator summary
-func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
+func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummary"))
 	defer t.ObserveDuration()
 
@@ -120,8 +120,8 @@ func (s *ValidatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 }
 
 // FindSummaryByAddress gets summary for given validator
-func (s *ValidatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"ValidatorSummaryStore_FindSummaryByAddress"}))
+func (s *validatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummaryByAddress"))
 	defer t.ObserveDuration()
 
 	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()

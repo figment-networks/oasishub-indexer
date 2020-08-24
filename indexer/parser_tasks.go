@@ -8,7 +8,6 @@ import (
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )

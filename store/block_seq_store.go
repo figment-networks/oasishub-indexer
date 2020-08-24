@@ -60,7 +60,7 @@ type GetAvgRecentTimesResult struct {
 }
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
-func (s *BlockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
+func (s *blockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSeqStore_GetAvgRecentTimes"))
 	defer t.ObserveDuration()
 
@@ -122,12 +122,8 @@ type BlockSeqSummary struct {
 }
 
 // Summarize gets the summarized version of block sequences
-func (s *BlockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
-<<<<<<< HEAD
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"BlockSummaryStore_Summarize"}))
-=======
+func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]BlockSeqSummary, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSummaryStore_CalculateSummary"))
->>>>>>> 84a61d6... Change withLabels to variadic version
 	defer t.ObserveDuration()
 
 	tx := s.db.

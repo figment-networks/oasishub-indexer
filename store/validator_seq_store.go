@@ -131,8 +131,8 @@ type ValidatorSeqSummary struct {
 }
 
 // Summarize gets the summarized version of validator sequences
-func (s *ValidatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels([]string{"ValidatorSeqStore_Summarize"}))
+func (s *validatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSeqStore_Summarize"))
 	defer t.ObserveDuration()
 
 	tx := s.db.

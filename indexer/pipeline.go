@@ -259,7 +259,7 @@ func (o *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	if err != nil {
 		indexerTotalErrors.WithLabels().Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
-		return nil, err
+		return err
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
@@ -311,7 +311,7 @@ func (o *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	runPayload, err := o.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels().Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
 		return nil, err
 	}

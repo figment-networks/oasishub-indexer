@@ -3,7 +3,7 @@ module github.com/figment-networks/oasishub-indexer
 go 1.14
 
 require (
-	github.com/figment-networks/indexing-engine v0.1.9
+	github.com/figment-networks/indexing-engine v0.1.10
 	github.com/figment-networks/oasis-rpc-proxy v0.3.20
 	github.com/gin-gonic/gin v1.5.0
 	github.com/golang-migrate/migrate/v4 v4.11.0

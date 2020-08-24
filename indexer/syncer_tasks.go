@@ -3,6 +3,7 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
@@ -59,7 +60,7 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 		}
 	}
 
-	syncable.StartedAt = *types.NewTimeFromTime(Now())
+	syncable.StartedAt = *types.NewTimeFromTime(time.Now())
 
 	report, ok := ctx.Value(CtxReport).(*model.Report)
 	if ok {

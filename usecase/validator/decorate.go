@@ -7,10 +7,8 @@ import (
 	"io"
 	"os"
 	"strings"
-	"time"
 
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
@@ -49,7 +47,7 @@ func NewDecorateUseCase(cfg *config.Config, db DecorateStore) *decorateUseCase {
 }
 
 func (uc *decorateUseCase) Execute(ctx context.Context, file string) error {
-	defer metric.LogUseCaseDuration(time.Now(), "decorate validator")
+	// defer metric.LogUseCaseDuration(time.Now(), "decorate validator")
 
 	if file == "" {
 		return errors.Wrap(ErrMissingFile, fmt.Sprintf("expected file with 3 columns, starting with the headers '%v'", strings.Join(colNames, "','")))

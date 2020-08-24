@@ -201,6 +201,8 @@ github.com/facebookgo/subset v0.0.0-20150612182917-8dac2c3c4870/go.mod h1:5tD+ne
 github.com/fatih/color v1.7.0/go.mod h1:Zm6kSWBoL9eyXnKyktHP6abPY2pDugNf5KwzbycvMj4=
 github.com/figment-networks/indexing-engine v0.1.9 h1:NkIHP8EHQu/GannBWx8/pvev0c8pBbmIMIcd0gYJdhE=
 github.com/figment-networks/indexing-engine v0.1.9/go.mod h1:XJB7fw5aBp2SEbKvWahullz3I+D7IL77OhkhTtVYky4=
+github.com/figment-networks/indexing-engine v0.1.10 h1:XeBazbdkS2cUZ1qEGtuJeeEVTtvW5w2EYPQyOAjk33M=
+github.com/figment-networks/indexing-engine v0.1.10/go.mod h1:DkM0fJKhvXx9yYS/oIJg6Z4YAc924Rol/F4S7mpNARo=
 github.com/figment-networks/oasis-rpc-proxy v0.3.20 h1:w02UhMUGPu8h6KMukIbjzOJ5nMJ4PW2+7NUHKkoU7RQ=
 github.com/figment-networks/oasis-rpc-proxy v0.3.20/go.mod h1:he+6N7AfiifOPDXecMj67mb7WE0BwBobNlLvcuC1UHc=
 github.com/fortytw2/leaktest v1.3.0 h1:u8491cBMTQ8ft8aeV+adlcytMZylmA5nnwwkRZjI8vw=

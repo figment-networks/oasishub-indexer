@@ -3,11 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
@@ -181,7 +179,8 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 
 func NewSystemEventPersistorTask(db SystemEventPersistorTaskStore) pipeline.Task {
 	return &systemEventPersistorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventPersistor),
 	}
 }
 
@@ -190,15 +189,17 @@ type SystemEventPersistorTaskStore interface {
 }
 
 type systemEventPersistorTask struct {
-	db SystemEventPersistorTaskStore
+	db             SystemEventPersistorTaskStore
+	metricObserver metrics.Observer
 }
 
 func (t *systemEventPersistorTask) GetName() string {
-	return SystemEventPersistorTaskName
+	return TaskNameSystemEventPersistor
 }
 
 func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
