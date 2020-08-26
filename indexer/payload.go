@@ -45,7 +45,7 @@ type payload struct {
 
 	// Fetcher stage
 	RawBlock        *blockpb.Block
-	RawEscrowEvents []*eventpb.AddEscrowEvent
+	RawEscrowEvents *eventpb.EscrowEvents
 	RawStakingState *statepb.Staking
 	RawState        *statepb.State
 	RawTransactions []*transactionpb.Transaction

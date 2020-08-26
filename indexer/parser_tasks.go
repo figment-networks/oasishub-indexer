@@ -107,7 +107,7 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
-	rewards := getRewardsFromEscrowEvents(payload.RawEscrowEvents, payload.CommonPoolAddress)
+	rewards := getRewardsFromEscrowEvents(payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
 
 	const (
 		NotValidated int64 = 1

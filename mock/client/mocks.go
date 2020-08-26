@@ -198,19 +198,19 @@ func (m *MockEventClient) EXPECT() *MockEventClientMockRecorder {
 	return m.recorder
 }
 
-// GetAddEscrowEventsByHeight mocks base method
-func (m *MockEventClient) GetAddEscrowEventsByHeight(arg0 int64) (*eventpb.GetAddEscrowEventsByHeightResponse, error) {
+// GetEscrowEventsByHeight mocks base method
+func (m *MockEventClient) GetEscrowEventsByHeight(arg0 int64) (*eventpb.GetEscrowEventsByHeightResponse, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "GetAddEscrowEventsByHeight", arg0)
-	ret0, _ := ret[0].(*eventpb.GetAddEscrowEventsByHeightResponse)
+	ret := m.ctrl.Call(m, "GetEscrowEventsByHeight", arg0)
+	ret0, _ := ret[0].(*eventpb.GetEscrowEventsByHeightResponse)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// GetAddEscrowEventsByHeight indicates an expected call of GetAddEscrowEventsByHeight
-func (mr *MockEventClientMockRecorder) GetAddEscrowEventsByHeight(arg0 interface{}) *gomock.Call {
+// GetEscrowEventsByHeight indicates an expected call of GetEscrowEventsByHeight
+func (mr *MockEventClientMockRecorder) GetEscrowEventsByHeight(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAddEscrowEventsByHeight", reflect.TypeOf((*MockEventClient)(nil).GetAddEscrowEventsByHeight), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEscrowEventsByHeight", reflect.TypeOf((*MockEventClient)(nil).GetEscrowEventsByHeight), arg0)
 }
 
 // MockStateClient is a mock of StateClient interface

@@ -111,7 +111,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 		rawBlock                     *blockpb.Block
 		rawStakingState              *statepb.Staking
 		rawValidators                []*validatorpb.Validator
-		rawEscrowEvents              []*eventpb.AddEscrowEvent
+		rawAddEscrowEvents           []*eventpb.AddEscrowEvent
 		expectedParsedValidatorsData ParsedValidatorsData
 	}{
 		{description: "update validator with no block votes",
@@ -265,7 +265,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
 					Owner:  "not common pool addr",
 					Escrow: "t0",
@@ -308,7 +308,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
 					Owner:  commonPoolAddr,
 					Escrow: "t0",
@@ -362,7 +362,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				RawBlock:          tt.rawBlock,
 				RawValidators:     tt.rawValidators,
 				RawStakingState:   tt.rawStakingState,
-				RawEscrowEvents:   tt.rawEscrowEvents,
+				RawEscrowEvents:   &eventpb.EscrowEvents{Add: tt.rawAddEscrowEvents},
 				CommonPoolAddress: commonPoolAddr,
 			}
 

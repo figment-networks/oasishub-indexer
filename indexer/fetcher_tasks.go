@@ -79,20 +79,20 @@ func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 	payload := p.(*payload)
 
-	events, err := t.client.GetAddEscrowEventsByHeight(payload.CurrentHeight)
+	resp, err := t.client.GetEscrowEventsByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
 
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
-	logger.DebugJSON(events.GetEvents(),
+	logger.DebugJSON(resp.GetEvents(),
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
 		logger.Field("request", "events"),
 		logger.Field("height", payload.CurrentHeight),
 	)
 
-	payload.RawEscrowEvents = events.GetEvents()
+	payload.RawEscrowEvents = resp.GetEvents()
 	return nil
 }
 
