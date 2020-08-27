@@ -63,11 +63,12 @@ type SeqListItem struct {
 
 	EntityUID           string         `json:"entity_uid"`
 	Address             string         `json:"address"`
+	Proposed            bool           `json:"proposed"`
 	VotingPower         int64          `json:"voting_power"`
 	TotalShares         types.Quantity `json:"total_shares"`
 	ActiveEscrowBalance types.Quantity `json:"active_escrow_balance"`
-	AsValidatorHeight   int64          `json:"as_validator_height"`
-	ProposedHeight      int64          `json:"proposed_height"`
+	Commission          types.Quantity `json:"commission"`
+	Rewards             types.Quantity `json:"rewards"`
 	PrecommitValidated  *bool          `json:"precommit_validated"`
 	EntityName          string         `json:"entity_name"`
 }
@@ -90,9 +91,12 @@ func ToSeqListView(validatorSeqs []model.ValidatorSeq, validatorAggs []model.Val
 
 			EntityUID:           m.EntityUID,
 			Address:             m.Address,
+			Proposed:            m.Proposed,
 			VotingPower:         m.VotingPower,
 			TotalShares:         m.TotalShares,
 			ActiveEscrowBalance: m.ActiveEscrowBalance,
+			Commission:          m.Commission,
+			Rewards:             m.Rewards,
 			PrecommitValidated:  m.PrecommitValidated,
 		}
 
