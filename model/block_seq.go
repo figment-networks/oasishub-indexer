@@ -7,7 +7,8 @@ type BlockSeq struct {
 
 	*Sequence
 
-	TransactionsCount int64  `json:"transactions_count"`
+	// Indexed data
+	TransactionsCount int64 `json:"transactions_count"`
 }
 
 func (BlockSeq) TableName() string {

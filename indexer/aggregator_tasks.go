@@ -3,10 +3,9 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
@@ -15,8 +14,8 @@ import (
 )
 
 const (
-	AccountAggCreatorTaskName   = "AccountAggCreator"
-	ValidatorAggCreatorTaskName = "ValidatorAggCreator"
+	TaskNameAccountAggCreator   = "AccountAggCreator"
+	TaskNameValidatorAggCreator = "ValidatorAggCreator"
 )
 
 var (
@@ -34,20 +33,23 @@ type AccountAggCreatorTaskStore interface {
 
 func NewAccountAggCreatorTask(db AccountAggCreatorTaskStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameAccountAggCreator),
 	}
 }
 
 type accountAggCreatorTask struct {
-	db AccountAggCreatorTaskStore
+	db             AccountAggCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 func (t *accountAggCreatorTask) GetName() string {
-	return AccountAggCreatorTaskName
+	return TaskNameAccountAggCreator
 }
 
 func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -122,7 +124,8 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 
 func NewValidatorAggCreatorTask(db ValidatorAggCreatorTaskStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorAggCreator),
 	}
 }
 
@@ -131,15 +134,17 @@ type ValidatorAggCreatorTaskStore interface {
 }
 
 type validatorAggCreatorTask struct {
-	db ValidatorAggCreatorTaskStore
+	db             ValidatorAggCreatorTaskStore
+	metricObserver metrics.Observer
 }
 
 func (t *validatorAggCreatorTask) GetName() string {
-	return ValidatorAggCreatorTaskName
+	return TaskNameValidatorAggCreator
 }
 
 func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

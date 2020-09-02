@@ -1,8 +1,9 @@
 package server
 
 import (
+	"github.com/figment-networks/indexing-engine/metrics"
+	"github.com/figment-networks/indexing-engine/metrics/prometheusmetrics"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/gin-gonic/gin"
@@ -30,7 +31,16 @@ func New(cfg *config.Config, handlers *usecase.HttpHandlers) *Server {
 func (s *Server) Start(listenAdd string) error {
 	logger.Info("starting server...", logger.Field("app", "server"))
 
-	go s.startMetricsServer()
+	prom := prometheusmetrics.New()
+	err := metrics.AddEngine(prom)
+	if err != nil {
+		logger.Error(err)
+	}
+	err = metrics.Hotload(prom.Name())
+	if err != nil {
+		logger.Error(err)
+	}
+	s.engine.GET(s.cfg.MetricServerUrl, gin.WrapH(metrics.Handler()))
 
 	return s.engine.Run(listenAdd)
 }
@@ -44,8 +54,3 @@ func (s *Server) init() *Server {
 
 	return s
 }
-
-func (s *Server) startMetricsServer() error {
-	return metric.NewServerMetric().StartServer(s.cfg.ServerMetricAddr, s.cfg.MetricServerUrl)
-}
-

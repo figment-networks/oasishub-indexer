@@ -20,6 +20,7 @@ func TestSyncer_Run(t *testing.T) {
 	dbErr := errors.New("dberr")
 
 	t.Run("returns error when db errors", func(t *testing.T) {
+		t.Parallel()
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 		pl := testSyncerPayload()
@@ -35,11 +36,10 @@ func TestSyncer_Run(t *testing.T) {
 	})
 
 	t.Run("updates existing syncable", func(t *testing.T) {
+		t.Parallel()
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 		pl := testSyncerPayload()
-		mockNow := time.Date(2009, 11, 10, 23, 0, 0, 0, time.UTC)
-		Now = func() time.Time { return mockNow }
 
 		expectSyncable := &model.Syncable{
 			Height:       pl.CurrentHeight,
@@ -47,7 +47,7 @@ func TestSyncer_Run(t *testing.T) {
 			AppVersion:   pl.HeightMeta.AppVersion,
 			BlockVersion: pl.HeightMeta.BlockVersion,
 			Status:       model.SyncableStatusRunning,
-			StartedAt:    *types.NewTimeFromTime(mockNow),
+			StartedAt:    *types.NewTimeFromTime(time.Now()),
 		}
 
 		dbMock := mock.NewMockSyncerTaskStore(ctrl)
@@ -66,11 +66,11 @@ func TestSyncer_Run(t *testing.T) {
 	})
 
 	t.Run("updates new syncable", func(t *testing.T) {
+		t.Parallel()
+
 		ctrl := gomock.NewController(t)
 		ctx := context.Background()
 		pl := testSyncerPayload()
-		mockNow := time.Date(2009, 11, 10, 23, 0, 0, 0, time.UTC)
-		Now = func() time.Time { return mockNow }
 
 		dbMock := mock.NewMockSyncerTaskStore(ctrl)
 		dbMock.EXPECT().FindByHeight(pl.CurrentHeight).Return(nil, store.ErrNotFound).Times(1)
@@ -81,22 +81,20 @@ func TestSyncer_Run(t *testing.T) {
 			return
 		}
 
-		expectSyncable := &model.Syncable{
-			Height:       pl.CurrentHeight,
-			Time:         pl.HeightMeta.Time,
-			AppVersion:   pl.HeightMeta.AppVersion,
-			BlockVersion: pl.HeightMeta.BlockVersion,
-			Status:       model.SyncableStatusRunning,
-			StartedAt:    *types.NewTimeFromTime(mockNow),
-		}
-
-		if !reflect.DeepEqual(pl.Syncable, expectSyncable) {
-			t.Errorf("unexpected payload.Syncable, want: %+v, got: %+v", expectSyncable, pl.Syncable)
+		if pl.Syncable.Height != pl.CurrentHeight ||
+			pl.Syncable.Time != pl.HeightMeta.Time ||
+			pl.Syncable.AppVersion != pl.HeightMeta.AppVersion ||
+			pl.Syncable.BlockVersion != pl.HeightMeta.BlockVersion ||
+			pl.Syncable.Status != model.SyncableStatusRunning ||
+			pl.Syncable.StartedAt.IsZero() {
+			t.Errorf("unexpected payload.Syncable %+v", pl.Syncable)
 			return
 		}
 	})
 
 	t.Run("Adds reportId to syncable if it exists in context", func(t *testing.T) {
+		t.Parallel()
+
 		ctrl := gomock.NewController(t)
 		ctx := ctxWithReport(testReportID)
 		pl := testSyncerPayload()

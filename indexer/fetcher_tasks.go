@@ -3,39 +3,41 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
 const (
-	BlockFetcherTaskName        = "BlockFetcher"
-	EventFetcherTaskName        = "EventsFetcher"
-	StateFetcherTaskName        = "StateFetcher"
-	StakingStateFetcherTaskName = "StakingStateFetcher"
-	ValidatorFetcherTaskName    = "ValidatorFetcher"
-	TransactionFetcherTaskName  = "TransactionFetcher"
+	TaskNameBlockFetcher        = "BlockFetcher"
+	TaskNameTransactionFetcher  = "TransactionFetcher"
+	TaskNameEventFetcher        = "EventsFetcher"
+	TaskNameStateFetcher        = "StateFetcher"
+	TaskNameStakingStateFetcher = "StakingStateFetcher"
+	TaskNameValidatorFetcher    = "ValidatorFetcher"
 )
 
 func NewBlockFetcherTask(client client.BlockClient) pipeline.Task {
 	return &BlockFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockFetcher),
 	}
 }
 
 type BlockFetcherTask struct {
-	client client.BlockClient
+	client         client.BlockClient
+	metricObserver metrics.Observer
 }
 
 func (t *BlockFetcherTask) GetName() string {
-	return BlockFetcherTaskName
+	return TaskNameBlockFetcher
 }
 
 func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 	block, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -57,20 +59,24 @@ func (t *BlockFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 func NewEventsFetcherTask(client client.EventClient) pipeline.Task {
 	return &EventsFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameEventFetcher),
 	}
 }
 
 type EventsFetcherTask struct {
-	client client.EventClient
+	client         client.EventClient
+	metricObserver metrics.Observer
 }
 
 func (t *EventsFetcherTask) GetName() string {
-	return EventFetcherTaskName
+	return TaskNameEventFetcher
 }
 
 func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
+
 	payload := p.(*payload)
 
 	events, err := t.client.GetAddEscrowEventsByHeight(payload.CurrentHeight)
@@ -92,20 +98,23 @@ func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 func NewStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StateFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameStateFetcher),
 	}
 }
 
 type StateFetcherTask struct {
-	client client.StateClient
+	client         client.StateClient
+	metricObserver metrics.Observer
 }
 
 func (t *StateFetcherTask) GetName() string {
-	return StateFetcherTaskName
+	return TaskNameStateFetcher
 }
 
 func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 	state, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -127,20 +136,23 @@ func (t *StateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 func NewStakingStateFetcherTask(client client.StateClient) pipeline.Task {
 	return &StakingStateFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameStakingStateFetcher),
 	}
 }
 
 type StakingStateFetcherTask struct {
-	client client.StateClient
+	client         client.StateClient
+	metricObserver metrics.Observer
 }
 
 func (t *StakingStateFetcherTask) GetName() string {
-	return StakingStateFetcherTaskName
+	return TaskNameStakingStateFetcher
 }
 
 func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 	state, err := t.client.GetStakingByHeight(payload.CurrentHeight)
@@ -162,20 +174,23 @@ func (t *StakingStateFetcherTask) Run(ctx context.Context, p pipeline.Payload) e
 
 func NewValidatorFetcherTask(client client.ValidatorClient) pipeline.Task {
 	return &ValidatorFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorFetcher),
 	}
 }
 
 type ValidatorFetcherTask struct {
-	client client.ValidatorClient
+	client         client.ValidatorClient
+	metricObserver metrics.Observer
 }
 
 func (t *ValidatorFetcherTask) GetName() string {
-	return ValidatorFetcherTaskName
+	return TaskNameValidatorFetcher
 }
 
 func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 	validators, err := t.client.GetByHeight(payload.CurrentHeight)
@@ -197,20 +212,23 @@ func (t *ValidatorFetcherTask) Run(ctx context.Context, p pipeline.Payload) erro
 
 func NewTransactionFetcherTask(client client.TransactionClient) pipeline.Task {
 	return &TransactionFetcherTask{
-		client: client,
+		client:         client,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameTransactionFetcher),
 	}
 }
 
 type TransactionFetcherTask struct {
-	client client.TransactionClient
+	client         client.TransactionClient
+	metricObserver metrics.Observer
 }
 
 func (t *TransactionFetcherTask) GetName() string {
-	return TransactionFetcherTaskName
+	return TaskNameTransactionFetcher
 }
 
 func (t *TransactionFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 	transactions, err := t.client.GetByHeight(payload.CurrentHeight)

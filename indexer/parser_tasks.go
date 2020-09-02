@@ -4,18 +4,17 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
 const (
-	BlockParserTaskName      = "BlockParser"
-	ValidatorsParserTaskName = "ValidatorsParser"
+	TaskNameBlockParser      = "BlockParser"
+	TaskNameValidatorsParser = "ValidatorsParser"
 )
 
 var (
@@ -24,10 +23,14 @@ var (
 )
 
 func NewBlockParserTask() *blockParserTask {
-	return &blockParserTask{}
+	return &blockParserTask{
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockParser),
+	}
 }
 
-type blockParserTask struct{}
+type blockParserTask struct {
+	metricObserver metrics.Observer
+}
 
 type ParsedBlockData struct {
 	TransactionsCount int64
@@ -35,11 +38,12 @@ type ParsedBlockData struct {
 }
 
 func (t *blockParserTask) GetName() string {
-	return BlockParserTaskName
+	return TaskNameBlockParser
 }
 
 func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -67,10 +71,14 @@ func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 }
 
 func NewValidatorsParserTask() *validatorsParserTask {
-	return &validatorsParserTask{}
+	return &validatorsParserTask{
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorsParser),
+	}
 }
 
-type validatorsParserTask struct{}
+type validatorsParserTask struct {
+	metricObserver metrics.Observer
+}
 
 type ParsedValidatorsData map[string]parsedValidator
 
@@ -85,11 +93,12 @@ type parsedValidator struct {
 }
 
 func (t *validatorsParserTask) GetName() string {
-	return ValidatorsParserTaskName
+	return TaskNameValidatorsParser
 }
 
 func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

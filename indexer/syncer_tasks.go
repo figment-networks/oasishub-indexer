@@ -3,18 +3,18 @@ package indexer
 import (
 	"context"
 	"fmt"
+	"time"
 
-	"github.com/figment-networks/oasishub-indexer/metric"
-	"github.com/figment-networks/oasishub-indexer/types"
-
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
 
 const (
-	MainSyncerTaskName = "MainSyncer"
+	TaskNameMainSyncer = "MainSyncer"
 )
 
 type SyncerTaskStore interface {
@@ -23,20 +23,23 @@ type SyncerTaskStore interface {
 
 func NewMainSyncerTask(db SyncerTaskStore) pipeline.Task {
 	return &mainSyncerTask{
-		db: db,
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels("TaskNameMainSyncer"),
 	}
 }
 
 type mainSyncerTask struct {
-	db SyncerTaskStore
+	db             SyncerTaskStore
+	metricObserver metrics.Observer
 }
 
 func (t *mainSyncerTask) GetName() string {
-	return MainSyncerTaskName
+	return TaskNameMainSyncer
 }
 
 func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -57,7 +60,7 @@ func (t *mainSyncerTask) Run(ctx context.Context, p pipeline.Payload) error {
 		}
 	}
 
-	syncable.StartedAt = *types.NewTimeFromTime(Now())
+	syncable.StartedAt = *types.NewTimeFromTime(time.Now())
 
 	report, ok := ctx.Value(CtxReport).(*model.Report)
 	if ok {

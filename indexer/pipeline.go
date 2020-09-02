@@ -3,12 +3,10 @@ package indexer
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -26,8 +24,6 @@ var (
 	ErrIndexCannotBeRun    = errors.New("cannot run index process")
 	ErrBackfillCannotBeRun = errors.New("cannot run backfill process")
 )
-
-var Now = time.Now
 
 type indexingPipeline struct {
 	cfg    *config.Config
@@ -181,7 +177,7 @@ func (o *indexingPipeline) Index(ctx context.Context, indexCfg IndexConfig) erro
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels().Inc()
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
@@ -261,7 +257,9 @@ func (o *indexingPipeline) Backfill(ctx context.Context, backfillCfg BackfillCon
 	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
 	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels().Inc()
+		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
+		return err
 	}
 
 	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
@@ -313,7 +311,7 @@ func (o *indexingPipeline) Run(ctx context.Context, runCfg RunConfig) (*payload,
 
 	runPayload, err := o.pipeline.Run(ctx, runCfg.Height, pipelineOptions)
 	if err != nil {
-		metric.IndexerTotalErrors.Inc()
+		indexerTotalErrors.WithLabels().Inc()
 		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
 		return nil, err
 	}

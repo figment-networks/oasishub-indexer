@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
-	"math"
-	"time"
 )
 
 const (
-	SystemEventCreatorTaskName = "SystemEventCreator"
+	TaskNameSystemEventCreator = "SystemEventCreator"
 )
 
 var (
@@ -32,8 +32,8 @@ var (
 // NewSystemEventCreatorTask creates system events
 func NewSystemEventCreatorTask(cfg *config.Config, s SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
-		cfg: cfg,
-
+		cfg:                     cfg,
+		metricObserver:          indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
 		SystemEventCreatorStore: s,
 	}
 }
@@ -46,17 +46,19 @@ type SystemEventCreatorStore interface {
 type systemEventCreatorTask struct {
 	cfg *config.Config
 
+	metricObserver metrics.Observer
 	SystemEventCreatorStore
 }
 
 type systemEventRawData map[string]interface{}
 
 func (t *systemEventCreatorTask) GetName() string {
-	return SystemEventCreatorTaskName
+	return TaskNameSystemEventCreator
 }
 
 func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

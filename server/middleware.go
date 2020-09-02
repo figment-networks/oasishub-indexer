@@ -1,11 +1,17 @@
 package server
 
 import (
-	"github.com/figment-networks/oasishub-indexer/metric"
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
 	"github.com/gin-gonic/gin"
-	"time"
 )
+
+var serverRequestDuration = metrics.MustNewHistogramWithTags(metrics.HistogramOptions{
+	Namespace: "indexer",
+	Subsystem: "oasis_http",
+	Name:      "request_duration",
+	Desc:      "The total time required to execute http request",
+	Tags:      []string{"path"}})
 
 // setupMiddleware sets up middleware for gin application
 func (s *Server) setupMiddleware() {
@@ -17,11 +23,9 @@ func (s *Server) setupMiddleware() {
 // MetricMiddleware is a middleware responsible for logging query execution time metric
 func MetricMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		t := time.Now()
+		t := metrics.NewTimer(serverRequestDuration.WithLabels(c.Request.URL.Path))
+		defer t.ObserveDuration()
 		c.Next()
-		elapsed := time.Since(t)
-
-		metric.ServerRequestDuration.WithLabelValues(c.Request.URL.Path).Set(elapsed.Seconds())
 	}
 }
 

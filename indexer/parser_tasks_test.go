@@ -266,12 +266,12 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				),
 			},
 			rawEscrowEvents: []*eventpb.AddEscrowEvent{
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  "not common pool addr",
 					Escrow: "t0",
 					Amount: hundredInBytes,
 				},
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  commonPoolAddr,
 					Escrow: "t1",
 					Amount: hundredInBytes,
@@ -309,22 +309,22 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				),
 			},
 			rawEscrowEvents: []*eventpb.AddEscrowEvent{
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  commonPoolAddr,
 					Escrow: "t0",
 					Amount: twentyInBytes,
 				},
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  commonPoolAddr,
 					Escrow: "t0",
 					Amount: hundredInBytes,
 				},
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  commonPoolAddr,
 					Escrow: "t1",
 					Amount: hundredInBytes,
 				},
-				&eventpb.AddEscrowEvent{
+				{
 					Owner:  commonPoolAddr,
 					Escrow: "t1",
 					Amount: twentyInBytes,
@@ -353,6 +353,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
+			t.Parallel()
 			ctx := context.Background()
 
 			task := NewValidatorsParserTask()

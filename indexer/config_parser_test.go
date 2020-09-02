@@ -2,12 +2,14 @@ package indexer
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/utils/test"
 	"testing"
+
+	"github.com/figment-networks/oasishub-indexer/utils/test"
 )
 
 func TestConfigParser(t *testing.T) {
 	t.Run("returns error when file is bad", func(t *testing.T) {
+		t.Parallel()
 		fileName := "test_indexer_config.json"
 		var targetsJsonBlob = []byte(`this is not a JSON`)
 
@@ -23,6 +25,7 @@ func TestConfigParser(t *testing.T) {
 
 func TestConfigParser_GetAllTasks(t *testing.T) {
 	t.Run("returns unique tasks for all targets", func(t *testing.T) {
+		t.Parallel()
 		fileName := "test_indexer_config.json"
 		var targetsJsonBlob = []byte(`
 			{

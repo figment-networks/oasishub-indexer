@@ -2,7 +2,6 @@ package worker
 
 import (
 	"github.com/figment-networks/oasishub-indexer/config"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/usecase"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/figment-networks/oasishub-indexer/utils/reporting"
@@ -66,9 +65,5 @@ func (w *Worker) Start() error {
 
 	w.cronJob.Start()
 
-	return w.startMetricsServer()
-}
-
-func (w *Worker) startMetricsServer() error {
-	return metric.NewIndexerMetric().StartServer(w.cfg.IndexerMetricAddr, w.cfg.MetricServerUrl)
+	return nil
 }

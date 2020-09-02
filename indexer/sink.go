@@ -3,8 +3,8 @@ package indexer
 import (
 	"context"
 	"fmt"
+
 	"github.com/figment-networks/indexing-engine/pipeline"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/pkg/errors"
@@ -67,8 +67,8 @@ func (s *sink) addMetrics(payload *payload) error {
 		return err
 	}
 
-	metric.IndexerHeightSuccess.Inc()
-	metric.IndexerHeightDuration.Set(payload.Syncable.Duration.Seconds())
-	metric.IndexerDbSizeAfterHeight.Set(res.Size)
+	indexerHeightSuccess.Inc()
+	indexerHeightDuration.Observe(payload.Syncable.Duration.Seconds())
+	indexerDbSizeAfterHeight.Observe(res.Size)
 	return nil
 }

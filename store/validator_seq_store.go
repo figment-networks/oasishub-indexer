@@ -2,11 +2,12 @@ package store
 
 import (
 	"fmt"
-	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/jinzhu/gorm"
 	"time"
 
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/model"
+	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/jinzhu/gorm"
 )
 
 var (
@@ -131,7 +132,8 @@ type ValidatorSeqSummary struct {
 
 // Summarize gets the summarized version of validator sequences
 func (s *validatorSeqStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]ValidatorSeqSummary, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSeqStore_Summarize")
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSeqStore_Summarize"))
+	defer t.ObserveDuration()
 
 	tx := s.db.
 		Table(model.ValidatorSeq{}.TableName()).

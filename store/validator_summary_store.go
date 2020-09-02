@@ -2,9 +2,11 @@ package store
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/jinzhu/gorm"
-	"time"
 
 	"github.com/figment-networks/oasishub-indexer/model"
 )
@@ -48,7 +50,8 @@ func (s validatorSummaryStore) Find(query *model.ValidatorSummary) (*model.Valid
 
 // FindActivityPeriods Finds activity periods
 func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterval, indexVersion int64) ([]ActivityPeriodRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindActivityPeriods")
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindActivityPeriods"))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
@@ -93,7 +96,8 @@ type ValidatorSummaryRow struct {
 
 // FindSummary gets summary for validator summary
 func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, period string) ([]ValidatorSummaryRow, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummary")
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummary"))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.
 		Raw(allValidatorsSummaryForIntervalQuery, interval, period, interval).
@@ -117,7 +121,8 @@ func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 
 // FindSummaryByAddress gets summary for given validator
 func (s *validatorSummaryStore) FindSummaryByAddress(address string, interval types.SummaryInterval, period string) ([]model.ValidatorSummary, error) {
-	defer logQueryDuration(time.Now(), "ValidatorSummaryStore_FindSummaryByAddress")
+	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummaryByAddress"))
+	defer t.ObserveDuration()
 
 	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
 	if err != nil {
