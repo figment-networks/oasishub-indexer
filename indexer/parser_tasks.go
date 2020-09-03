@@ -207,22 +207,35 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	fetchedStakingState := payload.RawStakingState
 
 	rewards, commissions := getRewardsAndCommission(payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
+	if len(rewards) == 0 {
+		return nil
+	}
 
 	var err error
 	balanceEvents := []model.BalanceEvent{}
 	for _, fetchedValidator := range fetchedValidators {
 		escrowAddr := fetchedValidator.GetAddress()
 
-		var currActiveEscrowBalance types.Quantity
-		var currTotalShares types.Quantity
-		if account, ok := fetchedStakingState.GetLedger()[escrowAddr]; ok {
-			currActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-			currTotalShares = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+		reward, ok := rewards[escrowAddr]
+		if !ok {
+			continue
 		}
 
-		// balance and shares before rewards/commission were applied
+		account, ok := fetchedStakingState.GetLedger()[escrowAddr]
+		if !ok {
+			return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
+		}
+		currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+		currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+
+		// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
 		prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
 		prevTotalShares := currTotalShares.Clone()
+
+		// reverse balance added from reward
+		if err = prevActiveEscrowBalance.Sub(reward); err != nil {
+			return err
+		}
 
 		var comShares types.Quantity
 		if com, ok := commissions[escrowAddr]; ok {
@@ -234,7 +247,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 				Kind:          model.Commission,
 			})
 
-			// reverse commission deposit
+			// reverse balance added from commission
 			err = prevActiveEscrowBalance.Sub(com)
 			if err != nil {
 				return err
@@ -249,12 +262,6 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 			}
 			// reverse shares added from commission
 			if err = prevTotalShares.Sub(comShares); err != nil {
-				return err
-			}
-		}
-
-		if reward, ok := rewards[escrowAddr]; ok {
-			if err = prevActiveEscrowBalance.Sub(reward); err != nil {
 				return err
 			}
 		}

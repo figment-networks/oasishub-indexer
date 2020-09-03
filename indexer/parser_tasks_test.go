@@ -496,4 +496,53 @@ func TestBalanceParserTask_Run(t *testing.T) {
 		}
 	})
 
+	t.Run("doesn't create event if there's no reward", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		task := NewBalanceParserTask()
+
+		pld := &payload{
+			CurrentHeight:     currHeight,
+			CommonPoolAddress: commonPoolAddr,
+			RawValidators: []*validatorpb.Validator{
+				testpbValidator(setValidatorAddress(escrowAddr)),
+			},
+			RawEscrowEvents: &eventpb.EscrowEvents{
+				Add: []*eventpb.AddEscrowEvent{},
+			},
+			RawStakingState: &statepb.Staking{
+				Ledger: map[string]*accountpb.Account{
+					escrowAddr: &accountpb.Account{
+						Escrow: &accountpb.EscrowAccount{
+							Active: &accountpb.SharePool{
+								Balance:     uintToBytes(600, t),
+								TotalShares: uintToBytes(333, t),
+							},
+						},
+					},
+				},
+				Delegations: map[string]*delegationpb.DelegationEntry{
+					escrowAddr: &delegationpb.DelegationEntry{
+						Entries: map[string]*delegationpb.Delegation{
+							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(33, t)},
+							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
+							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(200, t)},
+						},
+					},
+				},
+			},
+		}
+
+		if err := task.Run(ctx, pld); err != nil {
+			t.Errorf("unexpected error on Run, want %v; got %v", nil, err)
+			return
+		}
+
+		if len(pld.BalanceEvents) != 0 {
+			t.Errorf("Unexpected BalanceEvents len, want: %+v, got: %+v", 0, len(pld.BalanceEvents))
+			return
+		}
+	})
+
 }
