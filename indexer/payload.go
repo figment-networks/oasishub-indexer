@@ -54,6 +54,7 @@ type payload struct {
 	// Parser stage
 	ParsedBlock      ParsedBlockData
 	ParsedValidators ParsedValidatorsData
+	BalanceEvents    []model.BalanceEvent
 
 	// Aggregator stage
 	NewAggregatedAccounts       []model.AccountAgg

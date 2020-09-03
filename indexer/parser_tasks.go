@@ -4,10 +4,13 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
+	"github.com/figment-networks/oasishub-indexer/metric"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
 )
@@ -15,6 +18,7 @@ import (
 const (
 	TaskNameBlockParser      = "BlockParser"
 	TaskNameValidatorsParser = "ValidatorsParser"
+	TaskNameBalanceParser    = "BalanceParser"
 )
 
 var (
@@ -204,4 +208,150 @@ func getRewardsFromEscrowEvents(rawEvents []*eventpb.AddEscrowEvent, commonPoolA
 		}
 	}
 	return rewards
+}
+
+func NewBalanceParserTask() *balanceParserTask {
+	return &balanceParserTask{}
+}
+
+type balanceParserTask struct{}
+
+func (t *balanceParserTask) GetName() string {
+	return TaskNameBalanceParser
+}
+
+func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
+	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageParser, t.GetName(), payload.CurrentHeight))
+
+	fetchedValidators := payload.RawValidators
+	fetchedStakingState := payload.RawStakingState
+
+	rewards := make(map[string]types.Quantity)
+	commissions := make(map[string]types.Quantity)
+
+	var escrowAcnt string
+	for _, rawEvent := range payload.RawEscrowEvents.GetAdd() {
+		escrowAcnt = rawEvent.GetEscrow()
+		if rawEvent.GetOwner() != payload.CommonPoolAddress {
+			// rewards only come from commonpool, so skip
+			continue
+		}
+		newAmt := types.NewQuantityFromBytes(rawEvent.GetAmount())
+		existingAmt, ok := rewards[escrowAcnt]
+		if ok {
+			// if there's a duplicate, then the event with the higher amount is the reward (other is commission)
+			if existingAmt.Cmp(newAmt) < 0 {
+				rewards[escrowAcnt] = newAmt
+				commissions[escrowAcnt] = existingAmt
+			} else {
+				commissions[escrowAcnt] = newAmt
+			}
+		} else {
+			rewards[escrowAcnt] = newAmt
+		}
+	}
+
+	var err error
+	balanceEvents := []model.BalanceEvent{}
+	for _, fetchedValidator := range fetchedValidators {
+		escrowAddr := fetchedValidator.GetAddress()
+
+		var currActiveEscrowBalance types.Quantity
+		var currTotalShares types.Quantity
+		if account, ok := fetchedStakingState.GetLedger()[escrowAddr]; ok {
+			currActiveEscrowBalance = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+			currTotalShares = types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+		}
+
+		// balance and shares before rewards/commission were applied
+		prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
+		prevTotalShares := currTotalShares.Clone()
+
+		var comShares types.Quantity
+		if com, ok := commissions[escrowAddr]; ok {
+			balanceEvents = append(balanceEvents, model.BalanceEvent{
+				Address:       escrowAddr,
+				EscrowAddress: escrowAddr,
+				Amount:        com,
+				Kind:          model.Commission,
+			})
+
+			// reverse commission deposit
+			err = prevActiveEscrowBalance.Sub(com)
+			if err != nil {
+				return err
+			}
+
+			comShares = com.Clone()
+			if err = comShares.Mul(currTotalShares); err != nil {
+				return err
+			}
+			if err = comShares.Quo(currActiveEscrowBalance); err != nil {
+				return err
+			}
+			// reverse shares added from commission
+			if err = prevTotalShares.Sub(comShares); err != nil {
+				return err
+			}
+		}
+
+		if reward, ok := rewards[escrowAddr]; ok {
+			if err = prevActiveEscrowBalance.Sub(reward); err != nil {
+				return err
+			}
+		}
+
+		delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
+		var shares types.Quantity
+		if ok {
+			for delAddr, d := range delegations.Entries {
+				shares = types.NewQuantityFromBytes(d.Shares)
+
+				if delAddr == escrowAddr && !comShares.IsZero() {
+					// reverse shares added from commission
+					if err = shares.Sub(comShares); err != nil {
+						return err
+					}
+				}
+				if shares.IsZero() {
+					continue
+				}
+
+				// when reward is added to escrow balance, value of shares for each delegator goes up.
+				// find reward for each delegator by subtracting previous delegator balance from current delegator balance
+				prevBalance := shares.Clone()
+				if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
+					return err
+				}
+				if err = prevBalance.Quo(prevTotalShares); err != nil {
+					return err
+				}
+
+				rewardsAmt := shares.Clone()
+				if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
+					return err
+				}
+				if err = rewardsAmt.Quo(currTotalShares); err != nil {
+					return err
+				}
+				if err = rewardsAmt.Sub(prevBalance); err != nil {
+					return err
+				}
+
+				balanceEvents = append(balanceEvents, model.BalanceEvent{
+					Address:       delAddr,
+					EscrowAddress: escrowAddr,
+					Amount:        rewardsAmt,
+					Kind:          model.Reward,
+				})
+			}
+		}
+	}
+
+	payload.BalanceEvents = balanceEvents
+	return nil
 }

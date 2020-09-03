@@ -74,6 +74,7 @@ func NewPipeline(cfg *config.Config, db *store.Store, client *client.Client) (*i
 		pipeline.StageParser,
 		NewBlockParserTask(),
 		NewValidatorsParserTask(),
+		NewBalanceParserTask(),
 	)
 
 	// Set sequencer stage
