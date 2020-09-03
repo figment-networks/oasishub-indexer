@@ -227,6 +227,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 		var comShares types.Quantity
 		if com, ok := commissions[escrowAddr]; ok {
 			balanceEvents = append(balanceEvents, model.BalanceEvent{
+				Height:        payload.CurrentHeight,
 				Address:       escrowAddr,
 				EscrowAddress: escrowAddr,
 				Amount:        com,
@@ -296,6 +297,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 				}
 
 				balanceEvents = append(balanceEvents, model.BalanceEvent{
+					Height:        payload.CurrentHeight,
 					Address:       delAddr,
 					EscrowAddress: escrowAddr,
 					Amount:        rewardsAmt,

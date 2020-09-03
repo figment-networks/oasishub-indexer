@@ -398,6 +398,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 	escrowAddr := "escrowAddr"
 	delegatorAddr1 := "delegatorAddr1"
 	delegatorAddr2 := "delegatorAddr2"
+	const currHeight int64 = 20
 
 	t.Run("escrowAddr with commission", func(t *testing.T) {
 		t.Parallel()
@@ -406,6 +407,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 		task := NewBalanceParserTask()
 
 		pld := &payload{
+			CurrentHeight:     currHeight,
 			CommonPoolAddress: commonPoolAddr,
 			RawValidators: []*validatorpb.Validator{
 				testpbValidator(setValidatorAddress(escrowAddr)),
@@ -460,21 +462,21 @@ func TestBalanceParserTask_Run(t *testing.T) {
 
 		expectedEvents := map[string]model.BalanceEvent{
 			delegatorAddr1: model.BalanceEvent{
-				Height:        0,
+				Height:        currHeight,
 				Address:       delegatorAddr1,
 				EscrowAddress: escrowAddr,
 				Kind:          model.Reward,
 				Amount:        types.NewQuantityFromInt64(80), // account has 100/300 shares, so gets 1/3 * 240 of rewards
 			},
 			delegatorAddr2: model.BalanceEvent{
-				Height:        0,
+				Height:        currHeight,
 				Address:       delegatorAddr2,
 				EscrowAddress: escrowAddr,
 				Kind:          model.Reward,
 				Amount:        types.NewQuantityFromInt64(160), // account has 200/300 shares, so gets 2/3 * 240 of rewards
 			},
 			escrowAddr: model.BalanceEvent{
-				Height:        0,
+				Height:        currHeight,
 				Address:       escrowAddr,
 				EscrowAddress: escrowAddr,
 				Kind:          model.Commission,
