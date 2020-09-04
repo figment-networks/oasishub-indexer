@@ -26,6 +26,7 @@ func TestBlockFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -67,6 +68,7 @@ func TestStateFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -108,6 +110,7 @@ func TestStakingStateFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -150,6 +153,7 @@ func TestValidatorFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -201,6 +205,7 @@ func TestTransactionFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -256,6 +261,7 @@ func TestEventFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
