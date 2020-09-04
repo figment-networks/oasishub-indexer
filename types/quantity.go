@@ -58,6 +58,16 @@ func (b *Quantity) Sub(o Quantity) error {
 	return nil
 }
 
+// Add adds n to q, returning an error if n < 0 or n == nil.
+func (b *Quantity) Add(o Quantity) error {
+	if !o.Valid() {
+		return fmt.Errorf("could not multiply %v: invalid quantity", o)
+	}
+
+	b.Int.Add(&b.Int, &o.Int)
+	return nil
+}
+
 // Mul multiplies n with q, returning an error if o < 0
 func (b *Quantity) Mul(o Quantity) error {
 	if !o.Valid() {

@@ -210,7 +210,9 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	fetchedStakingState := payload.RawStakingState
 
 	rewards, commissions := getRewardsAndCommission(payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
-	if len(rewards) == 0 {
+	slashed := getSlashed(payload.RawEscrowEvents.GetTake())
+
+	if len(rewards) == 0 && len(slashed) == 0 {
 		return nil
 	}
 
@@ -219,100 +221,200 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	for _, fetchedValidator := range fetchedValidators {
 		escrowAddr := fetchedValidator.GetAddress()
 
-		reward, ok := rewards[escrowAddr]
-		if !ok {
-			continue
-		}
+		// create reward event
+		if reward, ok := rewards[escrowAddr]; ok {
+			account, ok := fetchedStakingState.GetLedger()[escrowAddr]
+			if !ok {
+				return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
+			}
+			currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+			currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
 
-		account, ok := fetchedStakingState.GetLedger()[escrowAddr]
-		if !ok {
-			return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
-		}
-		currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-		currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+			// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
+			prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
+			prevTotalShares := currTotalShares.Clone()
 
-		// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
-		prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
-		prevTotalShares := currTotalShares.Clone()
-
-		// reverse balance added from reward
-		if err = prevActiveEscrowBalance.Sub(reward); err != nil {
-			return err
-		}
-
-		var comShares types.Quantity
-		if com, ok := commissions[escrowAddr]; ok {
-			balanceEvents = append(balanceEvents, model.BalanceEvent{
-				Height:        payload.CurrentHeight,
-				Address:       escrowAddr,
-				EscrowAddress: escrowAddr,
-				Amount:        com,
-				Kind:          model.Commission,
-			})
-
-			// reverse balance added from commission
-			err = prevActiveEscrowBalance.Sub(com)
-			if err != nil {
+			// reverse balance added from reward
+			if err = prevActiveEscrowBalance.Sub(reward); err != nil {
 				return err
 			}
 
-			comShares = com.Clone()
-			if err = comShares.Mul(currTotalShares); err != nil {
-				return err
-			}
-			if err = comShares.Quo(currActiveEscrowBalance); err != nil {
-				return err
-			}
-			// reverse shares added from commission
-			if err = prevTotalShares.Sub(comShares); err != nil {
-				return err
-			}
-		}
-
-		delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
-		var shares types.Quantity
-		if ok {
-			for delAddr, d := range delegations.Entries {
-				shares = types.NewQuantityFromBytes(d.Shares)
-
-				if delAddr == escrowAddr && !comShares.IsZero() {
-					// reverse shares added from commission
-					if err = shares.Sub(comShares); err != nil {
-						return err
-					}
-				}
-				if shares.IsZero() {
-					continue
-				}
-
-				// when reward is added to escrow balance, value of shares for each delegator goes up.
-				// find reward for each delegator by subtracting previous delegator balance from current delegator balance
-				prevBalance := shares.Clone()
-				if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
-					return err
-				}
-				if err = prevBalance.Quo(prevTotalShares); err != nil {
-					return err
-				}
-
-				rewardsAmt := shares.Clone()
-				if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
-					return err
-				}
-				if err = rewardsAmt.Quo(currTotalShares); err != nil {
-					return err
-				}
-				if err = rewardsAmt.Sub(prevBalance); err != nil {
-					return err
-				}
-
+			var comShares types.Quantity
+			if com, ok := commissions[escrowAddr]; ok {
 				balanceEvents = append(balanceEvents, model.BalanceEvent{
 					Height:        payload.CurrentHeight,
-					Address:       delAddr,
+					Address:       escrowAddr,
 					EscrowAddress: escrowAddr,
-					Amount:        rewardsAmt,
-					Kind:          model.Reward,
+					Amount:        com,
+					Kind:          model.Commission,
 				})
+
+				// reverse balance added from commission
+				err = prevActiveEscrowBalance.Sub(com)
+				if err != nil {
+					return err
+				}
+
+				comShares = com.Clone()
+				if err = comShares.Mul(currTotalShares); err != nil {
+					return err
+				}
+				if err = comShares.Quo(currActiveEscrowBalance); err != nil {
+					return err
+				}
+				// reverse shares added from commission
+				if err = prevTotalShares.Sub(comShares); err != nil {
+					return err
+				}
+			}
+
+			delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
+			var shares types.Quantity
+			if ok {
+				for delAddr, d := range delegations.Entries {
+					shares = types.NewQuantityFromBytes(d.Shares)
+
+					if delAddr == escrowAddr && !comShares.IsZero() {
+						// reverse shares added from commission
+						if err = shares.Sub(comShares); err != nil {
+							return err
+						}
+					}
+					if shares.IsZero() {
+						continue
+					}
+
+					// when reward is added to escrow balance, value of shares for each delegator goes up.
+					// find reward for each delegator by subtracting previous delegator balance from current delegator balance
+					prevBalance := shares.Clone()
+					if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
+						return err
+					}
+					if err = prevBalance.Quo(prevTotalShares); err != nil {
+						return err
+					}
+
+					rewardsAmt := shares.Clone()
+					if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
+						return err
+					}
+					if err = rewardsAmt.Quo(currTotalShares); err != nil {
+						return err
+					}
+					if err = rewardsAmt.Sub(prevBalance); err != nil {
+						return err
+					}
+
+					balanceEvents = append(balanceEvents, model.BalanceEvent{
+						Height:        payload.CurrentHeight,
+						Address:       delAddr,
+						EscrowAddress: escrowAddr,
+						Amount:        rewardsAmt,
+						Kind:          model.Reward,
+					})
+				}
+			}
+		}
+
+		// create slash event
+		if amount, ok := slashed[escrowAddr]; ok {
+			account, ok := fetchedStakingState.GetLedger()[escrowAddr]
+			if !ok {
+				return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
+			}
+			currActiveBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+			currDebondingBalance := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetBalance())
+
+			total := currActiveBalance.Clone()
+			if err = total.Add(currDebondingBalance); err != nil {
+				return fmt.Errorf("compute total balance: %w", err)
+			}
+
+			// amount slashed is split between the debonding and active pools based on relative total balance.
+			totalSlashedActive := currActiveBalance.Clone()
+			if err := totalSlashedActive.Mul(amount); err != nil {
+				return fmt.Errorf("totalSlashedActive.Mul: %v", err)
+			}
+			if err := totalSlashedActive.Quo(total); err != nil {
+				return fmt.Errorf("totalSlashedActive.Quo: %v", err)
+			}
+
+			totalActiveShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+
+			delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
+			if ok {
+				var slashed types.Quantity
+				for delAddr, d := range delegations.Entries {
+					slashed = types.NewQuantityFromBytes(d.GetShares())
+					if slashed.IsZero() {
+						continue
+					}
+
+					if err = slashed.Mul(totalSlashedActive); err != nil {
+						return err
+					}
+					if err = slashed.Quo(totalActiveShares); err != nil {
+						return err
+					}
+
+					balanceEvents = append(balanceEvents, model.BalanceEvent{
+						Height:        payload.CurrentHeight,
+						Address:       delAddr,
+						EscrowAddress: escrowAddr,
+						Amount:        slashed,
+						Kind:          model.SlashActive,
+					})
+				}
+			}
+
+			totalSlashedDebonding := currDebondingBalance.Clone()
+			if err := totalSlashedDebonding.Mul(amount); err != nil {
+				return fmt.Errorf("totalSlashedDebonding.Mul: %v", err)
+			}
+			if err := totalSlashedDebonding.Quo(total); err != nil {
+				return fmt.Errorf("totalSlashedDebonding.Quo: %w", err)
+			}
+
+			totalDebondingShares := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetTotalShares())
+
+			debondingDelegations, ok := fetchedStakingState.GetDebondingDelegations()[escrowAddr]
+			if ok {
+				var totalSlashed types.Quantity
+				var slashed types.Quantity
+
+				for delAddr, innerEntries := range debondingDelegations.Entries {
+					totalSlashed = types.NewQuantityFromInt64(0)
+
+					for _, d := range innerEntries.GetDebondingDelegations() {
+						slashed = types.NewQuantityFromBytes(d.GetShares())
+						if slashed.IsZero() {
+							continue
+						}
+
+						if err = slashed.Mul(totalSlashedDebonding); err != nil {
+							return err
+						}
+						if err = slashed.Quo(totalDebondingShares); err != nil {
+							return err
+						}
+
+						if err = totalSlashed.Add(slashed); err != nil {
+							return err
+						}
+					}
+
+					if totalSlashed.IsZero() {
+						continue
+					}
+
+					balanceEvents = append(balanceEvents, model.BalanceEvent{
+						Height:        payload.CurrentHeight,
+						Address:       delAddr,
+						EscrowAddress: escrowAddr,
+						Amount:        totalSlashed,
+						Kind:          model.SlashDebonding,
+					})
+				}
 			}
 		}
 	}
@@ -348,4 +450,16 @@ func getRewardsAndCommission(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr
 	}
 
 	return rewards, commissions
+}
+
+func getSlashed(rawEvents []*eventpb.TakeEscrowEvent) (slashed map[string]types.Quantity) {
+	slashed = make(map[string]types.Quantity)
+
+	var acnt string
+	for _, rawEvent := range rawEvents {
+		acnt = rawEvent.GetOwner()
+		slashed[acnt] = types.NewQuantityFromBytes(rawEvent.GetAmount())
+	}
+
+	return slashed
 }

@@ -3,9 +3,10 @@ package model
 import "github.com/figment-networks/oasishub-indexer/types"
 
 const (
-	Commission BalanceEventKind = "commission"
-	Slash      BalanceEventKind = "slash"
-	Reward     BalanceEventKind = "reward"
+	Commission     BalanceEventKind = "commission"
+	SlashActive    BalanceEventKind = "slash_active"
+	SlashDebonding BalanceEventKind = "slash_debonding"
+	Reward         BalanceEventKind = "reward"
 )
 
 type BalanceEventKind string
