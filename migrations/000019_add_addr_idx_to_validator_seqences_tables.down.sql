@@ -1,0 +1,1 @@
+DROP index IF EXISTS idx_validator_sequences_validator_addr;

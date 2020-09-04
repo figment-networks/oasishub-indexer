@@ -1,0 +1,1 @@
+CREATE index idx_validator_sequences_validator_addr on validator_sequences (address);
