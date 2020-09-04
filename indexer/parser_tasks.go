@@ -236,7 +236,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 
 			// reverse balance added from reward
 			if err = prevActiveEscrowBalance.Sub(reward); err != nil {
-				return err
+				return fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
 			}
 
 			var comShares types.Quantity
@@ -250,21 +250,20 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 				})
 
 				// reverse balance added from commission
-				err = prevActiveEscrowBalance.Sub(com)
-				if err != nil {
-					return err
+				if err = prevActiveEscrowBalance.Sub(com); err != nil {
+					return fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
 				}
 
 				comShares = com.Clone()
 				if err = comShares.Mul(currTotalShares); err != nil {
-					return err
+					return fmt.Errorf("comShares.Mul: %v", err)
 				}
 				if err = comShares.Quo(currActiveEscrowBalance); err != nil {
-					return err
+					return fmt.Errorf("comShares.Quo: %v", err)
 				}
 				// reverse shares added from commission
 				if err = prevTotalShares.Sub(comShares); err != nil {
-					return err
+					return fmt.Errorf("prevTotalShares.Sub: %v", err)
 				}
 			}
 
@@ -277,7 +276,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 					if delAddr == escrowAddr && !comShares.IsZero() {
 						// reverse shares added from commission
 						if err = shares.Sub(comShares); err != nil {
-							return err
+							return fmt.Errorf("shares.Sub: %v", err)
 						}
 					}
 					if shares.IsZero() {
@@ -288,21 +287,21 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 					// find reward for each delegator by subtracting previous delegator balance from current delegator balance
 					prevBalance := shares.Clone()
 					if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
-						return err
+						return fmt.Errorf("prevBalance.Mul: %v", err)
 					}
 					if err = prevBalance.Quo(prevTotalShares); err != nil {
-						return err
+						return fmt.Errorf("prevBalance.Quo: %v", err)
 					}
 
 					rewardsAmt := shares.Clone()
 					if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
-						return err
+						return fmt.Errorf("rewardsAmt.Mul: %v", err)
 					}
 					if err = rewardsAmt.Quo(currTotalShares); err != nil {
-						return err
+						return fmt.Errorf("rewardsAmt.Quo: %v", err)
 					}
 					if err = rewardsAmt.Sub(prevBalance); err != nil {
-						return err
+						return fmt.Errorf("rewardsAmt.Sub: %v", err)
 					}
 
 					balanceEvents = append(balanceEvents, model.BalanceEvent{
@@ -349,12 +348,11 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 					if slashed.IsZero() {
 						continue
 					}
-
 					if err = slashed.Mul(totalSlashedActive); err != nil {
-						return err
+						return fmt.Errorf("slashed.Mul: %v", err)
 					}
 					if err = slashed.Quo(totalActiveShares); err != nil {
-						return err
+						return fmt.Errorf("slashed.Quo: %v", err)
 					}
 
 					balanceEvents = append(balanceEvents, model.BalanceEvent{
@@ -372,7 +370,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 				return fmt.Errorf("totalSlashedDebonding.Mul: %v", err)
 			}
 			if err := totalSlashedDebonding.Quo(total); err != nil {
-				return fmt.Errorf("totalSlashedDebonding.Quo: %w", err)
+				return fmt.Errorf("totalSlashedDebonding.Quo: %v", err)
 			}
 
 			totalDebondingShares := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetTotalShares())
@@ -392,14 +390,14 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 						}
 
 						if err = slashed.Mul(totalSlashedDebonding); err != nil {
-							return err
+							return fmt.Errorf("slashed.Mul: %v", err)
 						}
 						if err = slashed.Quo(totalDebondingShares); err != nil {
-							return err
+							return fmt.Errorf("slashed.Quo: %v", err)
 						}
 
 						if err = totalSlashed.Add(slashed); err != nil {
-							return err
+							return fmt.Errorf("totalSlashed.Add: %v", err)
 						}
 					}
 
