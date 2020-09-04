@@ -4,12 +4,10 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
-	"github.com/figment-networks/oasishub-indexer/metric"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -187,17 +185,22 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 }
 
 func NewBalanceParserTask() *balanceParserTask {
-	return &balanceParserTask{}
+	return &balanceParserTask{
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockParser),
+	}
 }
 
-type balanceParserTask struct{}
+type balanceParserTask struct {
+	metricObserver metrics.Observer
+}
 
 func (t *balanceParserTask) GetName() string {
 	return TaskNameBalanceParser
 }
 
 func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	defer metric.LogIndexerTaskDuration(time.Now(), t.GetName())
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

@@ -2,6 +2,7 @@ package indexer
 
 import (
 	"fmt"
+
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/pkg/errors"
 )
