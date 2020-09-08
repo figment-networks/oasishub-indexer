@@ -7,7 +7,9 @@ import (
 
 	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -216,204 +218,30 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 		return nil
 	}
 
-	var err error
 	balanceEvents := []model.BalanceEvent{}
 	for _, fetchedValidator := range fetchedValidators {
 		escrowAddr := fetchedValidator.GetAddress()
 
-		// create reward event
-		if reward, ok := rewards[escrowAddr]; ok {
-			account, ok := fetchedStakingState.GetLedger()[escrowAddr]
-			if !ok {
-				return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
-			}
-			currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-			currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
-
-			// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
-			prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
-			prevTotalShares := currTotalShares.Clone()
-
-			// reverse balance added from reward
-			if err = prevActiveEscrowBalance.Sub(reward); err != nil {
-				return fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
-			}
-
-			var comShares types.Quantity
-			if com, ok := commissions[escrowAddr]; ok {
-				balanceEvents = append(balanceEvents, model.BalanceEvent{
-					Height:        payload.CurrentHeight,
-					Address:       escrowAddr,
-					EscrowAddress: escrowAddr,
-					Amount:        com,
-					Kind:          model.Commission,
-				})
-
-				// reverse balance added from commission
-				if err = prevActiveEscrowBalance.Sub(com); err != nil {
-					return fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
-				}
-
-				comShares = com.Clone()
-				if err = comShares.Mul(currTotalShares); err != nil {
-					return fmt.Errorf("comShares.Mul: %v", err)
-				}
-				if err = comShares.Quo(currActiveEscrowBalance); err != nil {
-					return fmt.Errorf("comShares.Quo: %v", err)
-				}
-				// reverse shares added from commission
-				if err = prevTotalShares.Sub(comShares); err != nil {
-					return fmt.Errorf("prevTotalShares.Sub: %v", err)
-				}
-			}
-
-			delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
-			var shares types.Quantity
-			if ok {
-				for delAddr, d := range delegations.Entries {
-					shares = types.NewQuantityFromBytes(d.Shares)
-
-					if delAddr == escrowAddr && !comShares.IsZero() {
-						// reverse shares added from commission
-						if err = shares.Sub(comShares); err != nil {
-							return fmt.Errorf("shares.Sub: %v", err)
-						}
-					}
-					if shares.IsZero() {
-						continue
-					}
-
-					// when reward is added to escrow balance, value of shares for each delegator goes up.
-					// find reward for each delegator by subtracting previous delegator balance from current delegator balance
-					prevBalance := shares.Clone()
-					if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
-						return fmt.Errorf("prevBalance.Mul: %v", err)
-					}
-					if err = prevBalance.Quo(prevTotalShares); err != nil {
-						return fmt.Errorf("prevBalance.Quo: %v", err)
-					}
-
-					rewardsAmt := shares.Clone()
-					if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
-						return fmt.Errorf("rewardsAmt.Mul: %v", err)
-					}
-					if err = rewardsAmt.Quo(currTotalShares); err != nil {
-						return fmt.Errorf("rewardsAmt.Quo: %v", err)
-					}
-					if err = rewardsAmt.Sub(prevBalance); err != nil {
-						return fmt.Errorf("rewardsAmt.Sub: %v", err)
-					}
-
-					balanceEvents = append(balanceEvents, model.BalanceEvent{
-						Height:        payload.CurrentHeight,
-						Address:       delAddr,
-						EscrowAddress: escrowAddr,
-						Amount:        rewardsAmt,
-						Kind:          model.Reward,
-					})
-				}
-			}
+		account, ok := fetchedStakingState.GetLedger()[escrowAddr]
+		if !ok {
+			return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
 		}
 
-		// create slash event
+		if reward, ok := rewards[escrowAddr]; ok {
+			commission, _ := commissions[escrowAddr]
+			events, err := createRewardAndCommissionBalanceEvents(escrowAddr, account, fetchedStakingState, reward, commission, payload.CurrentHeight)
+			if err != nil {
+				return err
+			}
+			balanceEvents = append(balanceEvents, events...)
+		}
+
 		if amount, ok := slashed[escrowAddr]; ok {
-			account, ok := fetchedStakingState.GetLedger()[escrowAddr]
-			if !ok {
-				return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
+			events, err := createSlashBalanceEvents(escrowAddr, account, fetchedStakingState, amount, payload.CurrentHeight)
+			if err != nil {
+				return err
 			}
-			currActiveBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-			currDebondingBalance := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetBalance())
-
-			total := currActiveBalance.Clone()
-			if err = total.Add(currDebondingBalance); err != nil {
-				return fmt.Errorf("compute total balance: %w", err)
-			}
-
-			// amount slashed is split between the debonding and active pools based on relative total balance.
-			totalSlashedActive := currActiveBalance.Clone()
-			if err := totalSlashedActive.Mul(amount); err != nil {
-				return fmt.Errorf("totalSlashedActive.Mul: %v", err)
-			}
-			if err := totalSlashedActive.Quo(total); err != nil {
-				return fmt.Errorf("totalSlashedActive.Quo: %v", err)
-			}
-
-			totalActiveShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
-
-			delegations, ok := fetchedStakingState.GetDelegations()[escrowAddr]
-			if ok {
-				var slashed types.Quantity
-				for delAddr, d := range delegations.Entries {
-					slashed = types.NewQuantityFromBytes(d.GetShares())
-					if slashed.IsZero() {
-						continue
-					}
-					if err = slashed.Mul(totalSlashedActive); err != nil {
-						return fmt.Errorf("slashed.Mul: %v", err)
-					}
-					if err = slashed.Quo(totalActiveShares); err != nil {
-						return fmt.Errorf("slashed.Quo: %v", err)
-					}
-
-					balanceEvents = append(balanceEvents, model.BalanceEvent{
-						Height:        payload.CurrentHeight,
-						Address:       delAddr,
-						EscrowAddress: escrowAddr,
-						Amount:        slashed,
-						Kind:          model.SlashActive,
-					})
-				}
-			}
-
-			totalSlashedDebonding := currDebondingBalance.Clone()
-			if err := totalSlashedDebonding.Mul(amount); err != nil {
-				return fmt.Errorf("totalSlashedDebonding.Mul: %v", err)
-			}
-			if err := totalSlashedDebonding.Quo(total); err != nil {
-				return fmt.Errorf("totalSlashedDebonding.Quo: %v", err)
-			}
-
-			totalDebondingShares := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetTotalShares())
-
-			debondingDelegations, ok := fetchedStakingState.GetDebondingDelegations()[escrowAddr]
-			if ok {
-				var totalSlashed types.Quantity
-				var slashed types.Quantity
-
-				for delAddr, innerEntries := range debondingDelegations.Entries {
-					totalSlashed = types.NewQuantityFromInt64(0)
-
-					for _, d := range innerEntries.GetDebondingDelegations() {
-						slashed = types.NewQuantityFromBytes(d.GetShares())
-						if slashed.IsZero() {
-							continue
-						}
-
-						if err = slashed.Mul(totalSlashedDebonding); err != nil {
-							return fmt.Errorf("slashed.Mul: %v", err)
-						}
-						if err = slashed.Quo(totalDebondingShares); err != nil {
-							return fmt.Errorf("slashed.Quo: %v", err)
-						}
-
-						if err = totalSlashed.Add(slashed); err != nil {
-							return fmt.Errorf("totalSlashed.Add: %v", err)
-						}
-					}
-
-					if totalSlashed.IsZero() {
-						continue
-					}
-
-					balanceEvents = append(balanceEvents, model.BalanceEvent{
-						Height:        payload.CurrentHeight,
-						Address:       delAddr,
-						EscrowAddress: escrowAddr,
-						Amount:        totalSlashed,
-						Kind:          model.SlashDebonding,
-					})
-				}
-			}
+			balanceEvents = append(balanceEvents, events...)
 		}
 	}
 
@@ -460,4 +288,198 @@ func getSlashed(rawEvents []*eventpb.TakeEscrowEvent) (slashed map[string]types.
 	}
 
 	return slashed
+}
+
+func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountpb.Account, stakingState *statepb.Staking, reward types.Quantity, commission types.Quantity, height int64) ([]model.BalanceEvent, error) {
+	var err error
+	balanceEvents := []model.BalanceEvent{}
+
+	currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+	currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+
+	// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
+	prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
+	prevTotalShares := currTotalShares.Clone()
+
+	// reverse balance added from reward
+	if err = prevActiveEscrowBalance.Sub(reward); err != nil {
+		return nil, fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
+	}
+
+	var comShares types.Quantity
+	if !commission.IsZero() {
+		balanceEvents = append(balanceEvents, model.BalanceEvent{
+			Height:        height,
+			Address:       escrowAddr,
+			EscrowAddress: escrowAddr,
+			Amount:        commission,
+			Kind:          model.Commission,
+		})
+
+		// reverse balance added from commission
+		if err = prevActiveEscrowBalance.Sub(commission); err != nil {
+			return nil, fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
+		}
+
+		comShares = commission.Clone()
+		if err = comShares.Mul(currTotalShares); err != nil {
+			return nil, fmt.Errorf("comShares.Mul: %v", err)
+		}
+		if err = comShares.Quo(currActiveEscrowBalance); err != nil {
+			return nil, fmt.Errorf("comShares.Quo: %v", err)
+		}
+		// reverse shares added from commission
+		if err = prevTotalShares.Sub(comShares); err != nil {
+			return nil, fmt.Errorf("prevTotalShares.Sub: %v", err)
+		}
+	}
+
+	if delegations, ok := stakingState.GetDelegations()[escrowAddr]; ok {
+		var shares types.Quantity
+
+		for delAddr, d := range delegations.Entries {
+			shares = types.NewQuantityFromBytes(d.Shares)
+
+			if delAddr == escrowAddr && !comShares.IsZero() {
+				// reverse shares added from commission
+				if err = shares.Sub(comShares); err != nil {
+					return nil, fmt.Errorf("shares.Sub: %v", err)
+				}
+			}
+			if shares.IsZero() {
+				continue
+			}
+
+			// when reward is added to escrow balance, value of shares for each delegator goes up.
+			// find reward for each delegator by subtracting previous delegator balance from current delegator balance
+			prevBalance := shares.Clone()
+			if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
+				return nil, fmt.Errorf("prevBalance.Mul: %v", err)
+			}
+			if err = prevBalance.Quo(prevTotalShares); err != nil {
+				return nil, fmt.Errorf("prevBalance.Quo: %v", err)
+			}
+
+			rewardsAmt := shares.Clone()
+			if err = rewardsAmt.Mul(currActiveEscrowBalance); err != nil {
+				return nil, fmt.Errorf("rewardsAmt.Mul: %v", err)
+			}
+			if err = rewardsAmt.Quo(currTotalShares); err != nil {
+				return nil, fmt.Errorf("rewardsAmt.Quo: %v", err)
+			}
+			if err = rewardsAmt.Sub(prevBalance); err != nil {
+				return nil, fmt.Errorf("rewardsAmt.Sub: %v", err)
+			}
+
+			balanceEvents = append(balanceEvents, model.BalanceEvent{
+				Height:        height,
+				Address:       delAddr,
+				EscrowAddress: escrowAddr,
+				Amount:        rewardsAmt,
+				Kind:          model.Reward,
+			})
+		}
+	}
+
+	return balanceEvents, nil
+}
+
+func createSlashBalanceEvents(escrowAddr string, account *accountpb.Account, stakingState *statepb.Staking, amount types.Quantity, height int64) ([]model.BalanceEvent, error) {
+	var err error
+	balanceEvents := []model.BalanceEvent{}
+
+	currActiveBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
+	currDebondingBalance := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetBalance())
+
+	total := currActiveBalance.Clone()
+	if err = total.Add(currDebondingBalance); err != nil {
+		return nil, fmt.Errorf("compute total balance: %w", err)
+	}
+
+	// amount slashed is split between the debonding and active pools based on relative total balance.
+	totalSlashedActive := currActiveBalance.Clone()
+	if err := totalSlashedActive.Mul(amount); err != nil {
+		return nil, fmt.Errorf("totalSlashedActive.Mul: %v", err)
+	}
+	if err := totalSlashedActive.Quo(total); err != nil {
+		return nil, fmt.Errorf("totalSlashedActive.Quo: %v", err)
+	}
+
+	totalActiveShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+
+	delegations, ok := stakingState.GetDelegations()[escrowAddr]
+	if ok {
+		var slashed types.Quantity
+		for delAddr, d := range delegations.Entries {
+			slashed = types.NewQuantityFromBytes(d.GetShares())
+			if slashed.IsZero() {
+				continue
+			}
+			if err = slashed.Mul(totalSlashedActive); err != nil {
+				return nil, fmt.Errorf("slashed.Mul: %v", err)
+			}
+			if err = slashed.Quo(totalActiveShares); err != nil {
+				return nil, fmt.Errorf("slashed.Quo: %v", err)
+			}
+
+			balanceEvents = append(balanceEvents, model.BalanceEvent{
+				Height:        height,
+				Address:       delAddr,
+				EscrowAddress: escrowAddr,
+				Amount:        slashed,
+				Kind:          model.SlashActive,
+			})
+		}
+	}
+
+	totalSlashedDebonding := currDebondingBalance.Clone()
+	if err := totalSlashedDebonding.Mul(amount); err != nil {
+		return nil, fmt.Errorf("totalSlashedDebonding.Mul: %v", err)
+	}
+	if err := totalSlashedDebonding.Quo(total); err != nil {
+		return nil, fmt.Errorf("totalSlashedDebonding.Quo: %v", err)
+	}
+
+	totalDebondingShares := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetTotalShares())
+
+	debondingDelegations, ok := stakingState.GetDebondingDelegations()[escrowAddr]
+	if ok {
+		var totalSlashed types.Quantity
+		var slashed types.Quantity
+
+		for delAddr, innerEntries := range debondingDelegations.Entries {
+			totalSlashed = types.NewQuantityFromInt64(0)
+
+			for _, d := range innerEntries.GetDebondingDelegations() {
+				slashed = types.NewQuantityFromBytes(d.GetShares())
+				if slashed.IsZero() {
+					continue
+				}
+
+				if err = slashed.Mul(totalSlashedDebonding); err != nil {
+					return nil, fmt.Errorf("slashed.Mul: %v", err)
+				}
+				if err = slashed.Quo(totalDebondingShares); err != nil {
+					return nil, fmt.Errorf("slashed.Quo: %v", err)
+				}
+
+				if err = totalSlashed.Add(slashed); err != nil {
+					return nil, fmt.Errorf("totalSlashed.Add: %v", err)
+				}
+			}
+
+			if totalSlashed.IsZero() {
+				continue
+			}
+
+			balanceEvents = append(balanceEvents, model.BalanceEvent{
+				Height:        height,
+				Address:       delAddr,
+				EscrowAddress: escrowAddr,
+				Amount:        totalSlashed,
+				Kind:          model.SlashDebonding,
+			})
+		}
+	}
+	return balanceEvents, nil
 }
