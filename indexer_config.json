@@ -17,7 +17,7 @@
     },
     {
       "id": 4,
-      "parallel": false,
+      "parallel": true,
       "targets": [6]
     }
   ],
