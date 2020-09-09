@@ -227,9 +227,11 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 			return fmt.Errorf("could not find account: missing address '%v' in ledger", escrowAddr)
 		}
 
+		escrowAccount := account.GetEscrow()
+
 		if reward, ok := rewards[escrowAddr]; ok {
 			commission, _ := commissions[escrowAddr]
-			events, err := createRewardAndCommissionBalanceEvents(escrowAddr, account, fetchedStakingState, reward, commission, payload.CurrentHeight)
+			events, err := createRewardAndCommissionBalanceEvents(escrowAddr, escrowAccount, fetchedStakingState, reward, commission, payload.CurrentHeight)
 			if err != nil {
 				return err
 			}
@@ -237,7 +239,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 		}
 
 		if amount, ok := slashed[escrowAddr]; ok {
-			events, err := createSlashBalanceEvents(escrowAddr, account, fetchedStakingState, amount, payload.CurrentHeight)
+			events, err := createSlashBalanceEvents(escrowAddr, escrowAccount, fetchedStakingState, amount, payload.CurrentHeight)
 			if err != nil {
 				return err
 			}
@@ -290,12 +292,12 @@ func getSlashed(rawEvents []*eventpb.TakeEscrowEvent) (slashed map[string]types.
 	return slashed
 }
 
-func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountpb.Account, stakingState *statepb.Staking, reward types.Quantity, commission types.Quantity, height int64) ([]model.BalanceEvent, error) {
+func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountpb.EscrowAccount, stakingState *statepb.Staking, reward types.Quantity, commission types.Quantity, height int64) ([]model.BalanceEvent, error) {
 	var err error
 	balanceEvents := []model.BalanceEvent{}
 
-	currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-	currTotalShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+	currActiveEscrowBalance := types.NewQuantityFromBytes(account.GetActive().GetBalance())
+	currTotalShares := types.NewQuantityFromBytes(account.GetActive().GetTotalShares())
 
 	// balance and shares before rewards/commission were applied - need to reverse commission and rewards from current balance
 	prevActiveEscrowBalance := currActiveEscrowBalance.Clone()
@@ -384,12 +386,12 @@ func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountp
 	return balanceEvents, nil
 }
 
-func createSlashBalanceEvents(escrowAddr string, account *accountpb.Account, stakingState *statepb.Staking, amount types.Quantity, height int64) ([]model.BalanceEvent, error) {
+func createSlashBalanceEvents(escrowAddr string, account *accountpb.EscrowAccount, stakingState *statepb.Staking, amount types.Quantity, height int64) ([]model.BalanceEvent, error) {
 	var err error
 	balanceEvents := []model.BalanceEvent{}
 
-	currActiveBalance := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetBalance())
-	currDebondingBalance := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetBalance())
+	currActiveBalance := types.NewQuantityFromBytes(account.GetActive().GetBalance())
+	currDebondingBalance := types.NewQuantityFromBytes(account.GetDebonding().GetBalance())
 
 	total := currActiveBalance.Clone()
 	if err = total.Add(currDebondingBalance); err != nil {
@@ -405,7 +407,7 @@ func createSlashBalanceEvents(escrowAddr string, account *accountpb.Account, sta
 		return nil, fmt.Errorf("totalSlashedActive.Quo: %v", err)
 	}
 
-	totalActiveShares := types.NewQuantityFromBytes(account.GetEscrow().GetActive().GetTotalShares())
+	totalActiveShares := types.NewQuantityFromBytes(account.GetActive().GetTotalShares())
 
 	delegations, ok := stakingState.GetDelegations()[escrowAddr]
 	if ok {
@@ -440,7 +442,7 @@ func createSlashBalanceEvents(escrowAddr string, account *accountpb.Account, sta
 		return nil, fmt.Errorf("totalSlashedDebonding.Quo: %v", err)
 	}
 
-	totalDebondingShares := types.NewQuantityFromBytes(account.GetEscrow().GetDebonding().GetTotalShares())
+	totalDebondingShares := types.NewQuantityFromBytes(account.GetDebonding().GetTotalShares())
 
 	debondingDelegations, ok := stakingState.GetDebondingDelegations()[escrowAddr]
 	if ok {
