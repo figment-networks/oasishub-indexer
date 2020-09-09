@@ -1,5 +1,7 @@
 package types
 
+import "time"
+
 const (
 	IntervalHourly SummaryInterval = "hour"
 	IntervalDaily  SummaryInterval = "day"
@@ -14,4 +16,12 @@ func (s SummaryInterval) Valid() bool {
 
 func (s SummaryInterval) Equal(o SummaryInterval) bool {
 	return s == o
+}
+
+func (s SummaryInterval) ToDuration() (time.Duration, error) {
+	if s == IntervalDaily {
+		return time.ParseDuration("24h")
+	}
+
+	return time.ParseDuration("1h")
 }
