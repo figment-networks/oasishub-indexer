@@ -49,6 +49,61 @@ func TestSyncerPersistor_Run(t *testing.T) {
 	}
 }
 
+func TestBalanceEventPersistor_Run(t *testing.T) {
+	events := []model.BalanceEvent{
+		model.BalanceEvent{
+			Height:        20,
+			Address:       "delegatorAddr1",
+			EscrowAddress: "escrowAddr",
+			Kind:          model.Reward,
+			Amount:        types.NewQuantityFromInt64(80),
+		},
+		model.BalanceEvent{
+			Height:        20,
+			Address:       "delegatorAddr2",
+			EscrowAddress: "escrowAddr",
+			Kind:          model.Reward,
+			Amount:        types.NewQuantityFromInt64(100),
+		},
+	}
+
+	tests := []struct {
+		description string
+		expectErr   error
+	}{
+		{"calls db with event", nil},
+		{"returns error if database errors", errTestDbCreate},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			ctx := context.Background()
+
+			dbMock := mock.NewMockBalanceEventPersistorTaskStore(ctrl)
+
+			task := NewBalanceEventPersistorTask(dbMock)
+
+			pl := &payload{
+				CurrentHeight: 20,
+				BalanceEvents: events,
+			}
+
+			for _, event := range events {
+				e := event
+				dbMock.EXPECT().CreateOrUpdate(&e).Return(tt.expectErr).Times(1)
+				if tt.expectErr != nil {
+					// don't expect any more calls
+					break
+				}
+			}
+			if err := task.Run(ctx, pl); err != tt.expectErr {
+				t.Errorf("want %v; got %v", tt.expectErr, err)
+			}
+		})
+	}
+}
+
 func TestBlockSeqPersistor_Run(t *testing.T) {
 	seq := &model.BlockSeq{
 		Sequence: &model.Sequence{

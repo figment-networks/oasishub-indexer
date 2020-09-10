@@ -13,7 +13,7 @@ var (
 )
 
 type EventClient interface {
-	GetAddEscrowEventsByHeight(int64) (*eventpb.GetAddEscrowEventsByHeightResponse, error)
+	GetEscrowEventsByHeight(int64) (*eventpb.GetEscrowEventsByHeightResponse, error)
 }
 
 func NewEventClient(conn *grpc.ClientConn) EventClient {
@@ -26,8 +26,8 @@ type eventClient struct {
 	client eventpb.EventServiceClient
 }
 
-func (r *eventClient) GetAddEscrowEventsByHeight(h int64) (*eventpb.GetAddEscrowEventsByHeightResponse, error) {
+func (r *eventClient) GetEscrowEventsByHeight(h int64) (*eventpb.GetEscrowEventsByHeightResponse, error) {
 	ctx := context.Background()
 
-	return r.client.GetAddEscrowEventsByHeight(ctx, &eventpb.GetAddEscrowEventsByHeightRequest{Height: h})
+	return r.client.GetEscrowEventsByHeight(ctx, &eventpb.GetEscrowEventsByHeightRequest{Height: h})
 }

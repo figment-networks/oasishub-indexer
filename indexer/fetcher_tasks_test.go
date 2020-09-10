@@ -26,6 +26,7 @@ func TestBlockFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -67,6 +68,7 @@ func TestStateFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -108,6 +110,7 @@ func TestStakingStateFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -150,6 +153,7 @@ func TestValidatorFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -201,6 +205,7 @@ func TestTransactionFetcher_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -243,18 +248,20 @@ func TestTransactionFetcher_Run(t *testing.T) {
 func TestEventFetcher_Run(t *testing.T) {
 	tests := []struct {
 		description    string
-		expectedEvents []*eventpb.AddEscrowEvent
+		expectedEvents *eventpb.EscrowEvents
 		result         error
 	}{
 		{"returns error if client errors", nil, errTestClient},
-		{"updates payload", []*eventpb.AddEscrowEvent{{
-			Owner:  "ownerAddr",
-			Escrow: "escrowAddr",
-			Amount: randBytes(5),
-		}}, nil},
+		{"updates payload", &eventpb.EscrowEvents{
+			Add: []*eventpb.AddEscrowEvent{{
+				Owner:  "ownerAddr",
+				Escrow: "escrowAddr",
+				Amount: randBytes(5),
+			}}}, nil},
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctrl := gomock.NewController(t)
@@ -265,8 +272,8 @@ func TestEventFetcher_Run(t *testing.T) {
 
 			pl := &payload{CurrentHeight: 20}
 
-			mockClient.EXPECT().GetAddEscrowEventsByHeight(pl.CurrentHeight).Return(
-				&eventpb.GetAddEscrowEventsByHeightResponse{Events: tt.expectedEvents}, tt.result,
+			mockClient.EXPECT().GetEscrowEventsByHeight(pl.CurrentHeight).Return(
+				&eventpb.GetEscrowEventsByHeightResponse{Events: tt.expectedEvents}, tt.result,
 			).Times(1)
 
 			if result := task.Run(ctx, pl); result != tt.result {

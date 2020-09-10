@@ -45,7 +45,7 @@ type payload struct {
 
 	// Fetcher stage
 	RawBlock        *blockpb.Block
-	RawEscrowEvents []*eventpb.AddEscrowEvent
+	RawEscrowEvents *eventpb.EscrowEvents
 	RawStakingState *statepb.Staking
 	RawState        *statepb.State
 	RawTransactions []*transactionpb.Transaction
@@ -54,6 +54,7 @@ type payload struct {
 	// Parser stage
 	ParsedBlock      ParsedBlockData
 	ParsedValidators ParsedValidatorsData
+	BalanceEvents    []model.BalanceEvent
 
 	// Aggregator stage
 	NewAggregatedAccounts       []model.AccountAgg

@@ -14,6 +14,8 @@ const (
 	IndexTargetValidatorSequences
 	IndexTargetValidatorAggregates
 	IndexTargetSystemEvents
+	IndexValidatorRewards
+	IndexBalanceEvents
 )
 
 var (

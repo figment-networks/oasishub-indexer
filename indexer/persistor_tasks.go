@@ -11,6 +11,7 @@ import (
 )
 
 const (
+	TaskNameBalanceEventPersistor = "BalanceEventPersistor"
 	TaskNameSyncerPersistor       = "SyncerPersistor"
 	TaskNameBlockSeqPersistor     = "BlockSeqPersistor"
 	TaskNameValidatorSeqPersistor = "ValidatorSeqPersistor"
@@ -207,6 +208,43 @@ func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 	for _, systemEvent := range payload.SystemEvents {
 		if err := t.db.CreateOrUpdate(systemEvent); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func NewBalanceEventPersistorTask(db BalanceEventPersistorTaskStore) pipeline.Task {
+	return &balanceEventPersistorTask{
+		db:             db,
+		metricObserver: indexerTaskDuration.WithLabels(TaskNameBalanceEventPersistor),
+	}
+}
+
+type BalanceEventPersistorTaskStore interface {
+	CreateOrUpdate(*model.BalanceEvent) error
+}
+
+type balanceEventPersistorTask struct {
+	db             BalanceEventPersistorTaskStore
+	metricObserver metrics.Observer
+}
+
+func (t *balanceEventPersistorTask) GetName() string {
+	return TaskNameBalanceEventPersistor
+}
+
+func (t *balanceEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
+	timer := metrics.NewTimer(t.metricObserver)
+	defer timer.ObserveDuration()
+
+	payload := p.(*payload)
+
+	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StagePersistor, t.GetName(), payload.CurrentHeight))
+
+	for _, balanceEvent := range payload.BalanceEvents {
+		if err := t.db.CreateOrUpdate(&balanceEvent); err != nil {
 			return err
 		}
 	}

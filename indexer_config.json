@@ -14,6 +14,11 @@
       "id": 3,
       "parallel": false,
       "targets": [4,5]
+    },
+    {
+      "id": 4,
+      "parallel": true,
+      "targets": [6]
     }
   ],
   "shared_tasks": [
@@ -90,6 +95,18 @@
         "ValidatorSeqPersistor",
         "ValidatorAggCreator",
         "ValidatorAggPersistor"
+      ]
+    },
+    {
+      "id": 6,
+      "name": "index_balance_events",
+      "desc": "Creates and persists balance events",
+      "tasks": [
+        "EventsFetcher",
+        "ValidatorFetcher",
+        "StakingStateFetcher",
+        "BalanceParser",
+        "BalanceEventPersistor"
       ]
     }
   ]

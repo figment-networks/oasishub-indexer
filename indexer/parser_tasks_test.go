@@ -5,11 +5,15 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/block/blockpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/debondingdelegation/debondingdelegationpb"
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/delegation/delegationpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/state/statepb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/transaction/transactionpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/validator/validatorpb"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
 )
 
@@ -111,7 +115,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 		rawBlock                     *blockpb.Block
 		rawStakingState              *statepb.Staking
 		rawValidators                []*validatorpb.Validator
-		rawEscrowEvents              []*eventpb.AddEscrowEvent
+		rawAddEscrowEvents           []*eventpb.AddEscrowEvent
 		expectedParsedValidatorsData ParsedValidatorsData
 	}{
 		{description: "update validator with no block votes",
@@ -265,7 +269,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
 					Owner:  "not common pool addr",
 					Escrow: "t0",
@@ -308,7 +312,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					setValidatorAddress("t1"),
 				),
 			},
-			rawEscrowEvents: []*eventpb.AddEscrowEvent{
+			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
 					Owner:  commonPoolAddr,
 					Escrow: "t0",
@@ -352,6 +356,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.description, func(t *testing.T) {
 			t.Parallel()
 			ctx := context.Background()
@@ -362,7 +367,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				RawBlock:          tt.rawBlock,
 				RawValidators:     tt.rawValidators,
 				RawStakingState:   tt.rawStakingState,
-				RawEscrowEvents:   tt.rawEscrowEvents,
+				RawEscrowEvents:   &eventpb.EscrowEvents{Add: tt.rawAddEscrowEvents},
 				CommonPoolAddress: commonPoolAddr,
 			}
 
@@ -388,4 +393,339 @@ func TestValidatorParserTask_Run(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestBalanceParserTask_Run(t *testing.T) {
+	commonPoolAddr := "commonPoolAddr"
+	escrowAddr := "escrowAddr"
+	delegatorAddr1 := "delegatorAddr1"
+	delegatorAddr2 := "delegatorAddr2"
+	const currHeight int64 = 20
+
+	t.Run("creates reward amd commission balance events", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		task := NewBalanceParserTask()
+
+		pld := &payload{
+			CurrentHeight:     currHeight,
+			CommonPoolAddress: commonPoolAddr,
+			RawValidators: []*validatorpb.Validator{
+				testpbValidator(setValidatorAddress(escrowAddr)),
+			},
+			RawEscrowEvents: &eventpb.EscrowEvents{
+				Add: []*eventpb.AddEscrowEvent{
+					{
+						Owner:  commonPoolAddr,
+						Escrow: escrowAddr,
+						Amount: uintToBytes(60, t), // commission event
+					},
+					{
+						Owner:  commonPoolAddr,
+						Escrow: escrowAddr,
+						Amount: uintToBytes(240, t), // reward event
+					},
+				},
+			},
+			RawStakingState: &statepb.Staking{
+				Ledger: map[string]*accountpb.Account{
+					escrowAddr: &accountpb.Account{
+						Escrow: &accountpb.EscrowAccount{
+							Active: &accountpb.SharePool{
+								Balance:     uintToBytes(600, t),
+								TotalShares: uintToBytes(333, t),
+							},
+						},
+					},
+				},
+				Delegations: map[string]*delegationpb.DelegationEntry{
+					escrowAddr: &delegationpb.DelegationEntry{
+						Entries: map[string]*delegationpb.Delegation{
+							// 100% shares are from commission: commission_amount * total_shares / pre_commission_balance = 60 * 300 / 540 = 33
+							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(33, t)},
+							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
+							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(200, t)},
+						},
+					},
+				},
+			},
+		}
+
+		if err := task.Run(ctx, pld); err != nil {
+			t.Errorf("unexpected error on Run, want %v; got %v", nil, err)
+			return
+		}
+
+		expectedEvents := map[string]model.BalanceEvent{
+			delegatorAddr1: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       delegatorAddr1,
+				EscrowAddress: escrowAddr,
+				Kind:          model.Reward,
+				Amount:        types.NewQuantityFromInt64(80), // account has 100/300 shares, so gets 1/3 * 240 of rewards
+			},
+			delegatorAddr2: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       delegatorAddr2,
+				EscrowAddress: escrowAddr,
+				Kind:          model.Reward,
+				Amount:        types.NewQuantityFromInt64(160), // account has 200/300 shares, so gets 2/3 * 240 of rewards
+			},
+			escrowAddr: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       escrowAddr,
+				EscrowAddress: escrowAddr,
+				Kind:          model.Commission,
+				Amount:        types.NewQuantityFromInt64(60), // from commission event
+			},
+		}
+
+		if len(pld.BalanceEvents) != len(expectedEvents) {
+			t.Errorf("Unexpected BalanceEvents len, want: %+v, got: %+v", len(expectedEvents), len(pld.BalanceEvents))
+			return
+		}
+
+		for _, event := range pld.BalanceEvents {
+			expected, ok := expectedEvents[event.Address]
+			if !ok {
+				t.Errorf("Unexpected event in payload.BalanceEvents, got: %+v", event)
+				return
+			}
+			if !reflect.DeepEqual(event, expected) {
+				t.Errorf("Unexpected event, want: %+v, got: %+v", expected, event)
+			}
+		}
+	})
+
+	t.Run("doesn't create balance event if there's no raw escrow events", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		task := NewBalanceParserTask()
+
+		pld := &payload{
+			CurrentHeight:     currHeight,
+			CommonPoolAddress: commonPoolAddr,
+			RawValidators: []*validatorpb.Validator{
+				testpbValidator(setValidatorAddress(escrowAddr)),
+			},
+			RawEscrowEvents: &eventpb.EscrowEvents{
+				Add:  []*eventpb.AddEscrowEvent{},
+				Take: []*eventpb.TakeEscrowEvent{},
+			},
+			RawStakingState: &statepb.Staking{
+				Ledger: map[string]*accountpb.Account{
+					escrowAddr: &accountpb.Account{
+						Escrow: &accountpb.EscrowAccount{
+							Active: &accountpb.SharePool{
+								Balance:     uintToBytes(600, t),
+								TotalShares: uintToBytes(333, t),
+							},
+						},
+					},
+				},
+				Delegations: map[string]*delegationpb.DelegationEntry{
+					escrowAddr: &delegationpb.DelegationEntry{
+						Entries: map[string]*delegationpb.Delegation{
+							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(33, t)},
+							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
+							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(200, t)},
+						},
+					},
+				},
+			},
+		}
+
+		if err := task.Run(ctx, pld); err != nil {
+			t.Errorf("unexpected error on Run, want %v; got %v", nil, err)
+			return
+		}
+
+		if len(pld.BalanceEvents) != 0 {
+			t.Errorf("Unexpected BalanceEvents len, want: %+v, got: %+v", 0, len(pld.BalanceEvents))
+			return
+		}
+	})
+
+	t.Run("creates slash active events", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		task := NewBalanceParserTask()
+
+		pld := &payload{
+			CurrentHeight:     currHeight,
+			CommonPoolAddress: commonPoolAddr,
+			RawValidators: []*validatorpb.Validator{
+				testpbValidator(setValidatorAddress(escrowAddr)),
+			},
+			RawEscrowEvents: &eventpb.EscrowEvents{
+				Take: []*eventpb.TakeEscrowEvent{
+					{
+						Owner:  escrowAddr,
+						Amount: uintToBytes(50, t),
+					},
+				},
+			},
+			RawStakingState: &statepb.Staking{
+				Ledger: map[string]*accountpb.Account{
+					escrowAddr: &accountpb.Account{
+						Escrow: &accountpb.EscrowAccount{
+							Active: &accountpb.SharePool{
+								Balance:     uintToBytes(350, t),
+								TotalShares: uintToBytes(1000, t),
+							},
+						},
+					},
+				},
+				Delegations: map[string]*delegationpb.DelegationEntry{
+					escrowAddr: &delegationpb.DelegationEntry{
+						Entries: map[string]*delegationpb.Delegation{
+							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(600, t)},
+							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(300, t)},
+							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
+						},
+					},
+				},
+			},
+		}
+
+		if err := task.Run(ctx, pld); err != nil {
+			t.Errorf("unexpected error on Run, want %v; got %v", nil, err)
+			return
+		}
+
+		expectedEvents := map[string]model.BalanceEvent{
+			escrowAddr: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       escrowAddr,
+				EscrowAddress: escrowAddr,
+				Kind:          model.SlashActive,
+				Amount:        types.NewQuantityFromInt64(30), // 60% of 50
+			},
+			delegatorAddr1: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       delegatorAddr1,
+				EscrowAddress: escrowAddr,
+				Kind:          model.SlashActive,
+				Amount:        types.NewQuantityFromInt64(15), // 30% of 50
+			},
+			delegatorAddr2: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       delegatorAddr2,
+				EscrowAddress: escrowAddr,
+				Kind:          model.SlashActive,
+				Amount:        types.NewQuantityFromInt64(5), // 10% of 50
+			},
+		}
+
+		if len(pld.BalanceEvents) != len(expectedEvents) {
+			t.Errorf("Unexpected BalanceEvents len, want: %+v, got: %+v", len(expectedEvents), len(pld.BalanceEvents))
+			return
+		}
+
+		for _, event := range pld.BalanceEvents {
+			expected, ok := expectedEvents[event.Address]
+			if !ok {
+				t.Errorf("Unexpected event in payload.BalanceEvents, got: %+v", event)
+				return
+			}
+			if !reflect.DeepEqual(event, expected) {
+				t.Errorf("Unexpected event, want: %+v, got: %+v", expected, event)
+			}
+		}
+	})
+
+	t.Run("creates slash debonding events", func(t *testing.T) {
+		t.Parallel()
+		ctx := context.Background()
+
+		task := NewBalanceParserTask()
+
+		pld := &payload{
+			CurrentHeight:     currHeight,
+			CommonPoolAddress: commonPoolAddr,
+			RawValidators: []*validatorpb.Validator{
+				testpbValidator(setValidatorAddress(escrowAddr)),
+			},
+			RawEscrowEvents: &eventpb.EscrowEvents{
+				Take: []*eventpb.TakeEscrowEvent{
+					{
+						Owner:  escrowAddr,
+						Amount: uintToBytes(500, t),
+					},
+				},
+			},
+			RawStakingState: &statepb.Staking{
+				Ledger: map[string]*accountpb.Account{
+					escrowAddr: &accountpb.Account{
+						Escrow: &accountpb.EscrowAccount{
+							Debonding: &accountpb.SharePool{
+								Balance:     uintToBytes(3500, t),
+								TotalShares: uintToBytes(1000, t),
+							},
+						},
+					},
+				},
+				DebondingDelegations: map[string]*debondingdelegationpb.DebondingDelegationEntry{
+					escrowAddr: &debondingdelegationpb.DebondingDelegationEntry{
+						Entries: map[string]*debondingdelegationpb.DebondingDelegationInnerEntry{
+							escrowAddr: &debondingdelegationpb.DebondingDelegationInnerEntry{
+								DebondingDelegations: []*debondingdelegationpb.DebondingDelegation{
+									{Shares: uintToBytes(200, t)},
+									{Shares: uintToBytes(150, t)},
+									{Shares: uintToBytes(250, t)},
+								},
+							},
+							delegatorAddr1: &debondingdelegationpb.DebondingDelegationInnerEntry{
+								DebondingDelegations: []*debondingdelegationpb.DebondingDelegation{
+									{Shares: uintToBytes(400, t)},
+								},
+							},
+						},
+					},
+				},
+			},
+		}
+
+		if err := task.Run(ctx, pld); err != nil {
+			t.Errorf("unexpected error on Run, want %v; got %v", nil, err)
+			return
+		}
+
+		expectedEvents := map[string]model.BalanceEvent{
+			escrowAddr: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       escrowAddr,
+				EscrowAddress: escrowAddr,
+				Kind:          model.SlashDebonding,
+				Amount:        types.NewQuantityFromInt64(300), // 60% of 500
+			},
+			delegatorAddr1: model.BalanceEvent{
+				Height:        currHeight,
+				Address:       delegatorAddr1,
+				EscrowAddress: escrowAddr,
+				Kind:          model.SlashDebonding,
+				Amount:        types.NewQuantityFromInt64(200), // 40% of 500
+			},
+		}
+
+		if len(pld.BalanceEvents) != len(expectedEvents) {
+			t.Errorf("Unexpected BalanceEvents len, want: %+v, got: %+v", len(expectedEvents), len(pld.BalanceEvents))
+			return
+		}
+
+		for _, event := range pld.BalanceEvents {
+			expected, ok := expectedEvents[event.Address]
+			if !ok {
+				t.Errorf("Unexpected event in payload.BalanceEvents, got: %+v", event)
+				return
+			}
+			if !reflect.DeepEqual(event, expected) {
+				t.Errorf("Unexpected event, want: %+v, got: %+v", expected, event)
+			}
+		}
+	})
+
 }
