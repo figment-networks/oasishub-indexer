@@ -25,10 +25,14 @@ type BalanceEvent struct {
 	Kind          BalanceEventKind `json:"kind"`
 }
 
-func (b BalanceEvent) Update(m BalanceEvent) {
+func (b *BalanceEvent) Update(m BalanceEvent) {
 	b.Height = m.Height
 	b.Address = m.Address
 	b.EscrowAddress = m.EscrowAddress
 	b.Amount = m.Amount
 	b.Kind = m.Kind
+}
+
+func (BalanceEvent) TableName() string {
+	return "balance_events"
 }
