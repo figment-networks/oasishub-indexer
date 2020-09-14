@@ -72,7 +72,8 @@ func (s *blockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, 
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSummaryStore_FindActivityPeriods"))
 	defer t.ObserveDuration()
 
-	rows, err := s.db.Raw(blockSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
+	query := getActivityPeriodsQuery(model.BlockSummary{}.TableName())
+	rows, err := s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
 
 	if err != nil {
 		return nil, err

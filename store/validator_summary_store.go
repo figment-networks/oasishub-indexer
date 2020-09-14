@@ -53,8 +53,9 @@ func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterv
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindActivityPeriods"))
 	defer t.ObserveDuration()
 
+	query := getActivityPeriodsQuery(model.ValidatorSummary{}.TableName())
 	rows, err := s.db.
-		Raw(validatorSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).
+		Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).
 		Rows()
 
 	if err != nil {

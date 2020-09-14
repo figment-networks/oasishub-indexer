@@ -17,8 +17,10 @@ var (
 type BalanceEventsStore interface {
 	BaseStore
 
+	GetLastEventTime() (types.Time, error)
 	CreateOrUpdate(*model.BalanceEvent) error
-	Summarize(types.SummaryInterval, []ActivityPeriodRow) ([]model.RawBalanceSummary, error)
+	DeleteOlderThan(time.Time) (*int64, error)
+	Summarize(types.SummaryInterval, []ActivityPeriodRow) ([]model.BalanceSummary, error)
 }
 
 func NewBalanceEventsStore(db *gorm.DB) *balanceEventsStore {
@@ -29,26 +31,6 @@ func NewBalanceEventsStore(db *gorm.DB) *balanceEventsStore {
 type balanceEventsStore struct {
 	baseStore
 }
-
-const (
-	summarizeBalanceQuerySelect = `
-	s.time_bucket,
-	s.min_height,
-	balance_events.kind,
-	balance_events.address,
-	balance_events.escrow_address,
-	SUM(balance_events.amount) as total_amount
-`
-	summarizeBalanceJoinQuery = `INNER JOIN
-(
-	SELECT
-	  MAX(height)     AS max_height,
-	  MIN(height)     AS min_height,
-	  DATE_TRUNC(?, time) as time_bucket
-	FROM syncables
-	GROUP BY time_bucket
- ) AS s ON balance_events.height >= s.min_height AND balance_events.height <= s.max_height`
-)
 
 // CreateOrUpdate creates a new balance event or updates an existing one
 func (s *balanceEventsStore) CreateOrUpdate(val *model.BalanceEvent) error {
@@ -64,8 +46,40 @@ func (s *balanceEventsStore) CreateOrUpdate(val *model.BalanceEvent) error {
 	return s.Save(existing)
 }
 
+// DeleteOlderThan deletes balance events older than given threshold
+func (s *balanceEventsStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+	tx := s.db.
+		Unscoped().
+		Where("height IN (?)", s.db.Table("syncables").Select("height").Where("time < ?", purgeThreshold).QueryExpr()).
+		Delete(&model.BalanceEvent{})
+
+	if tx.Error != nil {
+		return nil, checkErr(tx.Error)
+	}
+
+	return &tx.RowsAffected, nil
+}
+
+// GetLastEventTime returns the time corresponding to the most recent balance event
+func (s *balanceEventsStore) GetLastEventTime() (types.Time, error) {
+	var result struct {
+		Time types.Time `json:"time"`
+	}
+
+	err := s.db.
+		Table(model.BalanceEvent{}.TableName()).
+		Select("s.time").
+		Joins("INNER JOIN syncables AS s ON balance_events.height = s.height").
+		Order("s.time DESC").
+		Limit(1).
+		Find(&result).
+		Error
+
+	return result.Time, checkErr(err)
+}
+
 // Summarize gets the summarized version of balance events
-func (s balanceEventsStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]model.RawBalanceSummary, error) {
+func (s *balanceEventsStore) Summarize(interval types.SummaryInterval, activityPeriods []ActivityPeriodRow) ([]model.BalanceSummary, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceEventStore_Summarize"))
 	defer t.ObserveDuration()
 
@@ -85,7 +99,7 @@ func (s balanceEventsStore) Summarize(interval types.SummaryInterval, activityPe
 			if isLast {
 				tx = tx.Or("time_bucket >= ?", activityPeriod.Max)
 			} else {
-				duration, err := time.ParseDuration(fmt.Sprintf("1%s", interval))
+				duration, err := time.ParseDuration(fmt.Sprintf("1%s", interval)) //todo change after pr fix is merged
 				if err != nil {
 					return nil, err
 				}
@@ -100,9 +114,9 @@ func (s balanceEventsStore) Summarize(interval types.SummaryInterval, activityPe
 	}
 	defer rows.Close()
 
-	var models []model.RawBalanceSummary
+	var models []model.BalanceSummary
 	for rows.Next() {
-		var summary model.RawBalanceSummary
+		var summary model.BalanceSummary
 		if err := s.db.ScanRows(rows, &summary); err != nil {
 			return nil, err
 		}
@@ -112,7 +126,7 @@ func (s balanceEventsStore) Summarize(interval types.SummaryInterval, activityPe
 	return models, nil
 }
 
-func (s balanceEventsStore) findUnique(height int64, escrowAddress, address string, kind model.BalanceEventKind) (*model.BalanceEvent, error) {
+func (s *balanceEventsStore) findUnique(height int64, escrowAddress, address string, kind model.BalanceEventKind) (*model.BalanceEvent, error) {
 	q := model.BalanceEvent{
 		Height:        height,
 		EscrowAddress: escrowAddress,

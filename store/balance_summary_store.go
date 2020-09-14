@@ -46,7 +46,8 @@ func (s *balanceSummaryStore) FindActivityPeriods(interval types.SummaryInterval
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_FindActivityPeriods"))
 	defer t.ObserveDuration()
 
-	rows, err := s.db.Raw(balanceSummaryActivityPeriodsQuery, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
+	query := getActivityPeriodsQuery(model.BalanceSummary{}.TableName())
+	rows, err := s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
 
 	if err != nil {
 		return nil, err

@@ -238,7 +238,7 @@ func (uc *summarizeUseCase) summarizeBalanceEvents(interval types.SummaryInterva
 		existingBalanceSummary, err := uc.db.BalanceSummary.Find(&balanceSummary)
 		if err != nil {
 			if err == store.ErrNotFound {
-				balanceSummary.UpdateFromRaw(rawSummary)
+				balanceSummary.Update(rawSummary)
 				if err := uc.db.BalanceEvents.Create(&balanceSummary); err != nil {
 					return err
 				}
@@ -247,7 +247,7 @@ func (uc *summarizeUseCase) summarizeBalanceEvents(interval types.SummaryInterva
 				return err
 			}
 		} else {
-			existingBalanceSummary.UpdateFromRaw(rawSummary)
+			existingBalanceSummary.Update(rawSummary)
 			if err := uc.db.BalanceEvents.Save(existingBalanceSummary); err != nil {
 				return err
 			}
