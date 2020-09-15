@@ -6,10 +6,12 @@ type BalanceSummary struct {
 	*Model
 	*Summary
 
-	Address       string           `json:"address"`
-	EscrowAddress string           `json:"escrow_addr"`
-	TotalAmount   types.Quantity   `json:"total_amount"`
-	Kind          BalanceEventKind `json:"kind"`
+	StartHeight     int64          `json:"start_height"`
+	Address         string         `json:"address"`
+	EscrowAddress   string         `json:"escrow_address"`
+	TotalRewards    types.Quantity `json:"total_rewards"`
+	TotalCommission types.Quantity `json:"total_commission"`
+	TotalSlashed    types.Quantity `json:"total_slashed"`
 }
 
 func (BalanceSummary) TableName() string {
@@ -19,6 +21,7 @@ func (BalanceSummary) TableName() string {
 func (s *BalanceSummary) Update(m BalanceSummary) {
 	s.Address = m.Address
 	s.EscrowAddress = m.EscrowAddress
-	s.TotalAmount = m.TotalAmount
-	s.Kind = m.Kind
+	s.TotalRewards = m.TotalRewards
+	s.TotalCommission = m.TotalCommission
+	s.TotalSlashed = m.TotalSlashed
 }

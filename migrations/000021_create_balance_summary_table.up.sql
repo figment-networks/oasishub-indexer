@@ -8,10 +8,12 @@ CREATE TABLE IF NOT EXISTS balance_summary
     time_bucket    TIMESTAMP WITH TIME ZONE NOT NULL,
     index_version  INT                      NOT NULL,
 
-    address         TEXT                     NOT NULL,
-    escrow_address  TEXT                     NOT NULL,
-    total_amount    DECIMAL(65, 0)           NOT NULL,
-    kind            TEXT                     NOT NULL,
+    start_height     DECIMAL(65, 0)         NOT NULL,
+    address          TEXT                   NOT NULL,
+    escrow_address   TEXT                   NOT NULL,
+    total_rewards    BIGINT,
+    total_commission BIGINT,
+    total_slashed    BIGINT,
 
     PRIMARY KEY (id)
 );

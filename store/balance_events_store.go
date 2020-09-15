@@ -87,7 +87,7 @@ func (s *balanceEventsStore) Summarize(interval types.SummaryInterval, activityP
 		Table(model.BalanceEvent{}.TableName()).
 		Select(summarizeBalanceQuerySelect).
 		Joins(summarizeBalanceJoinQuery, interval).
-		Group("s.time_bucket, s.min_height, balance_events.address, balance_events.kind, balance_events.escrow_address")
+		Group("s.time_bucket, balance_events.address, balance_events.escrow_address, s.start_height")
 
 	if len(activityPeriods) == 1 {
 		activityPeriod := activityPeriods[0]

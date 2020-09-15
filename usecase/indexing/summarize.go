@@ -51,10 +51,6 @@ func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
-	if err := uc.summarizeBalanceEvents(types.IntervalHourly, currentIndexVersion); err != nil {
-		return err
-	}
-
 	if err := uc.summarizeBalanceEvents(types.IntervalDaily, currentIndexVersion); err != nil {
 		return err
 	}
@@ -232,7 +228,6 @@ func (uc *summarizeUseCase) summarizeBalanceEvents(interval types.SummaryInterva
 			},
 			Address:       rawSummary.Address,
 			EscrowAddress: rawSummary.EscrowAddress,
-			Kind:          rawSummary.Kind,
 		}
 
 		existingBalanceSummary, err := uc.db.BalanceSummary.Find(&balanceSummary)
