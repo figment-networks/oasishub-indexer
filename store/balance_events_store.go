@@ -1,7 +1,6 @@
 package store
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/figment-networks/indexing-engine/metrics"
@@ -99,7 +98,7 @@ func (s *balanceEventsStore) Summarize(interval types.SummaryInterval, activityP
 			if isLast {
 				tx = tx.Or("time_bucket >= ?", activityPeriod.Max)
 			} else {
-				duration, err := time.ParseDuration(fmt.Sprintf("1%s", interval)) //todo change after pr fix is merged
+				duration, err := interval.ToDuration()
 				if err != nil {
 					return nil, err
 				}
