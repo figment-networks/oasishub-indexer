@@ -7,7 +7,7 @@ CREATE TABLE IF NOT EXISTS balance_events
     height          DECIMAL(65, 0)           NOT NULL,
     address         TEXT                     NOT NULL,
     escrow_address  TEXT                     NOT NULL,
-    amount          BIGINT                   NOT NULL,
+    amount          DECIMAL(65, 0)           NOT NULL,
     kind            TEXT                     NOT NULL,
 
     PRIMARY KEY (id)

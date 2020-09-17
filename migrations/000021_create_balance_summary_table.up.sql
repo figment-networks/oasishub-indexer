@@ -11,9 +11,9 @@ CREATE TABLE IF NOT EXISTS balance_summary
     start_height     DECIMAL(65, 0)         NOT NULL,
     address          TEXT                   NOT NULL,
     escrow_address   TEXT                   NOT NULL,
-    total_rewards    BIGINT,
-    total_commission BIGINT,
-    total_slashed    BIGINT,
+    total_rewards    DECIMAL(65, 0),
+    total_commission DECIMAL(65, 0),
+    total_slashed    DECIMAL(65, 0),
 
     PRIMARY KEY (id)
 );
