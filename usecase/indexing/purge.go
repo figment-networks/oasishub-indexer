@@ -52,11 +52,7 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
-	if err := uc.purgeBalanceEvents(); err != nil {
-		return err
-	}
-
-	return nil
+	return uc.purgeBalanceEvents()
 }
 
 func (uc *purgeUseCase) purgeBalanceEvents() error {

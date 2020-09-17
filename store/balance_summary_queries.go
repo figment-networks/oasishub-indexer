@@ -13,9 +13,9 @@ const (
 	summarizeBalanceJoinQuery = `INNER JOIN
 (
 	SELECT
-	  MAX(height)     AS end_height,
-	  MIN(height)     AS start_height,
-	  DATE_TRUNC(?, time) as time_bucket
+	  MAX(height)         AS end_height,
+	  MIN(height)         AS start_height,
+	  DATE_TRUNC(?, time) AS time_bucket
 	FROM syncables
 	GROUP BY time_bucket
  ) AS s ON balance_events.height >= s.start_height AND balance_events.height <= s.end_height`
