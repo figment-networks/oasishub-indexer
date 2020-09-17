@@ -45,7 +45,7 @@ func (h *getForAddressHttpHandler) Handle(c *gin.Context) {
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		logger.Error(err)
-		err := errors.New("invalid kind or/and after")
+		err := errors.New("invalid start or/and end")
 		c.JSON(http.StatusBadRequest, err)
 		return
 	}
