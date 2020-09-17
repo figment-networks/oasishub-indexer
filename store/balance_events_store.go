@@ -70,8 +70,7 @@ func (s *balanceEventsStore) GetLastEventTime() (types.Time, error) {
 		Select("s.time").
 		Joins("INNER JOIN syncables AS s ON balance_events.height = s.height").
 		Order("s.time DESC").
-		Limit(1).
-		Find(&result).
+		First(&result).
 		Error
 
 	return result.Time, checkErr(err)
