@@ -19,6 +19,7 @@ func (BalanceSummary) TableName() string {
 }
 
 func (s *BalanceSummary) Update(m BalanceSummary) {
+	s.StartHeight = m.StartHeight
 	s.Address = m.Address
 	s.EscrowAddress = m.EscrowAddress
 	s.TotalRewards = m.TotalRewards
