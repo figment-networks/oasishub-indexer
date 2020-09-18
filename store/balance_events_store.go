@@ -47,9 +47,11 @@ func (s *balanceEventsStore) CreateOrUpdate(val *model.BalanceEvent) error {
 
 // DeleteOlderThan deletes balance events older than given threshold
 func (s *balanceEventsStore) DeleteOlderThan(purgeThreshold time.Time) (*int64, error) {
+	query := s.db.Table("syncables").Select("height").Where("time < ?", purgeThreshold).QueryExpr()
+
 	tx := s.db.
 		Unscoped().
-		Where("height IN (?)", s.db.Table("syncables").Select("height").Where("time < ?", purgeThreshold).QueryExpr()).
+		Where("height IN (?)", query).
 		Delete(&model.BalanceEvent{})
 
 	if tx.Error != nil {
