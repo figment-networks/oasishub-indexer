@@ -52,6 +52,34 @@ func (uc *purgeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
+	return uc.purgeBalanceEvents()
+}
+
+func (uc *purgeUseCase) purgeBalanceEvents() error {
+	lastEventTime, err := uc.db.BalanceEvents.GetLastEventTime()
+	if err != nil {
+		return err
+	}
+
+	duration, err := uc.parseDuration(uc.cfg.PurgeBalanceEventsInterval)
+	if err != nil {
+		if err == ErrPurgingDisabled {
+			logger.Info("purging balance events disabled. Purge interval set to 0.")
+		}
+		return err
+	}
+
+	purgeThresholdFromNow := lastEventTime.Add(-*duration)
+
+	logger.Info(fmt.Sprintf("purging balance events... [older than=%s]", purgeThresholdFromNow))
+
+	deletedCount, err := uc.db.BalanceEvents.DeleteOlderThan(purgeThresholdFromNow)
+	if err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("%d balance events purged", *deletedCount))
+
 	return nil
 }
 

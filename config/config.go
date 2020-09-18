@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
 	"io/ioutil"
+
+	"github.com/kelseyhightower/envconfig"
 )
 
 const (
@@ -41,6 +42,7 @@ type Config struct {
 	ServerMetricAddr             string `json:"server_metric_addr" envconfig:"SERVER_METRIC_ADDR" default:":8090"`
 	MetricServerUrl              string `json:"metric_server_url" envconfig:"METRIC_SERVER_URL" default:"/metrics"`
 	PurgeSequencesInterval       string `json:"purge_sequences_interval" envconfig:"PURGE_SEQUENCES_INTERVAL" default:"24h"`
+	PurgeBalanceEventsInterval   string `json:"purge_balance_events_interval" envconfig:"PURGE_BALANCE_EVENTS_INTERVAL" default:"24h"`
 	PurgeSystemEventsInterval    string `json:"purge_system_events_interval" envconfig:"PURGE_SYSTEM_EVENTS_INTERVAL" default:"24h"`
 	PurgeHourlySummariesInterval string `json:"purge_hourly_summaries_interval" envconfig:"PURGE_HOURLY_SUMMARIES_INTERVAL" default:"24h"`
 	IndexerConfigFile            string `json:"indexer_config_file" envconfig:"INDEXER_CONFIG_FILE" default:"indexer_config.json"`

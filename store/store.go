@@ -43,6 +43,7 @@ func New(connStr string) (*Store, error) {
 
 		BlockSummary:     NewBlockSummaryStore(conn),
 		ValidatorSummary: NewValidatorSummaryStore(conn),
+		BalanceSummary:   NewBalanceSummaryStore(conn),
 
 		AccountAgg:   NewAccountAggStore(conn),
 		ValidatorAgg: NewValidatorAggStore(conn),
@@ -68,6 +69,7 @@ type Store struct {
 
 	BlockSummary     BlockSummaryStore
 	ValidatorSummary ValidatorSummaryStore
+	BalanceSummary   BalanceSummaryStore
 
 	AccountAgg   AccountAggStore
 	ValidatorAgg ValidatorAggStore

@@ -51,6 +51,10 @@ func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 		return err
 	}
 
+	if err := uc.summarizeBalanceEvents(types.IntervalDaily, currentIndexVersion); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -197,5 +201,55 @@ func (uc *summarizeUseCase) summarizeValidatorSeq(interval types.SummaryInterval
 
 	logger.Info(fmt.Sprintf("validator sequences summarized [created=%d] [updated=%d]", len(newModels), len(existingModels)))
 
+	return nil
+}
+
+func (uc *summarizeUseCase) summarizeBalanceEvents(interval types.SummaryInterval, currentIndexVersion int64) error {
+	logger.Info(fmt.Sprintf("summarizing balance events... [interval=%s]", interval))
+
+	activityPeriods, err := uc.db.BalanceSummary.FindActivityPeriods(interval, currentIndexVersion)
+	if err != nil {
+		return err
+	}
+
+	rawSummaryItems, err := uc.db.BalanceEvents.Summarize(interval, activityPeriods)
+	if err != nil {
+		return err
+	}
+
+	var newModels []model.BalanceSummary
+	var existingModels []model.BalanceSummary
+	for _, rawSummary := range rawSummaryItems {
+		balanceSummary := model.BalanceSummary{
+			Summary: &model.Summary{
+				TimeInterval: interval,
+				TimeBucket:   rawSummary.TimeBucket,
+				IndexVersion: currentIndexVersion,
+			},
+			Address:       rawSummary.Address,
+			EscrowAddress: rawSummary.EscrowAddress,
+		}
+
+		existingBalanceSummary, err := uc.db.BalanceSummary.Find(&balanceSummary)
+		if err != nil {
+			if err == store.ErrNotFound {
+				balanceSummary.Update(rawSummary)
+				if err := uc.db.BalanceEvents.Create(&balanceSummary); err != nil {
+					return err
+				}
+				newModels = append(newModels, balanceSummary)
+			} else {
+				return err
+			}
+		} else {
+			existingBalanceSummary.Update(rawSummary)
+			if err := uc.db.BalanceEvents.Save(existingBalanceSummary); err != nil {
+				return err
+			}
+			existingModels = append(existingModels, *existingBalanceSummary)
+		}
+	}
+
+	logger.Info(fmt.Sprintf("balance events summarized [created=%d] [updated=%d]", len(newModels), len(existingModels)))
 	return nil
 }

@@ -17,4 +17,5 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/debonding_delegations", s.handlers.GetDebondingDelegationsByHeight.Handle)
 	s.engine.GET("/account/:address", s.handlers.GetAccountByAddress.Handle)
 	s.engine.GET("/system_events/:address", s.handlers.GetSystemEventsForAddress.Handle)
+	s.engine.GET("/balance/:address", s.handlers.GetBalanceForAddress.Handle)
 }

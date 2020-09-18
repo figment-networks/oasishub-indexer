@@ -150,20 +150,6 @@ func (s *blockSeqStore) Summarize(interval types.SummaryInterval, activityPeriod
 		}
 	}
 
-	rows, err := tx.Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var models []BlockSeqSummary
-	for rows.Next() {
-		var summary BlockSeqSummary
-		if err := s.db.ScanRows(rows, &summary); err != nil {
-			return nil, err
-		}
-
-		models = append(models, summary)
-	}
-	return models, nil
+	return models, tx.Find(&models).Error
 }

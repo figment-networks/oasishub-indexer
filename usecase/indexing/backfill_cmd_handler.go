@@ -2,6 +2,7 @@ package indexing
 
 import (
 	"context"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
