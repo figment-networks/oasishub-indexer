@@ -106,22 +106,8 @@ func (s *balanceEventsStore) Summarize(interval types.SummaryInterval, activityP
 		}
 	}
 
-	rows, err := tx.Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var models []model.BalanceSummary
-	for rows.Next() {
-		var summary model.BalanceSummary
-		if err := s.db.ScanRows(rows, &summary); err != nil {
-			return nil, err
-		}
-
-		models = append(models, summary)
-	}
-	return models, nil
+	return models, tx.Find(&models).Error
 }
 
 func (s *balanceEventsStore) findUnique(height int64, escrowAddress, address string, kind model.BalanceEventKind) (*model.BalanceEvent, error) {

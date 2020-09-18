@@ -54,24 +54,9 @@ func (s *validatorSummaryStore) FindActivityPeriods(interval types.SummaryInterv
 	defer t.ObserveDuration()
 
 	query := getActivityPeriodsQuery(model.ValidatorSummary{}.TableName())
-	rows, err := s.db.
-		Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).
-		Rows()
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var res []ActivityPeriodRow
-	for rows.Next() {
-		var row ActivityPeriodRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Find(&res).Error
 }
 
 type ValidatorSummaryRow struct {
@@ -100,24 +85,8 @@ func (s *validatorSummaryStore) FindSummary(interval types.SummaryInterval, peri
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummary"))
 	defer t.ObserveDuration()
 
-	rows, err := s.db.
-		Raw(allValidatorsSummaryForIntervalQuery, interval, period, interval).
-		Rows()
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var res []ValidatorSummaryRow
-	for rows.Next() {
-		var row ValidatorSummaryRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(allValidatorsSummaryForIntervalQuery, interval, period, interval).Find(&res).Error
 }
 
 // FindSummaryByAddress gets summary for given validator
@@ -125,21 +94,8 @@ func (s *validatorSummaryStore) FindSummaryByAddress(address string, interval ty
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("ValidatorSummaryStore_FindSummaryByAddress"))
 	defer t.ObserveDuration()
 
-	rows, err := s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var res []model.ValidatorSummary
-	for rows.Next() {
-		var row model.ValidatorSummary
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(validatorSummaryForIntervalQuery, interval, period, address, interval).Find(&res).Error
 }
 
 // FindMostRecent finds most recent validator summary

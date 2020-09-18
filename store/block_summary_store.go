@@ -73,22 +73,9 @@ func (s *blockSummaryStore) FindActivityPeriods(interval types.SummaryInterval, 
 	defer t.ObserveDuration()
 
 	query := getActivityPeriodsQuery(model.BlockSummary{}.TableName())
-	rows, err := s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var res []ActivityPeriodRow
-	for rows.Next() {
-		var row ActivityPeriodRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Find(&res).Error
 }
 
 // FindSummary Gets summary of block sequences
@@ -96,24 +83,8 @@ func (s *blockSummaryStore) FindSummary(interval types.SummaryInterval, period s
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSummaryStore_FindSummary"))
 	defer t.ObserveDuration()
 
-	rows, err := s.db.
-		Raw(allBlocksSummaryForIntervalQuery, interval, period, interval).
-		Rows()
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var res []model.BlockSummary
-	for rows.Next() {
-		var row model.BlockSummary
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(allBlocksSummaryForIntervalQuery, interval, period, interval).Find(&res).Error
 }
 
 // DeleteOlderThan deletes block summary records older than given threshold

@@ -47,22 +47,9 @@ func (s *balanceSummaryStore) FindActivityPeriods(interval types.SummaryInterval
 	defer t.ObserveDuration()
 
 	query := getActivityPeriodsQuery(model.BalanceSummary{}.TableName())
-	rows, err := s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Rows()
-
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
 	var res []ActivityPeriodRow
-	for rows.Next() {
-		var row ActivityPeriodRow
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Find(&res).Error
 }
 
 // GetDailySummaries Gets daily summary of balance events
@@ -83,19 +70,6 @@ func (s *balanceSummaryStore) GetDailySummaries(address, start, end string) ([]m
 		tx = tx.Where("time_bucket >= ?", start)
 	}
 
-	rows, err := tx.Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var res []model.BalanceSummary
-	for rows.Next() {
-		var row model.BalanceSummary
-		if err := s.db.ScanRows(rows, &row); err != nil {
-			return nil, err
-		}
-		res = append(res, row)
-	}
-	return res, nil
+	return res, tx.Find(&res).Error
 }

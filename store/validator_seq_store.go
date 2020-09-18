@@ -159,20 +159,6 @@ func (s *validatorSeqStore) Summarize(interval types.SummaryInterval, activityPe
 		}
 	}
 
-	rows, err := tx.Rows()
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
 	var models []ValidatorSeqSummary
-	for rows.Next() {
-		var summary ValidatorSeqSummary
-		if err := s.db.ScanRows(rows, &summary); err != nil {
-			return nil, err
-		}
-
-		models = append(models, summary)
-	}
-	return models, nil
+	return models, tx.Find(&models).Error
 }
