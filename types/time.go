@@ -4,8 +4,9 @@ import (
 	"database/sql/driver"
 	"errors"
 	"fmt"
-	"github.com/golang/protobuf/ptypes/timestamp"
 	"time"
+
+	"github.com/golang/protobuf/ptypes/timestamp"
 )
 
 type Time struct {
@@ -24,11 +25,11 @@ func NewTimeFromTimestamp(timestamp timestamp.Timestamp) *Time {
 	}
 }
 
-func (t *Time) Duration (m Time) int64 {
+func (t *Time) Duration(m Time) int64 {
 	return t.Sub(m.Time).Milliseconds()
 }
 
-func (t *Time) Equal (m Time) bool {
+func (t *Time) Equal(m Time) bool {
 	return t.Time.Equal(m.Time)
 }
 
@@ -43,4 +44,8 @@ func (t *Time) Scan(value interface{}) error {
 	}
 	t.Time = tm
 	return nil
+}
+
+func (t *Time) IsZero() bool {
+	return t.Time.IsZero()
 }
