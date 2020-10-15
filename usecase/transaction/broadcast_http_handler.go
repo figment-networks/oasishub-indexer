@@ -29,7 +29,7 @@ func NewBroadcastHttpHandler(db *store.Store, c *client.Client) *broadcastHttpHa
 }
 
 type BroadcastRequest struct {
-	TxRaw string `form:"tx_raw" binding:"required"`
+	TxRaw string `form:"tx_raw" binding:"required" json:"tx_raw"`
 }
 
 func (h *broadcastHttpHandler) Handle(c *gin.Context) {
