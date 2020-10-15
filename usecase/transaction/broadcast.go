@@ -23,7 +23,7 @@ func (uc *broadcastUseCase) Execute(txRaw string) (*bool, error) {
 		return nil, err
 	}
 
-	txSubmitted := res.GetSuccess()
+	txSubmitted := res.GetSubmitted()
 
 	return &txSubmitted, nil
 }
