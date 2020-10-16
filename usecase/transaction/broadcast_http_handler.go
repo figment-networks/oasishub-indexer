@@ -32,6 +32,10 @@ type BroadcastRequest struct {
 	TxRaw string `form:"tx_raw" binding:"required" json:"tx_raw"`
 }
 
+type BroadcastResponse struct {
+	Submitted bool `json:"submitted"`
+}
+
 func (h *broadcastHttpHandler) Handle(c *gin.Context) {
 	var req BroadcastRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -41,14 +45,14 @@ func (h *broadcastHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	ds, err := h.getUseCase().Execute(req.TxRaw)
+	res, err := h.getUseCase().Execute(req.TxRaw)
 	if err != nil {
 		logger.Error(err)
 		c.JSON(http.StatusInternalServerError, err)
 		return
 	}
 
-	c.JSON(http.StatusOK, ds)
+	c.JSON(http.StatusOK, BroadcastResponse{Submitted: *res})
 }
 
 func (h *broadcastHttpHandler) getUseCase() *broadcastUseCase {
