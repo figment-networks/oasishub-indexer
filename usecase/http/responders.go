@@ -1,6 +1,7 @@
 package http
 
 import (
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"net/http"
 
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -8,45 +9,30 @@ import (
 )
 
 // BadRequest renders a HTTP 400 bad request response
-func BadRequest(c *gin.Context, err interface{}) {
+func BadRequest(c *gin.Context, err error) {
 	jsonError(c, http.StatusBadRequest, err)
 }
 
 // NotFound renders a HTTP 404 not found response
-func NotFound(c *gin.Context, err interface{}) {
+func NotFound(c *gin.Context, err error) {
 	jsonError(c, http.StatusNotFound, err)
 }
 
 // ServerError renders a HTTP 500 error response
-func ServerError(c *gin.Context, err interface{}) {
+func ServerError(c *gin.Context, err error) {
 	jsonError(c, http.StatusInternalServerError, err)
 }
 
 // JsonOK renders a successful response
 func JsonOK(c *gin.Context, data interface{}) {
-	switch data.(type) {
-	case []byte:
-		c.Header("Content-Type", "application/json")
-		c.String(200, "%s", data)
-	default:
-		c.JSON(200, data)
-	}
+	c.JSON(http.StatusOK, data)
 }
 
 // jsonError renders an error response
-func jsonError(c *gin.Context, status int, err interface{}) {
-	var message interface{}
-
-	switch v := err.(type) {
-	case error:
-		message = v.Error()
-	default:
-		message = v
-	}
-
+func jsonError(c *gin.Context, status int, err error) {
 	c.AbortWithStatusJSON(status, gin.H{
 		"status": status,
-		"error":  message,
+		"error":  err.Error(),
 	})
 }
 
@@ -55,6 +41,9 @@ func ShouldReturn(c *gin.Context, err error) bool {
 	if err == nil {
 		return false
 	}
+
+	// log error
+	logger.Error(err)
 
 	if err == store.ErrNotFound {
 		NotFound(c, err)

@@ -4,10 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -39,20 +38,16 @@ type BroadcastResponse struct {
 func (h *broadcastHttpHandler) Handle(c *gin.Context) {
 	var req BroadcastRequest
 	if err := c.ShouldBind(&req); err != nil {
-		logger.Error(err)
-		err := errors.New("invalid raw transaction string")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid raw transaction string"))
 		return
 	}
 
-	res, err := h.getUseCase().Execute(req.TxRaw)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	submitted, err := h.getUseCase().Execute(req.TxRaw)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, BroadcastResponse{Submitted: *res})
+	http.JsonOK(c, BroadcastResponse{Submitted: *submitted})
 }
 
 func (h *broadcastHttpHandler) getUseCase() *broadcastUseCase {

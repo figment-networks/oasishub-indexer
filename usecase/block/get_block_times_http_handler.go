@@ -4,9 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -34,15 +34,16 @@ type GetBlockTimesRequest struct {
 func (h *getBlockTimesHttpHandler) Handle(c *gin.Context) {
 	var req GetBlockTimesRequest
 	if err := c.ShouldBindUri(&req); err != nil {
-		//log.Error(err)
-		err := errors.New("invalid height")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid height"))
 		return
 	}
 
-	resp := h.getUseCase().Execute(req.Limit)
+	resp, err := h.getUseCase().Execute(req.Limit)
+	if http.ShouldReturn(c, err) {
+		return
+	}
 
-	c.JSON(http.StatusOK, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getBlockTimesHttpHandler) getUseCase() *getBlockTimesUseCase {

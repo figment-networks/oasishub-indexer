@@ -7,7 +7,6 @@ import (
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
 	"github.com/figment-networks/oasishub-indexer/usecase/http"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
 )
@@ -39,23 +38,21 @@ type GetForAddressRequest struct {
 func (h *getForAddressHttpHandler) Handle(c *gin.Context) {
 	var req GetForAddressRequest
 	if err := c.ShouldBindUri(&req); err != nil {
-		logger.Error(err)
 		http.BadRequest(c, errors.New("invalid address"))
 		return
 	}
 
 	if err := c.ShouldBindQuery(&req); err != nil {
-		logger.Error(err)
 		http.BadRequest(c, errors.New("invalid start or/and end"))
 		return
 	}
 
-	summaries, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End))
+	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End))
 	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	http.JsonOK(c, summaries)
+	http.JsonOK(c, resp)
 }
 
 func (h *getForAddressHttpHandler) getUseCase() *getForAddressUseCase {

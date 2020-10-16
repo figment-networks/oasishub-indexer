@@ -4,10 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -36,26 +35,20 @@ type GetByEntityUidRequest struct {
 func (h *getByAddressHttpHandler) Handle(c *gin.Context) {
 	var req GetByEntityUidRequest
 	if err := c.ShouldBindUri(&req); err != nil {
-		logger.Error(err)
-		err := errors.New("invalid address")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid address"))
 		return
 	}
 	if err := c.ShouldBindQuery(&req); err != nil {
-		logger.Error(err)
-		err := errors.New("invalid sequences limit")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid sequences limit"))
 		return
 	}
 
 	resp, err := h.getUseCase().Execute(req.Address, req.SequencesLimit)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getByAddressHttpHandler) getUseCase() *getByAddressUseCase {

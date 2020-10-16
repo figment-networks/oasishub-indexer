@@ -4,10 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -35,20 +34,16 @@ type GetForMinHeightRequest struct {
 func (h *getForMinHeightHttpHandler) Handle(c *gin.Context) {
 	var req GetForMinHeightRequest
 	if err := c.ShouldBindUri(&req); err != nil {
-		logger.Error(err)
-		err := errors.New("invalid request parameters")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid request parameters"))
 		return
 	}
 
 	resp, err := h.getUseCase().Execute(req.Height)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getForMinHeightHttpHandler) getUseCase() *getForMinHeightUseCase {
