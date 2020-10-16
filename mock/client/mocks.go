@@ -289,6 +289,21 @@ func (m *MockTransactionClient) EXPECT() *MockTransactionClientMockRecorder {
 	return m.recorder
 }
 
+// Broadcast mocks base method
+func (m *MockTransactionClient) Broadcast(arg0 string) (*transactionpb.BroadcastResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Broadcast", arg0)
+	ret0, _ := ret[0].(*transactionpb.BroadcastResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Broadcast indicates an expected call of Broadcast
+func (mr *MockTransactionClientMockRecorder) Broadcast(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Broadcast", reflect.TypeOf((*MockTransactionClient)(nil).Broadcast), arg0)
+}
+
 // GetByHeight mocks base method
 func (m *MockTransactionClient) GetByHeight(arg0 int64) (*transactionpb.GetByHeightResponse, error) {
 	m.ctrl.T.Helper()
