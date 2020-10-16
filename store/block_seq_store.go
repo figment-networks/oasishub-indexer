@@ -20,7 +20,7 @@ type BlockSeqStore interface {
 
 	FindBy(string, interface{}) (*model.BlockSeq, error)
 	FindByHeight(int64) (*model.BlockSeq, error)
-	GetAvgRecentTimes(int64) GetAvgRecentTimesResult
+	GetAvgRecentTimes(int64) (*GetAvgRecentTimesResult, error)
 	FindMostRecent() (*model.BlockSeq, error)
 	DeleteOlderThan(time.Time, []ActivityPeriodRow) (*int64, error)
 	Summarize(types.SummaryInterval, []ActivityPeriodRow) ([]BlockSeqSummary, error)
@@ -59,14 +59,14 @@ type GetAvgRecentTimesResult struct {
 }
 
 // GetAvgRecentTimes Gets average block times for recent blocks by limit
-func (s *blockSeqStore) GetAvgRecentTimes(limit int64) GetAvgRecentTimesResult {
+func (s *blockSeqStore) GetAvgRecentTimes(limit int64) (*GetAvgRecentTimesResult, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSeqStore_GetAvgRecentTimes"))
 	defer t.ObserveDuration()
 
-	var res GetAvgRecentTimesResult
-	s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&res)
+	var result *GetAvgRecentTimesResult
+	err := s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(result).Error
 
-	return res
+	return result, checkErr(err)
 }
 
 // GetAvgTimesForIntervalRow Contains row of data for FindSummary query

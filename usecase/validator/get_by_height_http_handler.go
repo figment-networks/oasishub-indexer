@@ -5,10 +5,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -38,20 +37,16 @@ type GetByHeightRequest struct {
 func (h *getByHeightHttpHandler) Handle(c *gin.Context) {
 	var req GetByHeightRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		logger.Error(err)
-		err := errors.New("invalid height")
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, errors.New("invalid height"))
 		return
 	}
 
-	ds, err := h.getUseCase().Execute(req.Height)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	resp, err := h.getUseCase().Execute(req.Height)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, ds)
+	http.JsonOK(c, resp)
 }
 
 func (h *getByHeightHttpHandler) getUseCase() *getByHeightUseCase {

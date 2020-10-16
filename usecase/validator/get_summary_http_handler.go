@@ -4,10 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -39,19 +38,16 @@ type GetSummaryRequest struct {
 func (h *getSummaryHttpHandler) Handle(c *gin.Context) {
 	req, err := h.validateParams(c)
 	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, err)
 		return
 	}
 
 	resp, err := h.getUseCase().Execute(req.Interval, req.Period, req.Address)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getSummaryHttpHandler) validateParams(c *gin.Context) (*GetSummaryRequest, error) {

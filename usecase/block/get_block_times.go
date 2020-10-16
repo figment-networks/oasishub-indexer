@@ -14,7 +14,7 @@ func NewGetBlockTimesUseCase(db *store.Store) *getBlockTimesUseCase {
 	}
 }
 
-func (uc *getBlockTimesUseCase) Execute(limit int64) store.GetAvgRecentTimesResult {
+func (uc *getBlockTimesUseCase) Execute(limit int64) (*store.GetAvgRecentTimesResult, error) {
 	return uc.db.BlockSeq.GetAvgRecentTimes(limit)
 }
 

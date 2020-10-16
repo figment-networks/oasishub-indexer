@@ -4,10 +4,9 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 	"github.com/gin-gonic/gin"
 	"github.com/pkg/errors"
-	"net/http"
 )
 
 var (
@@ -38,19 +37,16 @@ type GetBlockTimesForIntervalRequest struct {
 func (h *getBlockSummaryHttpHandler) Handle(c *gin.Context) {
 	req, err := h.validateParams(c)
 	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusBadRequest, err)
+		http.BadRequest(c, err)
 		return
 	}
 
 	resp, err := h.getUseCase().Execute(req.Interval, req.Period)
-	if err != nil {
-		logger.Error(err)
-		c.JSON(http.StatusInternalServerError, err)
+	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	c.JSON(http.StatusOK, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getBlockSummaryHttpHandler) validateParams(c *gin.Context) (*GetBlockTimesForIntervalRequest, error) {
