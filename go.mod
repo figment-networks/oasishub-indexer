@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/figment-networks/indexing-engine v0.1.11
-	github.com/figment-networks/oasis-rpc-proxy v0.4.0
+	github.com/figment-networks/oasis-rpc-proxy v0.6.0
 	github.com/gin-gonic/gin v1.5.0
 	github.com/golang-migrate/migrate/v4 v4.11.0
 	github.com/golang/mock v1.4.3
@@ -16,6 +16,5 @@ require (
 	github.com/rollbar/rollbar-go v1.2.0
 	github.com/stretchr/testify v1.6.1
 	go.uber.org/zap v1.15.0
-	google.golang.org/grpc v1.31.0
-	google.golang.org/protobuf v1.24.0 // indirect
+	google.golang.org/grpc v1.32.0
 )

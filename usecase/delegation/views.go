@@ -6,7 +6,7 @@ import (
 )
 
 type ListItem struct {
-	ValidatorUID string         `json:"validator_uid"`
+	ValidatorUID string         `json:"validator_uid, omitempty"`
 	DelegatorUID string         `json:"delegator_uid"`
 	Shares       types.Quantity `json:"shares"`
 }
@@ -27,6 +27,22 @@ func ToListView(rawDelegations map[string]*delegationpb.DelegationEntry) *ListVi
 
 			items = append(items, item)
 		}
+	}
+
+	return &ListView{
+		Items: items,
+	}
+}
+
+func ToListViewForAddress(rawDelegations map[string]*delegationpb.Delegation) *ListView {
+	var items []ListItem
+	for delegatorUID, info := range rawDelegations {
+		item := ListItem{
+			DelegatorUID: delegatorUID,
+			Shares:       types.NewQuantityFromBytes(info.GetShares()),
+		}
+
+		items = append(items, item)
 	}
 
 	return &ListView{

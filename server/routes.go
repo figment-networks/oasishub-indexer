@@ -2,6 +2,7 @@ package server
 
 // setupRoutes sets up routes for gin application
 func (s *Server) setupRoutes() {
+	// Queries
 	s.engine.GET("/health", s.handlers.Health.Handle)
 	s.engine.GET("/status", s.handlers.GetStatus.Handle)
 	s.engine.GET("/block", s.handlers.GetBlockByHeight.Handle)
@@ -14,8 +15,13 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/validators_summary", s.handlers.GetValidatorSummary.Handle)
 	s.engine.GET("/staking", s.handlers.GetStakingDetailsByHeight.Handle)
 	s.engine.GET("/delegations", s.handlers.GetDelegationsByHeight.Handle)
+	s.engine.GET("/delegations/:address", s.handlers.GetDelegationsByAddress.Handle)
 	s.engine.GET("/debonding_delegations", s.handlers.GetDebondingDelegationsByHeight.Handle)
+	s.engine.GET("/debonding_delegations/:address", s.handlers.GetDebondingDelegationsByAddress.Handle)
 	s.engine.GET("/account/:address", s.handlers.GetAccountByAddress.Handle)
 	s.engine.GET("/system_events/:address", s.handlers.GetSystemEventsForAddress.Handle)
 	s.engine.GET("/balance/:address", s.handlers.GetBalanceForAddress.Handle)
+
+	// Commands
+	s.engine.POST("/transactions", s.handlers.BroadcastTransaction.Handle)
 }
