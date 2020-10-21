@@ -6,7 +6,7 @@ import (
 )
 
 type ListItem struct {
-	ValidatorUID string         `json:"validator_uid"`
+	ValidatorUID string         `json:"validator_uid, omitempty"`
 	DelegatorUID string         `json:"delegator_uid"`
 	Shares       types.Quantity `json:"shares"`
 	DebondEnd    uint64         `json:"debond_end"`
