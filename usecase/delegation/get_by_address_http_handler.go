@@ -34,6 +34,10 @@ type GetByAddressRequest struct {
 
 func (h *getByAddressHttpHandler) Handle(c *gin.Context) {
 	var req GetByAddressRequest
+	if err := c.ShouldBindUri(&req); err != nil {
+		http.BadRequest(c, errors.New("invalid address"))
+		return
+	}
 	if err := c.ShouldBindQuery(&req); err != nil {
 		http.BadRequest(c, errors.New("invalid height"))
 		return
