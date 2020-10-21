@@ -63,10 +63,10 @@ func (s *blockSeqStore) GetAvgRecentTimes(limit int64) (*GetAvgRecentTimesResult
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BlockSeqStore_GetAvgRecentTimes"))
 	defer t.ObserveDuration()
 
-	var result *GetAvgRecentTimesResult
-	err := s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(result).Error
+	var result GetAvgRecentTimesResult
+	err := s.db.Raw(blockTimesForRecentBlocksQuery, limit).Scan(&result).Error
 
-	return result, checkErr(err)
+	return &result, checkErr(err)
 }
 
 // GetAvgTimesForIntervalRow Contains row of data for FindSummary query
