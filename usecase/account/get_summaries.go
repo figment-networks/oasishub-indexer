@@ -49,7 +49,7 @@ func (uc *getSummariesUseCase) Execute(address string, start, end time.Time) (Da
 			account:  resp.GetAccount(),
 		})
 
-		dayStart = dayStart.Add(time.Hour * 1)
+		dayStart = dayStart.Add(time.Hour * 24)
 		if dayStart.After(end) {
 			dayStart = end
 		}
