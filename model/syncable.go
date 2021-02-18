@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/figment-networks/oasishub-indexer/types"
 	"time"
+
+	"github.com/figment-networks/oasishub-indexer/types"
 )
 
 const (
@@ -27,7 +28,7 @@ type Syncable struct {
 	Duration     time.Duration  `json:"duration"`
 }
 
-func (Syncable) TableName() string {
+func (s *Syncable) TableName() string {
 	return "syncables"
 }
 

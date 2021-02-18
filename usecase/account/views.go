@@ -1,6 +1,8 @@
 package account
 
 import (
+	"time"
+
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasishub-indexer/types"
 )
@@ -23,4 +25,30 @@ func ToDetailsView(rawAccount *accountpb.Account) *DetailsView {
 		EscrowDebondingBalance:     types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetBalance()),
 		EscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 	}
+}
+
+type DailyBalanceViewResult struct {
+	Result []DailyBalanceView `json:"result"`
+}
+type DailyBalanceView struct {
+	TimeBucket time.Time   `json:"time_bucket"`
+	Balance    DetailsView `json:"balance"`
+}
+
+func toDailyBalanceViewResult(data []dataRow) DailyBalanceViewResult {
+	var summaries []DailyBalanceView
+	for _, row := range data {
+		summaries = append(summaries, DailyBalanceView{
+			TimeBucket: row.dayStart,
+			Balance: DetailsView{
+				GeneralBalance:             types.NewQuantityFromBytes(row.account.GetGeneral().GetBalance()),
+				GeneralNonce:               row.account.GetGeneral().GetNonce(),
+				EscrowActiveBalance:        types.NewQuantityFromBytes(row.account.GetEscrow().GetActive().GetBalance()),
+				EscrowActiveTotalShares:    types.NewQuantityFromBytes(row.account.GetEscrow().GetActive().GetBalance()),
+				EscrowDebondingBalance:     types.NewQuantityFromBytes(row.account.GetEscrow().GetDebonding().GetBalance()),
+				EscrowDebondingTotalShares: types.NewQuantityFromBytes(row.account.GetEscrow().GetDebonding().GetTotalShares()),
+			},
+		})
+	}
+	return DailyBalanceViewResult{Result: summaries}
 }
