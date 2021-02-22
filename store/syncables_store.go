@@ -1,6 +1,8 @@
 package store
 
 import (
+	"time"
+
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/jinzhu/gorm"
 )
@@ -17,12 +19,13 @@ type SyncablesStore interface {
 	FindSmallestIndexVersion() (*int64, error)
 	FindFirstByDifferentIndexVersion(int64) (*model.Syncable, error)
 	FindMostRecentByDifferentIndexVersion(int64) (*model.Syncable, error)
+	GetSyncableForMinTime(time time.Time) (result *model.Syncable, err error)
 	CreateOrUpdate(*model.Syncable) error
 	ResetProcessedAtForRange(int64, int64) error
 }
 
 func NewSyncablesStore(db *gorm.DB) *syncablesStore {
-	return &syncablesStore{scoped(db, model.Report{})}
+	return &syncablesStore{scoped(db, model.Syncable{})}
 }
 
 // syncablesStore handles operations on syncables
@@ -30,11 +33,25 @@ type syncablesStore struct {
 	baseStore
 }
 
-// FindByHeight returns syncable by height
-func (s syncablesStore) FindByHeight(height int64) (syncable *model.Syncable, err error) {
+// GetSyncableForMinTime returns first syncable that comes on or after given time
+func (s syncablesStore) GetSyncableForMinTime(time time.Time) (*model.Syncable, error) {
 	result := &model.Syncable{}
 
-	err = s.db.
+	err := s.db.
+		Where("time >= ?", time).
+		Order("time").
+		First(result).
+		Error
+
+	return result, checkErr(err)
+
+}
+
+// FindByHeight returns syncable by height
+func (s syncablesStore) FindByHeight(height int64) (*model.Syncable, error) {
+	result := &model.Syncable{}
+
+	err := s.db.
 		Where("height = ?", height).
 		First(result).
 		Error

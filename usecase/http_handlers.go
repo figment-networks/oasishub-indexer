@@ -26,6 +26,7 @@ func NewHttpHandlers(cfg *config.Config, db *store.Store, c *client.Client) *Htt
 		GetBlockTimes:                    block.NewGetBlockTimesHttpHandler(db, c),
 		GetBlockSummary:                  block.NewGetBlockSummaryHttpHandler(db, c),
 		GetAccountByAddress:              account.NewGetByAddressHttpHandler(db, c),
+		GetAccountSummaries:              account.NewGetSummariesHttpHandler(db, c),
 		GetDebondingDelegationsByHeight:  debondingdelegation.NewGetByHeightHttpHandler(db, c),
 		GetDebondingDelegationsByAddress: debondingdelegation.NewGetByAddressHttpHandler(db, c),
 		GetDelegationsByHeight:           delegation.NewGetByHeightHttpHandler(db, c),
@@ -49,6 +50,7 @@ type HttpHandlers struct {
 	GetBlockSummary                  types.HttpHandler
 	GetBlockByHeight                 types.HttpHandler
 	GetAccountByAddress              types.HttpHandler
+	GetAccountSummaries              types.HttpHandler
 	GetDebondingDelegationsByHeight  types.HttpHandler
 	GetDebondingDelegationsByAddress types.HttpHandler
 	GetDelegationsByHeight           types.HttpHandler
