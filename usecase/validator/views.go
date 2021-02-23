@@ -25,6 +25,7 @@ type AggDetailsView struct {
 	RecentVotingPower         int64          `json:"recent_voting_power"`
 	RecentTotalShares         types.Quantity `json:"recent_total_shares"`
 	RecentActiveEscrowBalance types.Quantity `json:"recent_active_escrow_balance"`
+	RecentCommission          types.Quantity `json:"recent_commission"`
 	RecentAsValidatorHeight   int64          `json:"recent_as_validator_height"`
 	RecentProposedHeight      int64          `json:"recent_proposed_height"`
 	AccumulatedProposedCount  int64          `json:"accumulated_proposed_count"`
@@ -47,6 +48,7 @@ func ToAggDetailsView(m *model.ValidatorAgg, sequences []model.ValidatorSeq) *Ag
 		RecentTotalShares:         m.RecentTotalShares,
 		RecentActiveEscrowBalance: m.RecentActiveEscrowBalance,
 		RecentAsValidatorHeight:   m.RecentAsValidatorHeight,
+		RecentCommission:          m.RecentCommission,
 		RecentProposedHeight:      m.RecentProposedHeight,
 		AccumulatedProposedCount:  m.AccumulatedProposedCount,
 		Uptime:                    float64(m.AccumulatedUptime) / float64(m.AccumulatedUptimeCount),
