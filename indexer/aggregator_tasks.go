@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
@@ -33,14 +32,12 @@ type AccountAggCreatorTaskStore interface {
 
 func NewAccountAggCreatorTask(db AccountAggCreatorTaskStore) *accountAggCreatorTask {
 	return &accountAggCreatorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameAccountAggCreator),
+		db: db,
 	}
 }
 
 type accountAggCreatorTask struct {
-	db             AccountAggCreatorTaskStore
-	metricObserver metrics.Observer
+	db AccountAggCreatorTaskStore
 }
 
 func (t *accountAggCreatorTask) GetName() string {
@@ -48,8 +45,6 @@ func (t *accountAggCreatorTask) GetName() string {
 }
 
 func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -124,8 +119,7 @@ func (t *accountAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) err
 
 func NewValidatorAggCreatorTask(db ValidatorAggCreatorTaskStore) *validatorAggCreatorTask {
 	return &validatorAggCreatorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorAggCreator),
+		db: db,
 	}
 }
 
@@ -134,8 +128,7 @@ type ValidatorAggCreatorTaskStore interface {
 }
 
 type validatorAggCreatorTask struct {
-	db             ValidatorAggCreatorTaskStore
-	metricObserver metrics.Observer
+	db ValidatorAggCreatorTaskStore
 }
 
 func (t *validatorAggCreatorTask) GetName() string {
@@ -143,8 +136,6 @@ func (t *validatorAggCreatorTask) GetName() string {
 }
 
 func (t *validatorAggCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

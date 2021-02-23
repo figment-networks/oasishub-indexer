@@ -57,6 +57,10 @@ func (s *backfillSource) Next(context.Context, pipeline.Payload) bool {
 	return false
 }
 
+func (s *backfillSource) Skip(stageName pipeline.StageName) bool {
+	return false
+}
+
 func (s *backfillSource) Current() int64 {
 	return s.currentHeight
 }

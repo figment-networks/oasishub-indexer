@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/event/eventpb"
@@ -27,13 +26,10 @@ var (
 )
 
 func NewBlockParserTask() *blockParserTask {
-	return &blockParserTask{
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockParser),
-	}
+	return &blockParserTask{}
 }
 
 type blockParserTask struct {
-	metricObserver metrics.Observer
 }
 
 type ParsedBlockData struct {
@@ -46,8 +42,6 @@ func (t *blockParserTask) GetName() string {
 }
 
 func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -75,13 +69,10 @@ func (t *blockParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 }
 
 func NewValidatorsParserTask() *validatorsParserTask {
-	return &validatorsParserTask{
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorsParser),
-	}
+	return &validatorsParserTask{}
 }
 
 type validatorsParserTask struct {
-	metricObserver metrics.Observer
 }
 
 type ParsedValidatorsData map[string]parsedValidator
@@ -101,8 +92,6 @@ func (t *validatorsParserTask) GetName() string {
 }
 
 func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -187,13 +176,10 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 }
 
 func NewBalanceParserTask() *balanceParserTask {
-	return &balanceParserTask{
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockParser),
-	}
+	return &balanceParserTask{}
 }
 
 type balanceParserTask struct {
-	metricObserver metrics.Observer
 }
 
 func (t *balanceParserTask) GetName() string {
@@ -201,8 +187,6 @@ func (t *balanceParserTask) GetName() string {
 }
 
 func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
