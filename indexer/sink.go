@@ -46,7 +46,7 @@ func (s *sink) Consume(ctx context.Context, p pipeline.Payload) error {
 		return err
 	}
 
-	s.successCount += 1
+	s.successCount++
 
 	logger.Info(fmt.Sprintf("processing completed [status=success] [height=%d]", payload.CurrentHeight))
 
@@ -67,8 +67,6 @@ func (s *sink) addMetrics(payload *payload) error {
 		return err
 	}
 
-	indexerHeightSuccess.Inc()
-	indexerHeightDuration.Observe(payload.Syncable.Duration.Seconds())
 	indexerDbSizeAfterHeight.Observe(res.Size)
 	return nil
 }

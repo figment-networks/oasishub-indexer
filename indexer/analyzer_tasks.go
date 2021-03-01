@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/config"
 	"github.com/figment-networks/oasishub-indexer/model"
@@ -33,7 +32,6 @@ var (
 func NewSystemEventCreatorTask(cfg *config.Config, s SystemEventCreatorStore) *systemEventCreatorTask {
 	return &systemEventCreatorTask{
 		cfg:                     cfg,
-		metricObserver:          indexerTaskDuration.WithLabels(TaskNameSystemEventCreator),
 		SystemEventCreatorStore: s,
 	}
 }
@@ -46,7 +44,6 @@ type SystemEventCreatorStore interface {
 type systemEventCreatorTask struct {
 	cfg *config.Config
 
-	metricObserver metrics.Observer
 	SystemEventCreatorStore
 }
 
@@ -57,8 +54,6 @@ func (t *systemEventCreatorTask) GetName() string {
 }
 
 func (t *systemEventCreatorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

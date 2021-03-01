@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/figment-networks/indexing-engine/metrics"
 	"github.com/figment-networks/indexing-engine/pipeline"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/utils/logger"
@@ -21,8 +20,7 @@ const (
 
 func NewSyncerPersistorTask(db SyncerPersistorTaskStore) pipeline.Task {
 	return &syncerPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameSyncerPersistor),
+		db: db,
 	}
 }
 
@@ -31,8 +29,7 @@ type SyncerPersistorTaskStore interface {
 }
 
 type syncerPersistorTask struct {
-	db             SyncerPersistorTaskStore
-	metricObserver metrics.Observer
+	db SyncerPersistorTaskStore
 }
 
 func (t *syncerPersistorTask) GetName() string {
@@ -40,8 +37,6 @@ func (t *syncerPersistorTask) GetName() string {
 }
 
 func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -52,14 +47,12 @@ func (t *syncerPersistorTask) Run(ctx context.Context, p pipeline.Payload) error
 
 func NewBlockSeqPersistorTask(db BlockSeqPersistorTaskStore) pipeline.Task {
 	return &blockSeqPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameBlockSeqPersistor),
+		db: db,
 	}
 }
 
 type blockSeqPersistorTask struct {
-	db             BlockSeqPersistorTaskStore
-	metricObserver metrics.Observer
+	db BlockSeqPersistorTaskStore
 }
 
 type BlockSeqPersistorTaskStore interface {
@@ -72,8 +65,6 @@ func (t *blockSeqPersistorTask) GetName() string {
 }
 
 func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -92,8 +83,7 @@ func (t *blockSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) err
 
 func NewValidatorSeqPersistorTask(db ValidatorSeqPersistorTaskStore) pipeline.Task {
 	return &validatorSeqPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorSeqPersistor),
+		db: db,
 	}
 }
 
@@ -103,8 +93,7 @@ type ValidatorSeqPersistorTaskStore interface {
 }
 
 type validatorSeqPersistorTask struct {
-	db             ValidatorSeqPersistorTaskStore
-	metricObserver metrics.Observer
+	db ValidatorSeqPersistorTaskStore
 }
 
 func (t *validatorSeqPersistorTask) GetName() string {
@@ -112,8 +101,6 @@ func (t *validatorSeqPersistorTask) GetName() string {
 }
 
 func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -136,8 +123,7 @@ func (t *validatorSeqPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 
 func NewValidatorAggPersistorTask(db ValidatorAggPersistorTaskStore) pipeline.Task {
 	return &validatorAggPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameValidatorAggPersistor),
+		db: db,
 	}
 }
 
@@ -147,8 +133,7 @@ type ValidatorAggPersistorTaskStore interface {
 }
 
 type validatorAggPersistorTask struct {
-	db             ValidatorAggPersistorTaskStore
-	metricObserver metrics.Observer
+	db ValidatorAggPersistorTaskStore
 }
 
 func (t *validatorAggPersistorTask) GetName() string {
@@ -156,8 +141,6 @@ func (t *validatorAggPersistorTask) GetName() string {
 }
 
 func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -180,8 +163,7 @@ func (t *validatorAggPersistorTask) Run(ctx context.Context, p pipeline.Payload)
 
 func NewSystemEventPersistorTask(db SystemEventPersistorTaskStore) pipeline.Task {
 	return &systemEventPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameSystemEventPersistor),
+		db: db,
 	}
 }
 
@@ -190,8 +172,7 @@ type SystemEventPersistorTaskStore interface {
 }
 
 type systemEventPersistorTask struct {
-	db             SystemEventPersistorTaskStore
-	metricObserver metrics.Observer
+	db SystemEventPersistorTaskStore
 }
 
 func (t *systemEventPersistorTask) GetName() string {
@@ -199,8 +180,6 @@ func (t *systemEventPersistorTask) GetName() string {
 }
 
 func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 
@@ -217,8 +196,7 @@ func (t *systemEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) 
 
 func NewBalanceEventPersistorTask(db BalanceEventPersistorTaskStore) pipeline.Task {
 	return &balanceEventPersistorTask{
-		db:             db,
-		metricObserver: indexerTaskDuration.WithLabels(TaskNameBalanceEventPersistor),
+		db: db,
 	}
 }
 
@@ -227,8 +205,7 @@ type BalanceEventPersistorTaskStore interface {
 }
 
 type balanceEventPersistorTask struct {
-	db             BalanceEventPersistorTaskStore
-	metricObserver metrics.Observer
+	db BalanceEventPersistorTaskStore
 }
 
 func (t *balanceEventPersistorTask) GetName() string {
@@ -236,8 +213,6 @@ func (t *balanceEventPersistorTask) GetName() string {
 }
 
 func (t *balanceEventPersistorTask) Run(ctx context.Context, p pipeline.Payload) error {
-	timer := metrics.NewTimer(t.metricObserver)
-	defer timer.ObserveDuration()
 
 	payload := p.(*payload)
 

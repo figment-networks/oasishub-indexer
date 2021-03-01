@@ -59,6 +59,10 @@ func (s *indexSource) Next(context.Context, pipeline.Payload) bool {
 	return false
 }
 
+func (s *indexSource) Skip(stageName pipeline.StageName) bool {
+	return false
+}
+
 func (s *indexSource) Current() int64 {
 	return s.currentHeight
 }
