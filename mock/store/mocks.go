@@ -177,6 +177,21 @@ func (mr *MockSyncablesStoreMockRecorder) FindSmallestIndexVersion() *gomock.Cal
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindSmallestIndexVersion", reflect.TypeOf((*MockSyncablesStore)(nil).FindSmallestIndexVersion))
 }
 
+// GetSyncableForMinTime mocks base method
+func (m *MockSyncablesStore) GetSyncableForMinTime(arg0 time.Time) (*model.Syncable, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetSyncableForMinTime", arg0)
+	ret0, _ := ret[0].(*model.Syncable)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetSyncableForMinTime indicates an expected call of GetSyncableForMinTime
+func (mr *MockSyncablesStoreMockRecorder) GetSyncableForMinTime(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetSyncableForMinTime", reflect.TypeOf((*MockSyncablesStore)(nil).GetSyncableForMinTime), arg0)
+}
+
 // ResetProcessedAtForRange mocks base method
 func (m *MockSyncablesStore) ResetProcessedAtForRange(arg0, arg1 int64) error {
 	m.ctrl.T.Helper()
@@ -604,11 +619,12 @@ func (mr *MockBlockSeqStoreMockRecorder) FindMostRecent() *gomock.Call {
 }
 
 // GetAvgRecentTimes mocks base method
-func (m *MockBlockSeqStore) GetAvgRecentTimes(arg0 int64) store.GetAvgRecentTimesResult {
+func (m *MockBlockSeqStore) GetAvgRecentTimes(arg0 int64) (*store.GetAvgRecentTimesResult, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAvgRecentTimes", arg0)
-	ret0, _ := ret[0].(store.GetAvgRecentTimesResult)
-	return ret0
+	ret0, _ := ret[0].(*store.GetAvgRecentTimesResult)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
 }
 
 // GetAvgRecentTimes indicates an expected call of GetAvgRecentTimes
