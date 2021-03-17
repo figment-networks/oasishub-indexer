@@ -54,13 +54,20 @@ func (s *balanceSummaryStore) FindActivityPeriods(interval types.SummaryInterval
 
 // GetSummariesByInterval Gets daily summary of balance events
 func (s *balanceSummaryStore) GetSummariesByInterval(interval types.SummaryInterval, address string, start, end *types.Time) ([]model.BalanceSummary, error) {
-	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetDailySummaries"))
+	var t *metrics.Timer
+	if interval.Equal(types.IntervalHourly) {
+		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetHourlySummaries"))
+	} else if interval.Equal(types.IntervalHourly) {
+		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetDailySummaries"))
+	} else {
+		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetMonthlySummaries"))
+	}
 	defer t.ObserveDuration()
 
 	tx := s.db.
 		Table(model.BalanceSummary{}.TableName()).
 		Select("*").
-		Where("address = ? AND time_interval= ?", address, interval).
+		Where("address = ? AND time_interval = ?", address, interval).
 		Order("time_bucket")
 
 	if !end.IsZero() {
