@@ -17,7 +17,7 @@ type BalanceSummaryStore interface {
 	BaseStore
 
 	Find(*model.BalanceSummary) (*model.BalanceSummary, error)
-	GetDailySummaries(address string, start, end *types.Time) ([]model.BalanceSummary, error)
+	GetSummariesByInterval(interval types.SummaryInterval, address string, start, end *types.Time) ([]model.BalanceSummary, error)
 	FindActivityPeriods(types.SummaryInterval, int64) ([]ActivityPeriodRow, error)
 }
 
@@ -52,15 +52,15 @@ func (s *balanceSummaryStore) FindActivityPeriods(interval types.SummaryInterval
 	return res, s.db.Raw(query, fmt.Sprintf("1%s", interval), interval, indexVersion).Find(&res).Error
 }
 
-// GetDailySummaries Gets daily summary of balance events
-func (s *balanceSummaryStore) GetDailySummaries(address string, start, end *types.Time) ([]model.BalanceSummary, error) {
+// GetSummariesByInterval Gets daily summary of balance events
+func (s *balanceSummaryStore) GetSummariesByInterval(interval types.SummaryInterval, address string, start, end *types.Time) ([]model.BalanceSummary, error) {
 	t := metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetDailySummaries"))
 	defer t.ObserveDuration()
 
 	tx := s.db.
 		Table(model.BalanceSummary{}.TableName()).
 		Select("*").
-		Where("address = ? AND time_interval='day'", address).
+		Where("address = ? AND time_interval= ?", address, interval).
 		Order("time_bucket")
 
 	if !end.IsZero() {
