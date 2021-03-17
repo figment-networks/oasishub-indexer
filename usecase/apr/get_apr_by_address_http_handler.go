@@ -46,7 +46,7 @@ func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
 		http.BadRequest(c, errors.New("invalid start or/and end"))
 		return
 	}
-
+	//TODO: correct return
 	err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End))
 	if http.ShouldReturn(c, err) {
 		return
