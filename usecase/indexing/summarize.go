@@ -54,6 +54,9 @@ func (uc *summarizeUseCase) Execute(ctx context.Context) error {
 	if err := uc.summarizeBalanceEvents(types.IntervalDaily, currentIndexVersion); err != nil {
 		return err
 	}
+	if err := uc.summarizeBalanceEvents(types.IntervalMonthly, currentIndexVersion); err != nil {
+		return err
+	}
 
 	return nil
 }
