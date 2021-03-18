@@ -31,8 +31,8 @@ func NewGetAprByAddressHttpHandler(db *store.Store, c *client.Client) *getAprByA
 
 type GetAprByAddressRequest struct {
 	Address string    `uri:"address" binding:"required"`
-	Start   time.Time `form:"start" binding:"-" time_format:"2006-01-02"`
-	End     time.Time `form:"end" binding:"-" time_format:"2006-01-02"`
+	Start   time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
+	End     time.Time `form:"end" binding:"required" time_format:"2006-01-02"`
 }
 
 func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
