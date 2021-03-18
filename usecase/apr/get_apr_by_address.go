@@ -18,24 +18,26 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 	}
 }
 
-func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) error {
+func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) (MonthlyAprViewResult, error) {
+	var res MonthlyAprViewResult
 	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalMonthly, address, start, end)
 	if err != nil {
-		return err
+		return res, err
 	}
 
 	var aprs []MonthlyAprView
 	for _, summary := range summaries {
 		rawAccount, err := uc.client.Account.GetByAddress(address, summary.StartHeight)
 		if err != nil {
-			return err
+			return res, err
 		}
-		// TODO: calculate apr
-		apr := NewMonthlyAprView(summary, rawAccount)
+		apr, err := NewMonthlyAprView(summary, rawAccount)
+		if err != nil {
+			return res, err
+		}
 		aprs = append(aprs, *apr)
 	}
-	//TODO: correct return
 
-	//return MonthlyAprViewResult{Result: aprs}
-	return nil
+	res.Result = aprs
+	return res, nil
 }

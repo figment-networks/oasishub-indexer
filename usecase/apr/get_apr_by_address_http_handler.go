@@ -46,13 +46,13 @@ func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
 		http.BadRequest(c, errors.New("invalid start or/and end"))
 		return
 	}
-	//TODO: correct return
-	err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End))
+
+	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End))
 	if http.ShouldReturn(c, err) {
 		return
 	}
 
-	//	http.JsonOK(c, resp)
+	http.JsonOK(c, resp)
 }
 
 func (h *getAprByAddressHttpHandler) getUseCase() *getAprByAddressUseCase {
