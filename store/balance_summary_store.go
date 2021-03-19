@@ -57,10 +57,8 @@ func (s *balanceSummaryStore) GetSummariesByInterval(interval types.SummaryInter
 	var t *metrics.Timer
 	if interval.Equal(types.IntervalHourly) {
 		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetHourlySummaries"))
-	} else if interval.Equal(types.IntervalHourly) {
-		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetDailySummaries"))
 	} else {
-		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetMonthlySummaries"))
+		t = metrics.NewTimer(databaseQueryDuration.WithLabels("BalanceSummaryStore_GetDailySummaries"))
 	}
 	defer t.ObserveDuration()
 

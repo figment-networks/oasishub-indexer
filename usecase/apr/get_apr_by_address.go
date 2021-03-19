@@ -20,7 +20,7 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 
 func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) (MonthlyAprViewResult, error) {
 	var res MonthlyAprViewResult
-	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalMonthly, address, start, end)
+	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
 		return res, err
 	}
