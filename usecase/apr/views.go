@@ -7,15 +7,15 @@ import (
 	"github.com/figment-networks/oasishub-indexer/types"
 )
 
-type MonthlyAprView struct {
-	TimeBucket          types.Time     `json:"time_bucket"`
-	StartHeight         int64          `json:"height"`
-	EscrowActiveBalance types.Quantity `json:"escrow_active_balance"`
-	TotalRewards        types.Quantity `json:"total_rewards"`
-	APR                 float64        `json:"apr"`
+type DailyApr struct {
+	TimeBucket          types.Time
+	StartHeight         int64
+	EscrowActiveBalance types.Quantity
+	TotalRewards        types.Quantity
+	APR                 float64
 }
 
-func (a *MonthlyAprView) calculateAPR() error {
+func (a *DailyApr) calculateAPR() error {
 	principalBalance := a.EscrowActiveBalance.Clone()
 	if err := principalBalance.Sub(a.TotalRewards); err != nil {
 		return err
@@ -29,8 +29,8 @@ func (a *MonthlyAprView) calculateAPR() error {
 	return nil
 }
 
-func NewMonthlyAprView(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (MonthlyAprView, error) {
-	res := MonthlyAprView{
+func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (DailyApr, error) {
+	res := DailyApr{
 		TimeBucket:          summary.TimeBucket,
 		StartHeight:         summary.StartHeight,
 		EscrowActiveBalance: types.NewQuantityFromBytes(rawAccount.GetAccount().GetEscrow().GetActive().GetBalance()),
@@ -40,6 +40,16 @@ func NewMonthlyAprView(summary model.BalanceSummary, rawAccount *accountpb.GetBy
 	return res, err
 }
 
+type MonthlyAprView struct {
+	MonthInfo string  `json:"month_info"`
+	AvgApr    float64 `json:"avg_apr"`
+}
+
 type MonthlyAprViewResult struct {
 	Result []MonthlyAprView `json:"result"`
+}
+
+type MonthlyAprTotal struct {
+	AprSum   float64
+	AprCount int
 }
