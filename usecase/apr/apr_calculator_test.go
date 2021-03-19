@@ -19,7 +19,7 @@ func TestCalculateApr(t *testing.T) {
 			totalRewards:        0,
 			expectedErr:         true,
 		},
-		{description: "zero total reward",
+		{description: "an example",
 			escrowActiveBalance: 102,
 			totalRewards:        2,
 			expectedRes:         24.33333333333333,
