@@ -29,18 +29,15 @@ func (a *MonthlyAprView) calculateAPR() error {
 	return nil
 }
 
-func NewMonthlyAprView(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (*MonthlyAprView, error) {
-	res := &MonthlyAprView{
+func NewMonthlyAprView(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (MonthlyAprView, error) {
+	res := MonthlyAprView{
 		TimeBucket:          summary.TimeBucket,
 		StartHeight:         summary.StartHeight,
 		EscrowActiveBalance: types.NewQuantityFromBytes(rawAccount.GetAccount().GetEscrow().GetActive().GetBalance()),
 		TotalRewards:        summary.TotalRewards,
 	}
 	err := res.calculateAPR()
-	if err != nil {
-		return nil, err
-	}
-	return res, nil
+	return res, err
 }
 
 type MonthlyAprViewResult struct {

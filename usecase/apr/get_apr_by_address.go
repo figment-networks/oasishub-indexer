@@ -35,7 +35,7 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 		if err != nil {
 			return res, err
 		}
-		aprs = append(aprs, *apr)
+		aprs = append(aprs, apr)
 	}
 
 	res.Result = aprs
