@@ -15,18 +15,19 @@ type DailyApr struct {
 	APR                 float64
 }
 
-func (a *DailyApr) calculateAPR() error {
-	principalBalance := a.EscrowActiveBalance.Clone()
-	if err := principalBalance.Sub(a.TotalRewards); err != nil {
-		return err
+func calculateAPR(escrowActiveBalance, totalRewards types.Quantity) (float64, error) {
+	principalBalance := escrowActiveBalance.Clone()
+	if err := principalBalance.Sub(totalRewards); err != nil {
+		return 0, err
 	}
 	if principalBalance.IsZero() {
-		return errors.New("balance is zero")
+		return 0, errors.New("balance is zero")
 	}
 
-	a.APR = float64(a.TotalRewards.Uint64() / ((365 / 30) * principalBalance.Uint64()))
-
-	return nil
+	duration := float64(365) / float64(30)
+	numerator := float64(totalRewards.Uint64()) * duration * 100
+	res := numerator / float64(principalBalance.Uint64())
+	return res, nil
 }
 
 func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (DailyApr, error) {
@@ -36,7 +37,8 @@ func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddres
 		EscrowActiveBalance: types.NewQuantityFromBytes(rawAccount.GetAccount().GetEscrow().GetActive().GetBalance()),
 		TotalRewards:        summary.TotalRewards,
 	}
-	err := res.calculateAPR()
+	apr, err := calculateAPR(res.EscrowActiveBalance.Clone(), res.TotalRewards.Clone())
+	res.APR = apr
 	return res, err
 }
 
