@@ -8,11 +8,11 @@ import (
 )
 
 type DailyApr struct {
-	TimeBucket          types.Time
-	StartHeight         int64
-	EscrowActiveBalance types.Quantity
-	TotalRewards        types.Quantity
-	rate                big.Float
+	TimeBucket          types.Time     `json:"time_bucket"`
+	StartHeight         int64          `json:"start_height"`
+	EscrowActiveBalance types.Quantity `json:"escrow_active_balance"`
+	TotalRewards        types.Quantity `json:"total_rewards"`
+	Rate                big.Float      `json:"rate"`
 }
 
 func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) DailyApr {
@@ -22,14 +22,15 @@ func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddres
 		EscrowActiveBalance: types.NewQuantityFromBytes(rawAccount.GetAccount().GetEscrow().GetActive().GetBalance()),
 		TotalRewards:        summary.TotalRewards,
 	}
-	res.rate = *new(big.Float)
-	res.rate.SetFloat64(float64(res.TotalRewards.Int64()) / float64(res.EscrowActiveBalance.Int64()))
+	res.Rate = *new(big.Float)
+	res.Rate.SetFloat64(float64(res.TotalRewards.Int64()) / float64(res.EscrowActiveBalance.Int64()))
 	return res
 }
 
 type MonthlyAprView struct {
-	MonthInfo string  `json:"month_info"`
-	AvgApr    float64 `json:"avg_apr"`
+	MonthInfo string     `json:"month_info"`
+	AvgApr    float64    `json:"avg_apr"`
+	Dailies   []DailyApr `json:"dailies"`
 }
 
 type MonthlyAprViewResult struct {
@@ -39,4 +40,5 @@ type MonthlyAprViewResult struct {
 type MonthlyAprTotal struct {
 	MonthlyRewardRate *big.Float
 	DayCount          int64
+	Dailies           []DailyApr
 }

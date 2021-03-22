@@ -21,7 +21,7 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 	}
 }
 
-func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) (MonthlyAprViewResult, error) {
+func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time, includeDailies bool) (MonthlyAprViewResult, error) {
 	var res MonthlyAprViewResult
 
 	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
@@ -49,13 +49,16 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 		monthIndex := fmt.Sprintf("%d_%d", summary.TimeBucket.Year(), summary.TimeBucket.Month())
 		m, ok := monthlySummaries[monthIndex]
 		if ok {
-			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &dailyApr.rate)
+			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &dailyApr.Rate)
 			m.DayCount = m.DayCount + 1
+			m.Dailies = append(m.Dailies, dailyApr)
 			monthlySummaries[monthIndex] = m
 		} else {
 			mrr := new(big.Float)
-			mrr.Copy(&dailyApr.rate)
-			first := MonthlyAprTotal{mrr, 1}
+			mrr.Copy(&dailyApr.Rate)
+			dailies := make([]DailyApr, 0)
+			m.Dailies = append(m.Dailies, dailyApr)
+			first := MonthlyAprTotal{mrr, 1, dailies}
 			monthlySummaries[monthIndex] = first
 		}
 	}
@@ -79,6 +82,9 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 		a := MonthlyAprView{
 			MonthInfo: key,
 			AvgApr:    avgRes,
+		}
+		if includeDailies {
+			a.Dailies = monthlySummaries[key].Dailies
 		}
 		aprs = append(aprs, a)
 	}
