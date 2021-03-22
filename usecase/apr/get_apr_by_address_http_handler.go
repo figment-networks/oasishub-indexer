@@ -39,7 +39,7 @@ type GetAprByAddressRequest struct {
 func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
 	var req GetAprByAddressRequest
 	if err := c.ShouldBindUri(&req); err != nil {
-		http.BadRequest(c, errors.New("invalid address"))
+		http.BadRequest(c, errors.New("missing parameter"))
 		return
 	}
 
