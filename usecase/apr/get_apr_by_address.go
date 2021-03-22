@@ -5,6 +5,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"math/big"
 	"sort"
 )
 
@@ -22,6 +23,15 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 
 func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) (MonthlyAprViewResult, error) {
 	var res MonthlyAprViewResult
+
+	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
+	if err != nil {
+		return res, err
+	}
+	if mostRecentSynced.Time.Before(end.Time) {
+		end = types.NewTimeFromTime(mostRecentSynced.Time.Time)
+	}
+
 	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
 		return res, err
@@ -34,20 +44,19 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 			return res, err
 		}
 
-		dailyApr, err := NewDailyApr(summary, rawAccount)
-		if err != nil {
-			return res, err
-		}
+		dailyApr := NewDailyApr(summary, rawAccount)
 
 		monthIndex := fmt.Sprintf("%d_%d", summary.TimeBucket.Year(), summary.TimeBucket.Month())
 		m, ok := monthlySummaries[monthIndex]
 		if ok {
-			m.AprSum = m.AprSum + dailyApr.APR
-			m.AprCount = m.AprCount + 1
+			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &dailyApr.rate)
+			m.DayCount = m.DayCount + 1
 			monthlySummaries[monthIndex] = m
 		} else {
-			n := MonthlyAprTotal{dailyApr.APR, 1}
-			monthlySummaries[monthIndex] = n
+			mrr := new(big.Float)
+			mrr.Copy(&dailyApr.rate)
+			first := MonthlyAprTotal{mrr, 1}
+			monthlySummaries[monthIndex] = first
 		}
 	}
 
@@ -58,10 +67,18 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 	sort.Strings(keys)
 
 	aprs := make([]MonthlyAprView, 0, len(keys))
-	for i := range keys {
+	for _, key := range keys {
+		avg := new(big.Float)
+		avg.SetString(monthlySummaries[key].MonthlyRewardRate.String())
+		daysInYear := big.NewFloat(365)
+		daysInMonth := new(big.Float)
+		daysInMonth.SetInt64(monthlySummaries[key].DayCount)
+		avg.Quo(avg, daysInMonth)
+		avg.Mul(avg, daysInYear)
+		avgRes, _ := avg.Float64()
 		a := MonthlyAprView{
-			MonthInfo: keys[i],
-			AvgApr:    monthlySummaries[keys[i]].AprSum / float64(monthlySummaries[keys[i]].AprCount),
+			MonthInfo: key,
+			AvgApr:    avgRes,
 		}
 		aprs = append(aprs, a)
 	}

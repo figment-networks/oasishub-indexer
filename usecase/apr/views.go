@@ -1,10 +1,10 @@
 package apr
 
 import (
-	"errors"
 	"github.com/figment-networks/oasis-rpc-proxy/grpc/account/accountpb"
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"math/big"
 )
 
 type DailyApr struct {
@@ -12,34 +12,19 @@ type DailyApr struct {
 	StartHeight         int64
 	EscrowActiveBalance types.Quantity
 	TotalRewards        types.Quantity
-	APR                 float64
+	rate                big.Float
 }
 
-func calculateAPR(escrowActiveBalance, totalRewards types.Quantity) (float64, error) {
-	principalBalance := escrowActiveBalance.Clone()
-	if err := principalBalance.Sub(totalRewards); err != nil {
-		return 0, err
-	}
-	if principalBalance.IsZero() {
-		return 0, errors.New("balance is zero")
-	}
-
-	duration := float64(365) / float64(30)
-	numerator := float64(totalRewards.Uint64()) * duration * 100
-	res := numerator / float64(principalBalance.Uint64())
-	return res, nil
-}
-
-func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) (DailyApr, error) {
+func NewDailyApr(summary model.BalanceSummary, rawAccount *accountpb.GetByAddressResponse) DailyApr {
 	res := DailyApr{
 		TimeBucket:          summary.TimeBucket,
 		StartHeight:         summary.StartHeight,
 		EscrowActiveBalance: types.NewQuantityFromBytes(rawAccount.GetAccount().GetEscrow().GetActive().GetBalance()),
 		TotalRewards:        summary.TotalRewards,
 	}
-	apr, err := calculateAPR(res.EscrowActiveBalance.Clone(), res.TotalRewards.Clone())
-	res.APR = apr
-	return res, err
+	res.rate = *new(big.Float)
+	res.rate.SetFloat64(float64(res.TotalRewards.Int64()) / float64(res.EscrowActiveBalance.Int64()))
+	return res
 }
 
 type MonthlyAprView struct {
@@ -52,6 +37,6 @@ type MonthlyAprViewResult struct {
 }
 
 type MonthlyAprTotal struct {
-	AprSum   float64
-	AprCount int
+	MonthlyRewardRate *big.Float
+	DayCount          int64
 }
