@@ -1,6 +1,7 @@
 package apr
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/figment-networks/oasishub-indexer/client"
@@ -43,11 +44,12 @@ func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
 		return
 	}
 
-	if err := c.ShouldBindQuery(&req); err != nil {
-		http.BadRequest(c, errors.New("invalid start or/and end"))
-		return
-	}
 
+	req.Start = time.Now().AddDate(-1,1,1)
+	req.End = time.Now()
+
+	fmt.Println(req.Start.String())
+	fmt.Println(req.end.String())
 	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End), req.IncludeDailies)
 	if http.ShouldReturn(c, err) {
 		return

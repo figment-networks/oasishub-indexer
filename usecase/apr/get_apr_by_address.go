@@ -57,7 +57,7 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 			mrr := new(big.Float)
 			mrr.Copy(&dailyApr.Rate)
 			dailies := make([]DailyApr, 0)
-			m.Dailies = append(m.Dailies, dailyApr)
+			dailies = append(dailies, dailyApr)
 			first := MonthlyAprTotal{mrr, 1, dailies}
 			monthlySummaries[monthIndex] = first
 		}
