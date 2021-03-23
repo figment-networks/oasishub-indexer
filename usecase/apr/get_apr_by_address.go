@@ -44,20 +44,20 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 			return res, err
 		}
 
-		dailyApr := NewDailyApr(summary, rawAccount)
+		r := NewRewardRate(summary, rawAccount)
 
 		monthIndex := fmt.Sprintf("%d_%d", summary.TimeBucket.Year(), summary.TimeBucket.Month())
 		m, ok := monthlySummaries[monthIndex]
 		if ok {
-			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &dailyApr.Rate)
+			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &r.Rate)
 			m.DayCount = m.DayCount + 1
-			m.Dailies = append(m.Dailies, dailyApr)
+			m.Dailies = append(m.Dailies, r)
 			monthlySummaries[monthIndex] = m
 		} else {
 			mrr := new(big.Float)
-			mrr.Copy(&dailyApr.Rate)
-			dailies := make([]DailyApr, 0)
-			dailies = append(dailies, dailyApr)
+			mrr.Copy(&r.Rate)
+			dailies := make([]RewardRate, 0)
+			dailies = append(dailies, r)
 			first := MonthlyAprTotal{mrr, 1, dailies}
 			monthlySummaries[monthIndex] = first
 		}
@@ -71,17 +71,17 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 
 	aprs := make([]MonthlyAprView, 0, len(keys))
 	for _, key := range keys {
-		avg := new(big.Float)
-		avg.SetString(monthlySummaries[key].MonthlyRewardRate.String())
+		apr := new(big.Float)
+		apr.SetString(monthlySummaries[key].MonthlyRewardRate.String())
 		daysInYear := big.NewFloat(365)
 		daysInMonth := new(big.Float)
 		daysInMonth.SetInt64(monthlySummaries[key].DayCount)
-		avg.Quo(avg, daysInMonth)
-		avg.Mul(avg, daysInYear)
-		avgRes, _ := avg.Float64()
+		apr.Quo(apr, daysInMonth)
+		apr.Mul(apr, daysInYear)
+		r, _ := apr.Float64()
 		a := MonthlyAprView{
 			MonthInfo: key,
-			AvgApr:    avgRes,
+			AvgApr:    r,
 		}
 		if includeDailies {
 			a.Dailies = monthlySummaries[key].Dailies

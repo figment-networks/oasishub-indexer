@@ -99,6 +99,11 @@ func (b *Quantity) Clone() Quantity {
 	return tmp
 }
 
+// GetBigInt returns big int
+func (b *Quantity) GetBigInt() *big.Int {
+	return &b.Int
+}
+
 // Value implement sql.Scanner
 func (b *Quantity) Value() (driver.Value, error) {
 	if b != nil {
