@@ -26,7 +26,6 @@ func NewRewardRate(summary model.BalanceSummary, rawAccount *accountpb.GetByAddr
 	rValue := new(big.Float).SetInt(r.GetBigInt())
 	b := res.EscrowActiveBalance.Clone()
 	bValue := new(big.Float).SetInt(b.GetBigInt())
-	rValue.Quo(rValue, bValue)
 	res.Rate = *new(big.Float).Quo(rValue, bValue)
 	return res
 }
