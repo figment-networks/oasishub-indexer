@@ -17,7 +17,7 @@ func NewGetForAddressUseCase(db *store.Store) *getForAddressUseCase {
 }
 
 func (uc *getForAddressUseCase) Execute(address string, start, end *types.Time) ([]model.BalanceSummary, error) {
-	summaries, err := uc.db.BalanceSummary.GetDailySummaries(address, start, end)
+	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
 		return nil, err
 	}

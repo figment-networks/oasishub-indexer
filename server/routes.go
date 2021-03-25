@@ -22,6 +22,7 @@ func (s *Server) setupRoutes() {
 	s.engine.GET("/account/:address/summaries", s.handlers.GetAccountSummaries.Handle)
 	s.engine.GET("/system_events/:address", s.handlers.GetSystemEventsForAddress.Handle)
 	s.engine.GET("/balance/:address", s.handlers.GetBalanceForAddress.Handle)
+	s.engine.GET("/apr/:address", s.handlers.GetAPRByAddress.Handle)
 
 	// Commands
 	s.engine.POST("/transactions", s.handlers.BroadcastTransaction.Handle)

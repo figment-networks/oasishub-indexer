@@ -3,8 +3,8 @@ package types
 import "time"
 
 const (
-	IntervalHourly SummaryInterval = "hour"
-	IntervalDaily  SummaryInterval = "day"
+	IntervalHourly  SummaryInterval = "hour"
+	IntervalDaily   SummaryInterval = "day"
 )
 
 // SummaryInterval type represents summary interval
@@ -22,6 +22,5 @@ func (s SummaryInterval) ToDuration() (time.Duration, error) {
 	if s == IntervalDaily {
 		return time.ParseDuration("24h")
 	}
-
 	return time.ParseDuration("1h")
 }
