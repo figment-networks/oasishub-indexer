@@ -91,6 +91,7 @@ data to the format indexer understands.
 | GET    | `/validators_summary`                | validator summary                                           | `interval (required)` - time interval [hourly or daily] `period (required)` - summary period [ie. 24 hours]  `address (optional)` - address of entity |
 | GET    | `/system_events/:address`            | system events for given actor                               | `address (required)` - address of account `after (optional)` - return events after with height greater than provided height  `kind (optional)` - system event kind |
 | POST   | `/transactions`                      | broadcast transaction                                       | `tx_raw (required)` - raw transaction data as string                                                                                                        |
+| GET   | `/apr/:address`                      | get time series of annualized rewards rates calculated per month   | `start (required)` - start date in format `2006-01-02` `end (required)` - end date in format `2006-01-02` `address (required)` - address of account  |
 
 ### Running app
 
