@@ -29,26 +29,30 @@ func NewGetAprByAddressHttpHandler(db *store.Store, c *client.Client) *getAprByA
 	}
 }
 
-type GetAprByAddressRequest struct {
-	Address        string    `uri:"address" binding:"required"`
-	IncludeDailies bool      `uri:"including_dailies" binding:"required"`
+type uriParams struct {
+	Address string `uri:"address" binding:"required"`
+}
+
+type queryParams struct {
+	IncludeDailies bool      `form:"including_dailies" binding:"required"`
 	Start          time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
 	End            time.Time `form:"end" binding:"required" time_format:"2006-01-02"`
 }
 
 func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
-	var req GetAprByAddressRequest
+	var req uriParams
 	if err := c.ShouldBindUri(&req); err != nil {
 		http.BadRequest(c, errors.New("missing parameter"))
 		return
 	}
 
-	if err := c.ShouldBindQuery(&req); err != nil {
-		http.BadRequest(c, errors.New("invalid start or/and end"))
+	var params queryParams
+	if err := c.ShouldBindQuery(&params); err != nil {
+		http.BadRequest(c, errors.New("invalid start or/and end date or missing including_dailies"))
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(req.Start), types.NewTimeFromTime(req.End), req.IncludeDailies)
+	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(params.Start), types.NewTimeFromTime(params.End), params.IncludeDailies)
 	if http.ShouldReturn(c, err) {
 		return
 	}
