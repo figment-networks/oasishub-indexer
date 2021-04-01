@@ -34,7 +34,7 @@ type uriParams struct {
 }
 
 type queryParams struct {
-	IncludeDailies bool      `form:"including_dailies" binding:"required"`
+	IncludeDailies bool      `form:"including_dailies" binding:"-"`
 	Start          time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
 	End            time.Time `form:"end" binding:"required" time_format:"2006-01-02"`
 }
