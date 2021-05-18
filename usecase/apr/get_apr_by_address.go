@@ -8,6 +8,7 @@ import (
 	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
+	"github.com/figment-networks/oasishub-indexer/usecase/http"
 )
 
 var (
@@ -38,6 +39,10 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 	rewardSeqs, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
 		return []DailyApr{}, err
+	}
+
+	if len(rewardSeqs) == 0 {
+		return []DailyApr{}, fmt.Errorf("No rewards exist for account: %w", http.ErrNotFound)
 	}
 
 	rewardLookup := make(map[string]model.BalanceSummary)
