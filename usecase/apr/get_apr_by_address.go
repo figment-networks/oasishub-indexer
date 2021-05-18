@@ -2,11 +2,16 @@ package apr
 
 import (
 	"fmt"
+
+	"github.com/figment-networks/oasis-rpc-proxy/grpc/delegation/delegationpb"
 	"github.com/figment-networks/oasishub-indexer/client"
+	"github.com/figment-networks/oasishub-indexer/model"
 	"github.com/figment-networks/oasishub-indexer/store"
 	"github.com/figment-networks/oasishub-indexer/types"
-	"math/big"
-	"sort"
+)
+
+var (
+	timeFormat = "2006-01-02"
 )
 
 type getAprByAddressUseCase struct {
@@ -21,74 +26,44 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 	}
 }
 
-func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time, includeDailies bool) (MonthlyAprViewResult, error) {
-	var res MonthlyAprViewResult
-
+func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) ([]DailyApr, error) {
 	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
 	if err != nil {
-		return res, err
+		return []DailyApr{}, err
 	}
 	if mostRecentSynced.Time.Before(end.Time) {
 		end = types.NewTimeFromTime(mostRecentSynced.Time.Time)
 	}
 
-	summaries, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
+	rewardSeqs, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
-		return res, err
+		return []DailyApr{}, err
 	}
 
-	monthlySummaries := make(map[string]MonthlyAprTotal)
-	for _, summary := range summaries {
-		rawAccount, err := uc.client.Account.GetByAddress(address, summary.StartHeight)
-		if err != nil {
-			return res, err
+	rewardLookup := make(map[string]model.BalanceSummary)
+	delegationLookup := make(map[string]*delegationpb.GetByAddressResponse)
+	validators := []string{}
+
+	for _, r := range rewardSeqs {
+		rewardLookupKey := fmt.Sprintf("%s.%s", r.EscrowAddress, r.TimeBucket.Format(timeFormat))
+		rewardLookup[rewardLookupKey] = r
+
+		delegationLookupKey := fmt.Sprintf("%s.%d", r.Address, r.StartHeight)
+		if _, ok := delegationLookup[delegationLookupKey]; !ok {
+			delegation, err := uc.client.Delegation.GetByAddress(r.Address, r.StartHeight) // fetches shares
+			if err != nil {
+				return []DailyApr{}, err
+			}
+			delegationLookup[delegationLookupKey] = delegation
 		}
 
-		r := NewRewardRate(summary, rawAccount)
-
-		monthIndex := fmt.Sprintf("%d_%d", summary.TimeBucket.Year(), summary.TimeBucket.Month())
-		m, ok := monthlySummaries[monthIndex]
-		if ok {
-			m.MonthlyRewardRate.Add(m.MonthlyRewardRate, &r.Rate)
-			m.DayCount = m.DayCount + 1
-			m.Dailies = append(m.Dailies, r)
-			monthlySummaries[monthIndex] = m
-		} else {
-			mrr := new(big.Float)
-			mrr.Copy(&r.Rate)
-			dailies := make([]RewardRate, 0)
-			dailies = append(dailies, r)
-			first := MonthlyAprTotal{mrr, 1, dailies}
-			monthlySummaries[monthIndex] = first
-		}
+		validators = append(validators, r.EscrowAddress)
 	}
 
-	keys := make([]string, 0, len(monthlySummaries))
-	for k := range monthlySummaries {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	aprs := make([]MonthlyAprView, 0, len(keys))
-	for _, key := range keys {
-		apr := new(big.Float)
-		apr.SetString(monthlySummaries[key].MonthlyRewardRate.String())
-		daysInYear := big.NewFloat(365)
-		daysInMonth := new(big.Float)
-		daysInMonth.SetInt64(monthlySummaries[key].DayCount)
-		apr.Quo(apr, daysInMonth)
-		apr.Mul(apr, daysInYear)
-		r, _ := apr.Float64()
-		a := MonthlyAprView{
-			MonthInfo: key,
-			AvgApr:    r,
-		}
-		if includeDailies {
-			a.Dailies = monthlySummaries[key].Dailies
-		}
-		aprs = append(aprs, a)
+	summaries, err := uc.db.ValidatorSummary.FindAllByTimePeriod(start, end, validators...)
+	if err != nil {
+		return []DailyApr{}, err
 	}
 
-	res.Result = aprs
-	return res, nil
+	return toAPRView(summaries, rewardLookup, delegationLookup)
 }

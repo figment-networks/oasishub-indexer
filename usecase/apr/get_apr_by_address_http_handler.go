@@ -34,9 +34,8 @@ type uriParams struct {
 }
 
 type queryParams struct {
-	IncludeDailies bool      `form:"including_dailies" binding:"-"`
-	Start          time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
-	End            time.Time `form:"end" binding:"required" time_format:"2006-01-02"`
+	Start time.Time `form:"start" binding:"required" time_format:"2006-01-02"`
+	End   time.Time `form:"end" binding:"-" time_format:"2006-01-02"`
 }
 
 func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
@@ -48,11 +47,11 @@ func (h *getAprByAddressHttpHandler) Handle(c *gin.Context) {
 
 	var params queryParams
 	if err := c.ShouldBindQuery(&params); err != nil {
-		http.BadRequest(c, errors.New("invalid start or/and end date or missing including_dailies"))
+		http.BadRequest(c, errors.New("invalid start and/or end date"))
 		return
 	}
 
-	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(params.Start), types.NewTimeFromTime(params.End), params.IncludeDailies)
+	resp, err := h.getUseCase().Execute(req.Address, types.NewTimeFromTime(params.Start), types.NewTimeFromTime(params.End))
 	if http.ShouldReturn(c, err) {
 		return
 	}
