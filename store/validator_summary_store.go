@@ -20,6 +20,7 @@ type ValidatorSummaryStore interface {
 
 	Find(*model.ValidatorSummary) (*model.ValidatorSummary, error)
 	FindActivityPeriods(types.SummaryInterval, int64) ([]ActivityPeriodRow, error)
+	FindAllByTimePeriod(start, end *types.Time, addresses ...string) ([]model.ValidatorSummary, error)
 	FindSummary(types.SummaryInterval, string) ([]ValidatorSummaryRow, error)
 	FindSummaryByAddress(string, types.SummaryInterval, string) ([]model.ValidatorSummary, error)
 	FindMostRecent() (*model.ValidatorSummary, error)
@@ -103,6 +104,24 @@ func (s *validatorSummaryStore) FindMostRecent() (*model.ValidatorSummary, error
 	validatorSummary := &model.ValidatorSummary{}
 	err := findMostRecent(s.db, "time_bucket", validatorSummary)
 	return validatorSummary, checkErr(err)
+}
+
+// FindAllByTimePeriod finds all validator summaries for a given address within the specified start and end times
+func (s *validatorSummaryStore) FindAllByTimePeriod(start, end *types.Time, addresses ...string) ([]model.ValidatorSummary, error) {
+
+	tx := s.db.
+		Where("time_interval = 'day' AND address In (?)", addresses).
+		Order("time_bucket")
+
+	if !end.IsZero() {
+		tx = tx.Where("time_bucket <= ?", end)
+	}
+	if !start.IsZero() {
+		tx = tx.Where("time_bucket >= ?", start)
+	}
+
+	var res []model.ValidatorSummary
+	return res, checkErr(tx.Find(&res).Error)
 }
 
 // FindMostRecentByInterval finds most recent validator summary for interval

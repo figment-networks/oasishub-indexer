@@ -1,10 +1,12 @@
 package http
 
 import (
-	"github.com/figment-networks/oasishub-indexer/utils/logger"
+	"errors"
 	"net/http"
 
 	"github.com/figment-networks/oasishub-indexer/store"
+	"github.com/figment-networks/oasishub-indexer/utils/logger"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -45,7 +47,7 @@ func ShouldReturn(c *gin.Context, err error) bool {
 	// log error
 	logger.Error(err)
 
-	if err == store.ErrNotFound {
+	if errors.Is(err, ErrNotFound) || err == store.ErrNotFound {
 		NotFound(c, err)
 	} else {
 		ServerError(c, err)

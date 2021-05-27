@@ -25,6 +25,10 @@ func NewTimeFromTimestamp(timestamp timestamp.Timestamp) *Time {
 	}
 }
 
+func (t *Time) Format(format string) string {
+	return t.Time.Format(format)
+}
+
 func (t *Time) Duration(m Time) int64 {
 	return t.Sub(m.Time).Milliseconds()
 }
