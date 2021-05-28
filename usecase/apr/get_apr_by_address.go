@@ -27,10 +27,10 @@ func NewGetAprByAddressUseCase(db *store.Store, c *client.Client) *getAprByAddre
 	}
 }
 
-func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) ([]DailyApr, error) {
+func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time) (dA []DailyApr, err error) {
 	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
 	if err != nil {
-		return []DailyApr{}, err
+		return dA, err
 	}
 	if mostRecentSynced.Time.Before(end.Time) {
 		end = types.NewTimeFromTime(mostRecentSynced.Time.Time)
@@ -38,11 +38,11 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 
 	rewardSeqs, err := uc.db.BalanceSummary.GetSummariesByInterval(types.IntervalDaily, address, start, end)
 	if err != nil {
-		return []DailyApr{}, err
+		return dA, err
 	}
 
 	if len(rewardSeqs) == 0 {
-		return []DailyApr{}, fmt.Errorf("No rewards exist for account: %w", http.ErrNotFound)
+		return dA, fmt.Errorf("No rewards exist for account: %w", http.ErrNotFound)
 	}
 
 	rewardLookup := make(map[string]model.BalanceSummary)
@@ -57,7 +57,7 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 		if _, ok := delegationLookup[delegationLookupKey]; !ok {
 			delegation, err := uc.client.Delegation.GetByAddress(r.Address, r.StartHeight) // fetches shares
 			if err != nil {
-				return []DailyApr{}, err
+				return dA, err
 			}
 			delegationLookup[delegationLookupKey] = delegation
 		}
@@ -67,7 +67,7 @@ func (uc *getAprByAddressUseCase) Execute(address string, start, end *types.Time
 
 	summaries, err := uc.db.ValidatorSummary.FindAllByTimePeriod(start, end, validators...)
 	if err != nil {
-		return []DailyApr{}, err
+		return dA, err
 	}
 
 	return toAPRView(summaries, rewardLookup, delegationLookup)
