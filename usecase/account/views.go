@@ -21,7 +21,7 @@ func ToDetailsView(rawAccount *accountpb.Account) *DetailsView {
 		GeneralBalance:             types.NewQuantityFromBytes(rawAccount.GetGeneral().GetBalance()),
 		GeneralNonce:               rawAccount.GetGeneral().GetNonce(),
 		EscrowActiveBalance:        types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
-		EscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetBalance()),
+		EscrowActiveTotalShares:    types.NewQuantityFromBytes(rawAccount.GetEscrow().GetActive().GetTotalShares()),
 		EscrowDebondingBalance:     types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetBalance()),
 		EscrowDebondingTotalShares: types.NewQuantityFromBytes(rawAccount.GetEscrow().GetDebonding().GetTotalShares()),
 	}
