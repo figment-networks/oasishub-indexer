@@ -235,30 +235,33 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	return nil
 }
 
-func getRewardsAndCommission(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) (rewards map[string]types.Quantity, commissions map[string]types.Quantity) {
-	rewards = make(map[string]types.Quantity)
-	commissions = make(map[string]types.Quantity)
+type commissionDetails struct {
+	newShares types.Quantity
+	amount    types.Quantity
+}
+
+func getRewardsAndCommission(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) (rewards map[string]types.Quantity, commissions map[string]commissionDetails) {
+	rewards = make(map[string]types.Quantity)        // map of escrow account to remaining rewards
+	commissions = make(map[string]commissionDetails) // map of escrow account to commission info
 
 	var escrowAcnt string
+
 	for _, rawEvent := range rawEvents {
 		escrowAcnt = rawEvent.GetEscrow()
+
+		//todo get rewards from transfer events
+		if rawEvent.GetOwner() == escrowAcnt {
+			commissions[escrowAcnt] = commissionDetails{
+				amount:    types.NewQuantityFromBytes(rawEvent.GetAmount()),
+				newShares: types.NewQuantityFromBytes(rawEvent.GetNewShares()),
+			}
+		}
+
 		if rawEvent.GetOwner() != commonPoolAddr {
 			// rewards only come from commonpool, so skip
 			continue
 		}
-		newAmt := types.NewQuantityFromBytes(rawEvent.GetAmount())
-		existingAmt, ok := rewards[escrowAcnt]
-		if ok {
-			// if there's a duplicate, then the event with the higher amount is the reward (other is commission)
-			if existingAmt.Cmp(newAmt) < 0 {
-				rewards[escrowAcnt] = newAmt
-				commissions[escrowAcnt] = existingAmt
-			} else {
-				commissions[escrowAcnt] = newAmt
-			}
-		} else {
-			rewards[escrowAcnt] = newAmt
-		}
+		rewards[escrowAcnt] = types.NewQuantityFromBytes(rawEvent.GetAmount())
 	}
 
 	return rewards, commissions
@@ -276,7 +279,7 @@ func getSlashed(rawEvents []*eventpb.TakeEscrowEvent) (slashed map[string]types.
 	return slashed
 }
 
-func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountpb.EscrowAccount, stakingState *statepb.Staking, reward types.Quantity, commission types.Quantity, height int64) ([]model.BalanceEvent, error) {
+func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountpb.EscrowAccount, stakingState *statepb.Staking, reward types.Quantity, commission commissionDetails, height int64) ([]model.BalanceEvent, error) {
 	var err error
 	balanceEvents := []model.BalanceEvent{}
 
@@ -292,31 +295,26 @@ func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountp
 		return nil, fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
 	}
 
-	var comShares types.Quantity
-	if !commission.IsZero() {
+	sharesFromCommission := commission.newShares.Clone()
+	amountFromCommission := commission.amount.Clone()
+
+	if !amountFromCommission.IsZero() {
 		balanceEvents = append(balanceEvents, model.BalanceEvent{
 			Height:        height,
 			Address:       escrowAddr,
 			EscrowAddress: escrowAddr,
-			Amount:        commission,
+			Amount:        amountFromCommission,
 			Kind:          model.Commission,
 		})
 
-		// reverse balance added from commission
-		if err = prevActiveEscrowBalance.Sub(commission); err != nil {
-			return nil, fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
+		// reverse shares added from commission
+		if err = prevTotalShares.Sub(sharesFromCommission); err != nil {
+			return nil, fmt.Errorf("prevTotalShares.Sub: %v", err)
 		}
 
-		comShares = commission.Clone()
-		if err = comShares.Mul(currTotalShares); err != nil {
-			return nil, fmt.Errorf("comShares.Mul: %v", err)
-		}
-		if err = comShares.Quo(currActiveEscrowBalance); err != nil {
-			return nil, fmt.Errorf("comShares.Quo: %v", err)
-		}
-		// reverse shares added from commission
-		if err = prevTotalShares.Sub(comShares); err != nil {
-			return nil, fmt.Errorf("prevTotalShares.Sub: %v", err)
+		// reverse balance added from commission
+		if err = prevActiveEscrowBalance.Sub(amountFromCommission); err != nil {
+			return nil, fmt.Errorf("prevActiveEscrowBalance.Sub: %v", err)
 		}
 	}
 
@@ -325,10 +323,9 @@ func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountp
 
 		for delAddr, d := range delegations.Entries {
 			shares = types.NewQuantityFromBytes(d.Shares)
-
-			if delAddr == escrowAddr && !comShares.IsZero() {
+			if delAddr == escrowAddr && !sharesFromCommission.IsZero() {
 				// reverse shares added from commission
-				if err = shares.Sub(comShares); err != nil {
+				if err = shares.Sub(sharesFromCommission); err != nil {
 					return nil, fmt.Errorf("shares.Sub: %v", err)
 				}
 			}
@@ -338,8 +335,8 @@ func createRewardAndCommissionBalanceEvents(escrowAddr string, account *accountp
 
 			// when reward is added to escrow balance, value of shares for each delegator goes up.
 			// find reward for each delegator by subtracting previous delegator balance from current delegator balance
-			prevBalance := shares.Clone()
-			if err = prevBalance.Mul(prevActiveEscrowBalance); err != nil {
+			prevBalance := prevActiveEscrowBalance.Clone()
+			if err = prevBalance.Mul(shares); err != nil {
 				return nil, fmt.Errorf("prevBalance.Mul: %v", err)
 			}
 			if err = prevBalance.Quo(prevTotalShares); err != nil {
