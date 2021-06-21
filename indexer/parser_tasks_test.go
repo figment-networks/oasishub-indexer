@@ -116,6 +116,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 		rawStakingState              *statepb.Staking
 		rawValidators                []*validatorpb.Validator
 		rawAddEscrowEvents           []*eventpb.AddEscrowEvent
+		rawTransferEvents            []*eventpb.TransferEvent
 		expectedParsedValidatorsData ParsedValidatorsData
 	}{
 		{description: "update validator with no block votes",
@@ -299,7 +300,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
-		{description: "updates validator rewards based on addescrowevent with the higher amount",
+		{description: "updates validator rewards without commission",
 			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(),
 			),
@@ -314,7 +315,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 			},
 			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
-					Owner:  commonPoolAddr,
+					Owner:  "t0",
 					Escrow: "t0",
 					Amount: twentyInBytes,
 				},
@@ -329,8 +330,20 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					Amount: hundredInBytes,
 				},
 				{
-					Owner:  commonPoolAddr,
+					Owner:  "t1",
 					Escrow: "t1",
+					Amount: twentyInBytes,
+				},
+			},
+			rawTransferEvents: []*eventpb.TransferEvent{
+				{
+					From:   commonPoolAddr,
+					To:     "t0",
+					Amount: twentyInBytes,
+				},
+				{
+					From:   commonPoolAddr,
+					To:     "t1",
 					Amount: twentyInBytes,
 				},
 			},
