@@ -402,7 +402,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 	delegatorAddr2 := "delegatorAddr2"
 	const currHeight int64 = 20
 
-	t.Run("creates reward amd commission balance events", func(t *testing.T) {
+	t.Run("creates reward and commission balance events", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 
@@ -417,15 +417,23 @@ func TestBalanceParserTask_Run(t *testing.T) {
 			RawEscrowEvents: &eventpb.EscrowEvents{
 				Add: []*eventpb.AddEscrowEvent{
 					{
-						Owner:  commonPoolAddr,
-						Escrow: escrowAddr,
-						Amount: uintToBytes(60, t), // commission event
+						Owner:     escrowAddr,
+						Escrow:    escrowAddr,
+						Amount:    uintToBytes(60, t), // event for the automatically escrowed commission reward
+						NewShares: uintToBytes(33, t),
 					},
 					{
 						Owner:  commonPoolAddr,
 						Escrow: escrowAddr,
-						Amount: uintToBytes(240, t), // reward event
+						Amount: uintToBytes(240, t), // event for the non-commissioned part of the reward (which only increases existing shares prices)
 					},
+				},
+			},
+			RawTransferEvents: []*eventpb.TransferEvent{
+				{
+					From:   commonPoolAddr,
+					To:     escrowAddr,
+					Amount: uintToBytes(60, t), // event for the commissioned part of the reward
 				},
 			},
 			RawStakingState: &statepb.Staking{
@@ -442,7 +450,6 @@ func TestBalanceParserTask_Run(t *testing.T) {
 				Delegations: map[string]*delegationpb.DelegationEntry{
 					escrowAddr: {
 						Entries: map[string]*delegationpb.Delegation{
-							// 100% shares are from commission: commission_amount * total_shares / pre_commission_balance = 60 * 300 / 540 = 33
 							escrowAddr:     {Shares: uintToBytes(33, t)},
 							delegatorAddr1: {Shares: uintToBytes(100, t)},
 							delegatorAddr2: {Shares: uintToBytes(200, t)},

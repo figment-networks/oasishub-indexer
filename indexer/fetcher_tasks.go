@@ -67,23 +67,34 @@ func (t *EventsFetcherTask) GetName() string {
 }
 
 func (t *EventsFetcherTask) Run(ctx context.Context, p pipeline.Payload) error {
-
 	payload := p.(*payload)
 
-	resp, err := t.client.GetEscrowEventsByHeight(payload.CurrentHeight)
+	escrow, err := t.client.GetEscrowEventsByHeight(payload.CurrentHeight)
 	if err != nil {
 		return err
 	}
 
+	payload.RawEscrowEvents = escrow.GetEvents()
+
 	logger.Info(fmt.Sprintf("running indexer task [stage=%s] [task=%s] [height=%d]", pipeline.StageFetcher, t.GetName(), payload.CurrentHeight))
-	logger.DebugJSON(resp.GetEvents(),
+	logger.DebugJSON(escrow.GetEvents(),
 		logger.Field("process", "pipeline"),
 		logger.Field("stage", "fetcher"),
 		logger.Field("request", "events"),
 		logger.Field("height", payload.CurrentHeight),
 	)
 
-	payload.RawEscrowEvents = resp.GetEvents()
+	// only fetch transfer events if there are add escrow events -  needed for rewards calculations in parser
+	if len(payload.RawEscrowEvents.GetAdd()) == 0 {
+		return nil
+	}
+
+	transfer, err := t.client.GetTransferEventsByHeight(payload.CurrentHeight)
+	if err != nil {
+		return err
+	}
+
+	payload.RawTransferEvents = transfer.GetEvents()
 	return nil
 }
 

@@ -100,7 +100,7 @@ func (t *validatorsParserTask) Run(ctx context.Context, p pipeline.Payload) erro
 	fetchedValidators := payload.RawValidators
 	fetchedBlock := payload.RawBlock
 	fetchedStakingState := payload.RawStakingState
-	rewards, _ := getRewardsAndCommission(payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
+	rewards, _ := getRewardsAndCommission(payload.RawTransferEvents, payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
 
 	const (
 		NotValidated int64 = 1
@@ -195,7 +195,7 @@ func (t *balanceParserTask) Run(ctx context.Context, p pipeline.Payload) error {
 	fetchedValidators := payload.RawValidators
 	fetchedStakingState := payload.RawStakingState
 
-	rewards, commissions := getRewardsAndCommission(payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
+	rewards, commissions := getRewardsAndCommission(payload.RawTransferEvents, payload.RawEscrowEvents.GetAdd(), payload.CommonPoolAddress)
 	slashed := getSlashed(payload.RawEscrowEvents.GetTake())
 
 	if len(rewards) == 0 && len(slashed) == 0 {
@@ -240,28 +240,42 @@ type commissionDetails struct {
 	amount    types.Quantity
 }
 
-func getRewardsAndCommission(rawEvents []*eventpb.AddEscrowEvent, commonPoolAddr string) (rewards map[string]types.Quantity, commissions map[string]commissionDetails) {
+func getRewardsAndCommission(rawTake []*eventpb.TransferEvent, rawEscrow []*eventpb.AddEscrowEvent, commonPoolAddr string) (rewards map[string]types.Quantity, commissions map[string]commissionDetails) {
 	rewards = make(map[string]types.Quantity)        // map of escrow account to remaining rewards
 	commissions = make(map[string]commissionDetails) // map of escrow account to commission info
 
-	var escrowAcnt string
-
-	for _, rawEvent := range rawEvents {
-		escrowAcnt = rawEvent.GetEscrow()
-
-		//todo get rewards from transfer events
-		if rawEvent.GetOwner() == escrowAcnt {
-			commissions[escrowAcnt] = commissionDetails{
-				amount:    types.NewQuantityFromBytes(rawEvent.GetAmount()),
-				newShares: types.NewQuantityFromBytes(rawEvent.GetNewShares()),
-			}
-		}
-
-		if rawEvent.GetOwner() != commonPoolAddr {
-			// rewards only come from commonpool, so skip
+	for _, ev := range rawTake {
+		if ev.GetFrom() != commonPoolAddr {
+			// event for the commissioned part of the reward, only comes from commonpool
 			continue
 		}
-		rewards[escrowAcnt] = types.NewQuantityFromBytes(rawEvent.GetAmount())
+
+		commissions[ev.GetTo()] = commissionDetails{
+			amount: types.NewQuantityFromBytes(ev.GetAmount()),
+		}
+	}
+
+	var escrowAcnt string
+	for _, ev := range rawEscrow {
+		escrowAcnt = ev.GetEscrow()
+
+		if ev.GetOwner() == commonPoolAddr {
+			// for the non-commissioned part of the reward, events only come from commonpool
+			rewards[escrowAcnt] = types.NewQuantityFromBytes(ev.GetAmount())
+		}
+
+		if ev.GetOwner() != escrowAcnt {
+			// for the automatically escrowed commission reward, event owner matches recipient
+			continue
+		}
+
+		deets, ok := commissions[escrowAcnt]
+		if !ok || deets.amount.Cmp(types.NewQuantityFromBytes(ev.GetAmount())) != 0 {
+			continue
+		}
+
+		deets.newShares = types.NewQuantityFromBytes(ev.GetNewShares())
+		commissions[escrowAcnt] = deets
 	}
 
 	return rewards, commissions
