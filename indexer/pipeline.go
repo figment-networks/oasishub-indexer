@@ -280,6 +280,79 @@ func (o *indexingPipeline) canRunBackfill(isParallel bool) error {
 	return nil
 }
 
+type ReindexConfig struct {
+	Parallel bool
+	// Force       bool
+	StartHeight int64
+	EndHeight   int64
+	TargetIds   []int64
+}
+
+// Reindex starts reindex process
+func (o *indexingPipeline) Reindex(ctx context.Context, cfg ReindexConfig) error {
+	if err := o.canRunBackfill(cfg.Parallel); err != nil {
+		return err
+	}
+
+	source, err := NewReindexSource(o.cfg, o.db.Syncables, cfg.StartHeight, cfg.EndHeight)
+	if err != nil {
+		return err
+	}
+
+	currentIndexVersion := o.configParser.GetCurrentVersionId()
+	sink := NewSink(o.db, currentIndexVersion)
+
+	kind := model.ReportKindSequentialReindex
+	if cfg.Parallel {
+		kind = model.ReportKindParallelReindex
+	}
+	// if cfg.Force {
+	// 	if err := o.db.Reports.DeleteByKinds([]model.ReportKind{model.ReportKindParallelReindex, model.ReportKindSequentialReindex}); err != nil {
+	// 		return err
+	// 	}
+	// }
+
+	reportCreator := &reportCreator{
+		kind:         kind,
+		indexVersion: currentIndexVersion,
+		startHeight:  source.startHeight,
+		endHeight:    source.endHeight,
+		store:        o.db.Reports,
+	}
+
+	pipelineOptionsCreator := &pipelineOptionsCreator{
+		configParser:     o.configParser,
+		desiredTargetIds: cfg.TargetIds,
+	}
+	pipelineOptions, err := pipelineOptionsCreator.parse()
+	if err != nil {
+		return err
+	}
+
+	if err := o.db.Syncables.ResetProcessedAtForRange(source.startHeight, source.endHeight); err != nil {
+		return err
+	}
+
+	if err := reportCreator.createIfNotExists(model.ReportKindSequentialReindex, model.ReportKindParallelReindex); err != nil {
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("starting pipeline [start=%d] [end=%d] [options=%+v]", source.startHeight, source.endHeight, pipelineOptions))
+
+	ctxWithReport := context.WithValue(ctx, CtxReport, reportCreator.report)
+	err = o.pipeline.Start(ctxWithReport, source, sink, pipelineOptions)
+	if err != nil {
+		logger.Info(fmt.Sprintf("pipeline completed with error [Err: %+v]", err))
+		return err
+	}
+
+	logger.Info(fmt.Sprintf("pipeline completed [Err: %+v]", err))
+
+	err = reportCreator.complete(source.Len(), sink.successCount, err)
+
+	return nil
+}
+
 type RunConfig struct {
 	Height            int64
 	DesiredVersionIDs []int64
