@@ -103,7 +103,8 @@ func (s *balanceEventsStore) Summarize(interval types.SummaryInterval, activityP
 				if err != nil {
 					return nil, err
 				}
-				tx = tx.Or("time_bucket >= ? AND time_bucket < ?", activityPeriod.Max.Add(duration), activityPeriods[i+1].Min)
+				tx = tx.Or("time_bucket >= ? AND time_bucket < ?", activityPeriod.Max, activityPeriod.Max.Add(duration))
+				tx = tx.Or("time_bucket >= ? AND time_bucket < ?", activityPeriod.Max.Add(duration), activityPeriod.Max.Add(duration*2))
 			}
 		}
 	}
