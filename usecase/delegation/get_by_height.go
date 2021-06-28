@@ -1,9 +1,10 @@
 package delegation
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
-	"github.com/pkg/errors"
 )
 
 type getByHeightUseCase struct {

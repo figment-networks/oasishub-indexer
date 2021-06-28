@@ -15,6 +15,7 @@ func NewCmdHandlers(cfg *config.Config, db *store.Store, c *client.Client) *CmdH
 		IndexerIndex:       indexing.NewIndexCmdHandler(cfg, db, c),
 		IndexerBackfill:    indexing.NewBackfillCmdHandler(cfg, db, c),
 		IndexerPurge:       indexing.NewPurgeCmdHandler(cfg, db, c),
+		IndexerReindex:     indexing.NewReindexCmdHandler(cfg, db, c),
 		IndexerSummarize:   indexing.NewSummarizeCmdHandler(cfg, db, c),
 		DecorateValidators: validator.NewDecorateCmdHandler(cfg, db, c),
 	}
@@ -25,6 +26,7 @@ type CmdHandlers struct {
 	IndexerIndex       *indexing.IndexCmdHandler
 	IndexerBackfill    *indexing.BackfillCmdHandler
 	IndexerPurge       *indexing.PurgeCmdHandler
+	IndexerReindex     *indexing.ReindexCmdHandler
 	IndexerSummarize   *indexing.SummarizeCmdHandler
 	DecorateValidators *validator.DecorateCmdHandler
 }
