@@ -14,6 +14,7 @@ var (
 
 type EventClient interface {
 	GetEscrowEventsByHeight(int64) (*eventpb.GetEscrowEventsByHeightResponse, error)
+	GetTransferEventsByHeight(int64) (*eventpb.GetTransferEventsByHeightResponse, error)
 }
 
 func NewEventClient(conn *grpc.ClientConn) EventClient {
@@ -30,4 +31,10 @@ func (r *eventClient) GetEscrowEventsByHeight(h int64) (*eventpb.GetEscrowEvents
 	ctx := context.Background()
 
 	return r.client.GetEscrowEventsByHeight(ctx, &eventpb.GetEscrowEventsByHeightRequest{Height: h})
+}
+
+func (r *eventClient) GetTransferEventsByHeight(h int64) (*eventpb.GetTransferEventsByHeightResponse, error) {
+	ctx := context.Background()
+
+	return r.client.GetTransferEventsByHeight(ctx, &eventpb.GetTransferEventsByHeightRequest{Height: h})
 }

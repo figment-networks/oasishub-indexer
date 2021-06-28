@@ -116,6 +116,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 		rawStakingState              *statepb.Staking
 		rawValidators                []*validatorpb.Validator
 		rawAddEscrowEvents           []*eventpb.AddEscrowEvent
+		rawTransferEvents            []*eventpb.TransferEvent
 		expectedParsedValidatorsData ParsedValidatorsData
 	}{
 		{description: "update validator with no block votes",
@@ -299,7 +300,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 				},
 			},
 		},
-		{description: "updates validator rewards based on addescrowevent with the higher amount",
+		{description: "updates validator rewards without commission",
 			rawBlock: testpbBlock(
 				setBlockLastCommitVotes(),
 			),
@@ -314,7 +315,7 @@ func TestValidatorParserTask_Run(t *testing.T) {
 			},
 			rawAddEscrowEvents: []*eventpb.AddEscrowEvent{
 				{
-					Owner:  commonPoolAddr,
+					Owner:  "t0",
 					Escrow: "t0",
 					Amount: twentyInBytes,
 				},
@@ -329,8 +330,20 @@ func TestValidatorParserTask_Run(t *testing.T) {
 					Amount: hundredInBytes,
 				},
 				{
-					Owner:  commonPoolAddr,
+					Owner:  "t1",
 					Escrow: "t1",
+					Amount: twentyInBytes,
+				},
+			},
+			rawTransferEvents: []*eventpb.TransferEvent{
+				{
+					From:   commonPoolAddr,
+					To:     "t0",
+					Amount: twentyInBytes,
+				},
+				{
+					From:   commonPoolAddr,
+					To:     "t1",
 					Amount: twentyInBytes,
 				},
 			},
@@ -402,7 +415,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 	delegatorAddr2 := "delegatorAddr2"
 	const currHeight int64 = 20
 
-	t.Run("creates reward amd commission balance events", func(t *testing.T) {
+	t.Run("creates reward and commission balance events", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
 
@@ -417,20 +430,28 @@ func TestBalanceParserTask_Run(t *testing.T) {
 			RawEscrowEvents: &eventpb.EscrowEvents{
 				Add: []*eventpb.AddEscrowEvent{
 					{
-						Owner:  commonPoolAddr,
-						Escrow: escrowAddr,
-						Amount: uintToBytes(60, t), // commission event
+						Owner:     escrowAddr,
+						Escrow:    escrowAddr,
+						Amount:    uintToBytes(60, t), // event for the automatically escrowed commission reward
+						NewShares: uintToBytes(33, t),
 					},
 					{
 						Owner:  commonPoolAddr,
 						Escrow: escrowAddr,
-						Amount: uintToBytes(240, t), // reward event
+						Amount: uintToBytes(240, t), // event for the non-commissioned part of the reward (which only increases existing shares prices)
 					},
+				},
+			},
+			RawTransferEvents: []*eventpb.TransferEvent{
+				{
+					From:   commonPoolAddr,
+					To:     escrowAddr,
+					Amount: uintToBytes(60, t), // event for the commissioned part of the reward
 				},
 			},
 			RawStakingState: &statepb.Staking{
 				Ledger: map[string]*accountpb.Account{
-					escrowAddr: &accountpb.Account{
+					escrowAddr: {
 						Escrow: &accountpb.EscrowAccount{
 							Active: &accountpb.SharePool{
 								Balance:     uintToBytes(600, t),
@@ -440,12 +461,11 @@ func TestBalanceParserTask_Run(t *testing.T) {
 					},
 				},
 				Delegations: map[string]*delegationpb.DelegationEntry{
-					escrowAddr: &delegationpb.DelegationEntry{
+					escrowAddr: {
 						Entries: map[string]*delegationpb.Delegation{
-							// 100% shares are from commission: commission_amount * total_shares / pre_commission_balance = 60 * 300 / 540 = 33
-							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(33, t)},
-							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
-							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(200, t)},
+							escrowAddr:     {Shares: uintToBytes(33, t)},
+							delegatorAddr1: {Shares: uintToBytes(100, t)},
+							delegatorAddr2: {Shares: uintToBytes(200, t)},
 						},
 					},
 				},
@@ -458,21 +478,21 @@ func TestBalanceParserTask_Run(t *testing.T) {
 		}
 
 		expectedEvents := map[string]model.BalanceEvent{
-			delegatorAddr1: model.BalanceEvent{
+			delegatorAddr1: {
 				Height:        currHeight,
 				Address:       delegatorAddr1,
 				EscrowAddress: escrowAddr,
 				Kind:          model.Reward,
 				Amount:        types.NewQuantityFromInt64(80), // account has 100/300 shares, so gets 1/3 * 240 of rewards
 			},
-			delegatorAddr2: model.BalanceEvent{
+			delegatorAddr2: {
 				Height:        currHeight,
 				Address:       delegatorAddr2,
 				EscrowAddress: escrowAddr,
 				Kind:          model.Reward,
 				Amount:        types.NewQuantityFromInt64(160), // account has 200/300 shares, so gets 2/3 * 240 of rewards
 			},
-			escrowAddr: model.BalanceEvent{
+			escrowAddr: {
 				Height:        currHeight,
 				Address:       escrowAddr,
 				EscrowAddress: escrowAddr,
@@ -516,7 +536,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 			},
 			RawStakingState: &statepb.Staking{
 				Ledger: map[string]*accountpb.Account{
-					escrowAddr: &accountpb.Account{
+					escrowAddr: {
 						Escrow: &accountpb.EscrowAccount{
 							Active: &accountpb.SharePool{
 								Balance:     uintToBytes(600, t),
@@ -526,11 +546,11 @@ func TestBalanceParserTask_Run(t *testing.T) {
 					},
 				},
 				Delegations: map[string]*delegationpb.DelegationEntry{
-					escrowAddr: &delegationpb.DelegationEntry{
+					escrowAddr: {
 						Entries: map[string]*delegationpb.Delegation{
-							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(33, t)},
-							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
-							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(200, t)},
+							escrowAddr:     {Shares: uintToBytes(33, t)},
+							delegatorAddr1: {Shares: uintToBytes(100, t)},
+							delegatorAddr2: {Shares: uintToBytes(200, t)},
 						},
 					},
 				},
@@ -570,7 +590,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 			},
 			RawStakingState: &statepb.Staking{
 				Ledger: map[string]*accountpb.Account{
-					escrowAddr: &accountpb.Account{
+					escrowAddr: {
 						Escrow: &accountpb.EscrowAccount{
 							Active: &accountpb.SharePool{
 								Balance:     uintToBytes(350, t),
@@ -580,11 +600,11 @@ func TestBalanceParserTask_Run(t *testing.T) {
 					},
 				},
 				Delegations: map[string]*delegationpb.DelegationEntry{
-					escrowAddr: &delegationpb.DelegationEntry{
+					escrowAddr: {
 						Entries: map[string]*delegationpb.Delegation{
-							escrowAddr:     &delegationpb.Delegation{Shares: uintToBytes(600, t)},
-							delegatorAddr1: &delegationpb.Delegation{Shares: uintToBytes(300, t)},
-							delegatorAddr2: &delegationpb.Delegation{Shares: uintToBytes(100, t)},
+							escrowAddr:     {Shares: uintToBytes(600, t)},
+							delegatorAddr1: {Shares: uintToBytes(300, t)},
+							delegatorAddr2: {Shares: uintToBytes(100, t)},
 						},
 					},
 				},
@@ -597,21 +617,21 @@ func TestBalanceParserTask_Run(t *testing.T) {
 		}
 
 		expectedEvents := map[string]model.BalanceEvent{
-			escrowAddr: model.BalanceEvent{
+			escrowAddr: {
 				Height:        currHeight,
 				Address:       escrowAddr,
 				EscrowAddress: escrowAddr,
 				Kind:          model.SlashActive,
 				Amount:        types.NewQuantityFromInt64(30), // 60% of 50
 			},
-			delegatorAddr1: model.BalanceEvent{
+			delegatorAddr1: {
 				Height:        currHeight,
 				Address:       delegatorAddr1,
 				EscrowAddress: escrowAddr,
 				Kind:          model.SlashActive,
 				Amount:        types.NewQuantityFromInt64(15), // 30% of 50
 			},
-			delegatorAddr2: model.BalanceEvent{
+			delegatorAddr2: {
 				Height:        currHeight,
 				Address:       delegatorAddr2,
 				EscrowAddress: escrowAddr,
@@ -659,7 +679,7 @@ func TestBalanceParserTask_Run(t *testing.T) {
 			},
 			RawStakingState: &statepb.Staking{
 				Ledger: map[string]*accountpb.Account{
-					escrowAddr: &accountpb.Account{
+					escrowAddr: {
 						Escrow: &accountpb.EscrowAccount{
 							Debonding: &accountpb.SharePool{
 								Balance:     uintToBytes(3500, t),
@@ -669,16 +689,16 @@ func TestBalanceParserTask_Run(t *testing.T) {
 					},
 				},
 				DebondingDelegations: map[string]*debondingdelegationpb.DebondingDelegationEntry{
-					escrowAddr: &debondingdelegationpb.DebondingDelegationEntry{
+					escrowAddr: {
 						Entries: map[string]*debondingdelegationpb.DebondingDelegationInnerEntry{
-							escrowAddr: &debondingdelegationpb.DebondingDelegationInnerEntry{
+							escrowAddr: {
 								DebondingDelegations: []*debondingdelegationpb.DebondingDelegation{
 									{Shares: uintToBytes(200, t)},
 									{Shares: uintToBytes(150, t)},
 									{Shares: uintToBytes(250, t)},
 								},
 							},
-							delegatorAddr1: &debondingdelegationpb.DebondingDelegationInnerEntry{
+							delegatorAddr1: {
 								DebondingDelegations: []*debondingdelegationpb.DebondingDelegation{
 									{Shares: uintToBytes(400, t)},
 								},
@@ -695,14 +715,14 @@ func TestBalanceParserTask_Run(t *testing.T) {
 		}
 
 		expectedEvents := map[string]model.BalanceEvent{
-			escrowAddr: model.BalanceEvent{
+			escrowAddr: {
 				Height:        currHeight,
 				Address:       escrowAddr,
 				EscrowAddress: escrowAddr,
 				Kind:          model.SlashDebonding,
 				Amount:        types.NewQuantityFromInt64(300), // 60% of 500
 			},
-			delegatorAddr1: model.BalanceEvent{
+			delegatorAddr1: {
 				Height:        currHeight,
 				Address:       delegatorAddr1,
 				EscrowAddress: escrowAddr,

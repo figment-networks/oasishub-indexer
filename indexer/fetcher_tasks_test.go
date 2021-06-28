@@ -247,17 +247,25 @@ func TestTransactionFetcher_Run(t *testing.T) {
 
 func TestEventFetcher_Run(t *testing.T) {
 	tests := []struct {
-		description    string
-		expectedEvents *eventpb.EscrowEvents
-		result         error
+		description      string
+		expectedEscrow   *eventpb.EscrowEvents
+		callTransfer     bool
+		expectedTransfer []*eventpb.TransferEvent
+		result           error
 	}{
-		{"returns error if client errors", nil, errTestClient},
+		{"returns error if client errors", nil, false, nil, errTestClient},
 		{"updates payload", &eventpb.EscrowEvents{
 			Add: []*eventpb.AddEscrowEvent{{
-				Owner:  "ownerAddr",
-				Escrow: "escrowAddr",
+				Owner:     "cmnpool",
+				Escrow:    "escrowAddr",
+				Amount:    randBytes(5),
+				NewShares: randBytes(5),
+			}}}, true, []*eventpb.TransferEvent{
+			{
+				From:   "cmnpool",
+				To:     "escrowAddr",
 				Amount: randBytes(5),
-			}}}, nil},
+			}}, nil},
 	}
 
 	for _, tt := range tests {
@@ -273,8 +281,14 @@ func TestEventFetcher_Run(t *testing.T) {
 			pl := &payload{CurrentHeight: 20}
 
 			mockClient.EXPECT().GetEscrowEventsByHeight(pl.CurrentHeight).Return(
-				&eventpb.GetEscrowEventsByHeightResponse{Events: tt.expectedEvents}, tt.result,
+				&eventpb.GetEscrowEventsByHeightResponse{Events: tt.expectedEscrow}, tt.result,
 			).Times(1)
+
+			if tt.callTransfer {
+				mockClient.EXPECT().GetTransferEventsByHeight(pl.CurrentHeight).Return(
+					&eventpb.GetTransferEventsByHeightResponse{Events: tt.expectedTransfer}, tt.result,
+				).Times(1)
+			}
 
 			if result := task.Run(ctx, pl); result != tt.result {
 				t.Errorf("want %v; got %v", tt.result, result)
@@ -286,8 +300,13 @@ func TestEventFetcher_Run(t *testing.T) {
 				return
 			}
 
-			if !reflect.DeepEqual(pl.RawEscrowEvents, tt.expectedEvents) {
-				t.Errorf("want: %+v, got: %+v", tt.expectedEvents, pl.RawEscrowEvents)
+			if !reflect.DeepEqual(pl.RawEscrowEvents, tt.expectedEscrow) {
+				t.Errorf("want: %+v, got: %+v", tt.expectedEscrow, pl.RawEscrowEvents)
+				return
+			}
+
+			if !reflect.DeepEqual(pl.RawTransferEvents, tt.expectedTransfer) {
+				t.Errorf("want: %+v, got: %+v", tt.expectedTransfer, pl.RawEscrowEvents)
 				return
 			}
 		})

@@ -1463,6 +1463,26 @@ func (mr *MockValidatorSummaryStoreMockRecorder) FindActivityPeriods(arg0, arg1 
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindActivityPeriods", reflect.TypeOf((*MockValidatorSummaryStore)(nil).FindActivityPeriods), arg0, arg1)
 }
 
+// FindAllByTimePeriod mocks base method
+func (m *MockValidatorSummaryStore) FindAllByTimePeriod(arg0, arg1 *types.Time, arg2 ...string) ([]model.ValidatorSummary, error) {
+	m.ctrl.T.Helper()
+	varargs := []interface{}{arg0, arg1}
+	for _, a := range arg2 {
+		varargs = append(varargs, a)
+	}
+	ret := m.ctrl.Call(m, "FindAllByTimePeriod", varargs...)
+	ret0, _ := ret[0].([]model.ValidatorSummary)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// FindAllByTimePeriod indicates an expected call of FindAllByTimePeriod
+func (mr *MockValidatorSummaryStoreMockRecorder) FindAllByTimePeriod(arg0, arg1 interface{}, arg2 ...interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	varargs := append([]interface{}{arg0, arg1}, arg2...)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FindAllByTimePeriod", reflect.TypeOf((*MockValidatorSummaryStore)(nil).FindAllByTimePeriod), varargs...)
+}
+
 // FindMostRecent mocks base method
 func (m *MockValidatorSummaryStore) FindMostRecent() (*model.ValidatorSummary, error) {
 	m.ctrl.T.Helper()

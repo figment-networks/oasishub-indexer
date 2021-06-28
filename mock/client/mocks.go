@@ -213,6 +213,21 @@ func (mr *MockEventClientMockRecorder) GetEscrowEventsByHeight(arg0 interface{})
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetEscrowEventsByHeight", reflect.TypeOf((*MockEventClient)(nil).GetEscrowEventsByHeight), arg0)
 }
 
+// GetTransferEventsByHeight mocks base method
+func (m *MockEventClient) GetTransferEventsByHeight(arg0 int64) (*eventpb.GetTransferEventsByHeightResponse, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetTransferEventsByHeight", arg0)
+	ret0, _ := ret[0].(*eventpb.GetTransferEventsByHeightResponse)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetTransferEventsByHeight indicates an expected call of GetTransferEventsByHeight
+func (mr *MockEventClientMockRecorder) GetTransferEventsByHeight(arg0 interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetTransferEventsByHeight", reflect.TypeOf((*MockEventClient)(nil).GetTransferEventsByHeight), arg0)
+}
+
 // MockStateClient is a mock of StateClient interface
 type MockStateClient struct {
 	ctrl     *gomock.Controller
