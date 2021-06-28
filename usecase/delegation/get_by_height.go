@@ -1,6 +1,8 @@
 package delegation
 
 import (
+	"github.com/pkg/errors"
+
 	"github.com/figment-networks/oasishub-indexer/client"
 	"github.com/figment-networks/oasishub-indexer/store"
 )
@@ -19,20 +21,20 @@ func NewGetByHeightUseCase(db *store.Store, c *client.Client) *getByHeightUseCas
 
 func (uc *getByHeightUseCase) Execute(height *int64) (*ListView, error) {
 	// Get last indexed height
-	// mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// lastH := mostRecentSynced.Height
+	mostRecentSynced, err := uc.db.Syncables.FindMostRecent()
+	if err != nil {
+		return nil, err
+	}
+	lastH := mostRecentSynced.Height
 
-	// // Show last synced height, if not provided
-	// if height == nil {
-	// 	height = &lastH
-	// }
+	// Show last synced height, if not provided
+	if height == nil {
+		height = &lastH
+	}
 
-	// if *height > lastH {
-	// 	return nil, errors.New("height is not indexed yet")
-	// }
+	if *height > lastH {
+		return nil, errors.New("height is not indexed yet")
+	}
 
 	res, err := uc.client.State.GetStakingByHeight(*height)
 	if err != nil {

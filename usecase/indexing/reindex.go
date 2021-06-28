@@ -24,7 +24,6 @@ func NewReindexUseCase(cfg *config.Config, db *store.Store, c *client.Client) *r
 
 type ReindexUseCaseConfig struct {
 	Parallel    bool
-	Force       bool
 	StartHeight int64
 	EndHeight   int64
 	TargetIds   []int64
@@ -37,8 +36,7 @@ func (uc *reindexUseCase) Execute(ctx context.Context, useCaseConfig ReindexUseC
 	}
 
 	return indexingPipeline.Reindex(ctx, indexer.ReindexConfig{
-		Parallel: useCaseConfig.Parallel,
-		// Force:       useCaseConfig.Force,
+		Parallel:    useCaseConfig.Parallel,
 		StartHeight: useCaseConfig.StartHeight,
 		EndHeight:   useCaseConfig.EndHeight,
 		TargetIds:   useCaseConfig.TargetIds,

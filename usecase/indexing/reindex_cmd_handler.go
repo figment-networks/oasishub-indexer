@@ -25,12 +25,11 @@ func NewReindexCmdHandler(cfg *config.Config, db *store.Store, c *client.Client)
 	}
 }
 
-func (h *ReindexCmdHandler) Handle(ctx context.Context, parallel bool, force bool, startHeight, endHeight int64, targetIds []int64) {
+func (h *ReindexCmdHandler) Handle(ctx context.Context, parallel bool, startHeight, endHeight int64, targetIds []int64) {
 	logger.Info("running reindex use case [handler=cmd]")
 
 	useCaseConfig := ReindexUseCaseConfig{
 		Parallel:    parallel,
-		Force:       force,
 		StartHeight: startHeight,
 		EndHeight:   endHeight,
 		TargetIds:   targetIds,

@@ -281,8 +281,7 @@ func (o *indexingPipeline) canRunBackfill(isParallel bool) error {
 }
 
 type ReindexConfig struct {
-	Parallel bool
-	// Force       bool
+	Parallel    bool
 	StartHeight int64
 	EndHeight   int64
 	TargetIds   []int64
@@ -306,11 +305,6 @@ func (o *indexingPipeline) Reindex(ctx context.Context, cfg ReindexConfig) error
 	if cfg.Parallel {
 		kind = model.ReportKindParallelReindex
 	}
-	// if cfg.Force {
-	// 	if err := o.db.Reports.DeleteByKinds([]model.ReportKind{model.ReportKindParallelReindex, model.ReportKindSequentialReindex}); err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	reportCreator := &reportCreator{
 		kind:         kind,
